@@ -1,0 +1,210 @@
+<!doctype html>
+<!--
+  PROTOTYPE — throwaway. Lives on branch prototype/verify-email-screens, never merged.
+  Question: what do the email-verification screens look like? (issue #12)
+  Three variants (?variant=A|B|C) × three screens (?screen=check|confirm|verified),
+  plus the resend states Keycloak can produce on the "check" screen (?state=idle|sent|cooldown).
+  Open this file directly in a browser. ← / → cycle variants, ↑ / ↓ cycle screens.
+  Copy texts are drafts in the sign-up's "du" voice; ${email} stands in for Keycloak's user.email.
+-->
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROTOTYPE · Verify-email screens</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.12"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-sans: "Nunito", sans-serif;
+        --color-bg: #eceefe;
+        --color-primary: #444df2;
+        --color-primary-light: #797ef3;
+        --color-field: #eceefe;
+        --color-ink: #000000;
+        --color-muted: #686868;
+        --color-success: #92c83e;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-bg font-sans text-ink">
+    <div class="flex min-h-screen flex-col px-4 py-8 md:px-[75px] md:py-[75px]">
+      <header><img src="../../docs/design/general/logo-with-name.png" alt="DABubble" class="h-[70px]" /></header>
+      <main id="app" class="flex flex-1 items-center justify-center py-10"></main>
+      <footer class="flex justify-center gap-11 pb-2 text-lg text-primary-light">
+        <a href="#">Impressum</a><a href="#">Datenschutz</a>
+      </footer>
+    </div>
+
+    <!-- floating switcher: not part of the design -->
+    <div class="fixed bottom-5 left-1/2 z-50 flex -translate-x-1/2 items-center gap-3 rounded-full bg-neutral-900 px-3 py-2 font-mono text-xs text-white shadow-2xl ring-2 ring-yellow-400">
+      <button id="prev" class="rounded-full px-2 py-1 hover:bg-white/15">◀</button>
+      <span id="label" class="min-w-52 text-center"></span>
+      <button id="next" class="rounded-full px-2 py-1 hover:bg-white/15">▶</button>
+      <span class="h-5 w-px bg-white/30"></span>
+      <span id="screens" class="flex gap-1"></span>
+      <span id="states" class="flex gap-1"></span>
+    </div>
+
+    <script>
+      const EMAIL = "sofia.mueller@email.com";
+      const VARIANTS = { A: "Figma card", B: "Centred status", C: "Stepper + help" };
+      const SCREENS = {
+        check: "check email (login-verify-email.ftl)",
+        confirm: "other browser: confirm (info.ftl)",
+        verified: "email verified (info.ftl)",
+      };
+      const STATES = { idle: "idle", sent: "resent", cooldown: "30 s cooldown" };
+
+      const params = new URLSearchParams(location.search);
+      let variant = params.get("variant") ?? "A";
+      let screen = params.get("screen") ?? "check";
+      let state = params.get("state") ?? "idle";
+
+      // ---- shared bits (styling primitives only, no shared layout) ----
+      const arrow = `<a href="#" class="grid size-10 place-items-center rounded-full hover:bg-bg" title="Zurück">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>`;
+      const btnPrimary = (t) => `<button class="rounded-full bg-primary px-6 py-3 text-lg font-bold text-white hover:bg-[#535af1]">${t}</button>`;
+      const btnSecondary = (t) => `<button class="rounded-full border border-primary-light px-6 py-3 text-lg font-bold text-primary hover:bg-primary hover:text-white">${t}</button>`;
+      const mailIcon = (cls) => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>`;
+      const checkIcon = (cls) => `<svg class="${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
+      const feedback = {
+        idle: "",
+        sent: `Wir haben dir eine neue E-Mail geschickt.`,
+        cooldown: `Bitte warte 30 Sekunden, bevor du die E-Mail erneut anforderst.`,
+      };
+
+      // ---- Variant A: the Figma's password-reset card, as-is ----
+      // back arrow + blue headline row, centred body copy, right-aligned primary button.
+      const A = {
+        check: () => `
+          <section class="w-full max-w-[700px] rounded-[30px] bg-white px-10 py-10">
+            <div class="grid grid-cols-[40px_1fr_40px] items-center">${arrow}
+              <h1 class="text-center text-[46px] font-extrabold text-primary">E-Mail bestätigen</h1></div>
+            <p class="mx-auto mt-8 max-w-md text-center text-xl">Fast geschafft! Wir haben dir eine E-Mail an <b>${EMAIL}</b> geschickt.</p>
+            <p class="mx-auto mt-6 max-w-md text-center text-lg text-muted">Klicke auf den Link in der E-Mail, um dein Konto zu aktivieren. Danach geht es direkt weiter zu DABubble.</p>
+            ${state !== "idle" ? `<p class="mx-auto mt-6 max-w-md rounded-2xl ${state === "sent" ? "bg-[#eef7e1] text-[#4b7a12]" : "bg-[#fdecec] text-[#c0392b]"} px-5 py-3 text-center">${feedback[state]}</p>` : ""}
+            <div class="mx-auto mt-8 flex max-w-[486px] items-center justify-between">
+              <span class="text-muted">Keine E-Mail erhalten?</span>${btnSecondary("Erneut senden")}</div>
+          </section>`,
+        confirm: () => `
+          <section class="w-full max-w-[700px] rounded-[30px] bg-white px-10 py-10">
+            <div class="grid grid-cols-[40px_1fr_40px] items-center"><span></span>
+              <h1 class="text-center text-[46px] font-extrabold text-primary">E-Mail bestätigen</h1></div>
+            <p class="mx-auto mt-8 max-w-md text-center text-xl">Bitte bestätige, dass <b>${EMAIL}</b> deine E-Mail-Adresse ist.</p>
+            <div class="mx-auto mt-10 flex max-w-[486px] justify-end">${btnPrimary("Bestätigen")}</div>
+          </section>`,
+        verified: () => `
+          <section class="w-full max-w-[700px] rounded-[30px] bg-white px-10 py-10">
+            <div class="grid grid-cols-[40px_1fr_40px] items-center"><span></span>
+              <h1 class="text-center text-[46px] font-extrabold text-primary">E-Mail bestätigt</h1></div>
+            <p class="mx-auto mt-8 max-w-md text-center text-xl">Deine E-Mail-Adresse ist bestätigt.</p>
+            <p class="mx-auto mt-4 max-w-md text-center text-lg text-muted">Melde dich jetzt mit deiner E-Mail-Adresse und deinem Passwort an.</p>
+            <div class="mx-auto mt-10 flex max-w-[486px] justify-end">${btnPrimary("Zur Anmeldung")}</div>
+          </section>`,
+      };
+
+      // ---- Variant B: centred status page ----
+      // big round status icon leads, no back arrow, stacked full-width actions, resend as a text link.
+      const B = {
+        check: () => `
+          <section class="flex w-full max-w-[520px] flex-col items-center rounded-[30px] bg-white px-10 pb-10 pt-12 text-center">
+            <div class="grid size-28 place-items-center rounded-full bg-bg text-primary">${mailIcon("size-14")}</div>
+            <h1 class="mt-6 text-4xl font-extrabold text-primary">Schau in dein Postfach</h1>
+            <p class="mt-4 text-lg">Wir haben einen Bestätigungslink an</p>
+            <p class="mt-1 rounded-full bg-bg px-5 py-2 text-lg font-bold">${EMAIL}</p>
+            <p class="mt-4 text-muted">geschickt. Ein Klick darauf aktiviert dein Konto.</p>
+            <div class="mt-8 w-full border-t border-bg pt-6 text-muted">
+              ${state === "idle" ? `Nichts angekommen? <a href="#" class="font-bold text-primary-light hover:underline">Neue E-Mail senden</a>`
+                : `<span class="${state === "sent" ? "text-[#4b7a12]" : "text-[#c0392b]"}">${feedback[state]}</span>`}
+            </div>
+          </section>`,
+        confirm: () => `
+          <section class="flex w-full max-w-[520px] flex-col items-center rounded-[30px] bg-white px-10 pb-10 pt-12 text-center">
+            <div class="grid size-28 place-items-center rounded-full bg-bg text-primary">${mailIcon("size-14")}</div>
+            <h1 class="mt-6 text-4xl font-extrabold text-primary">Ist das deine Adresse?</h1>
+            <p class="mt-4 rounded-full bg-bg px-5 py-2 text-lg font-bold">${EMAIL}</p>
+            <button class="mt-8 w-full rounded-full bg-primary py-3 text-lg font-bold text-white">Ja, bestätigen</button>
+          </section>`,
+        verified: () => `
+          <section class="flex w-full max-w-[520px] flex-col items-center rounded-[30px] bg-white px-10 pb-10 pt-12 text-center">
+            <div class="grid size-28 place-items-center rounded-full bg-success text-white">${checkIcon("size-14")}</div>
+            <h1 class="mt-6 text-4xl font-extrabold text-primary">Alles klar!</h1>
+            <p class="mt-4 text-lg">Deine E-Mail-Adresse ist bestätigt.</p>
+            <p class="mt-1 text-muted">Du kannst dieses Fenster schließen oder dich hier anmelden.</p>
+            <button class="mt-8 w-full rounded-full bg-primary py-3 text-lg font-bold text-white">Zu DABubble</button>
+          </section>`,
+      };
+
+      // ---- Variant C: stepper + help ----
+      // wide two-column card: registration progress on the left, left-aligned content and troubleshooting on the right.
+      const steps = (current) => {
+        const s = ["Konto erstellen", "Passwort festlegen", "E-Mail bestätigen"];
+        return `<ol class="flex flex-col gap-6">${s.map((label, i) => {
+          const done = i < current, active = i === current;
+          return `<li class="flex items-center gap-4">
+            <span class="grid size-10 shrink-0 place-items-center rounded-full font-bold ${done ? "bg-success text-white" : active ? "bg-primary text-white" : "bg-white text-muted ring-1 ring-muted/30"}">${done ? checkIcon("size-5") : i + 1}</span>
+            <span class="${active ? "font-bold text-ink" : "text-muted"}">${label}</span></li>`;
+        }).join("")}</ol>`;
+      };
+      const cardC = (current, body) => `
+        <section class="grid w-full max-w-[900px] overflow-hidden rounded-[30px] bg-white md:grid-cols-[260px_1fr]">
+          <aside class="bg-bg/60 p-8">${steps(current)}</aside>
+          <div class="p-10">${body}</div>
+        </section>`;
+      const C = {
+        check: () => cardC(2, `
+          <h1 class="text-[40px] font-extrabold leading-tight text-primary">Bestätige deine E-Mail</h1>
+          <p class="mt-4 text-lg">Wir haben einen Link an <b>${EMAIL}</b> geschickt. Öffne ihn in diesem Browser, dann geht es automatisch weiter.</p>
+          <details class="mt-6 rounded-2xl bg-bg/60 px-5 py-4" open>
+            <summary class="cursor-pointer font-bold">Keine E-Mail da?</summary>
+            <ul class="mt-3 list-disc space-y-1 pl-5 text-muted">
+              <li>Schau im Spam-Ordner nach.</li>
+              <li>Prüfe, ob die Adresse oben stimmt. Falls nicht: <a href="#" class="text-primary-light hover:underline">neu registrieren</a>.</li>
+            </ul>
+            <div class="mt-4 flex items-center gap-4">${btnSecondary("Erneut senden")}
+              ${state !== "idle" ? `<span class="${state === "sent" ? "text-[#4b7a12]" : "text-[#c0392b]"}">${feedback[state]}</span>` : ""}</div>
+          </details>`),
+        confirm: () => cardC(2, `
+          <h1 class="text-[40px] font-extrabold leading-tight text-primary">Letzter Schritt</h1>
+          <p class="mt-4 text-lg">Du hast den Link in einem anderen Browser geöffnet. Bestätige hier, dass <b>${EMAIL}</b> deine Adresse ist.</p>
+          <div class="mt-8">${btnPrimary("E-Mail bestätigen")}</div>`),
+        verified: () => cardC(3, `
+          <h1 class="text-[40px] font-extrabold leading-tight text-primary">Geschafft!</h1>
+          <p class="mt-4 text-lg">Dein Konto ist aktiv. Melde dich an, um dir als Nächstes einen Avatar auszusuchen.</p>
+          <div class="mt-8">${btnPrimary("Anmelden")}</div>`),
+      };
+
+      // ---- switcher ----
+      const V = { A, B, C };
+      const keys = Object.keys(VARIANTS), screenKeys = Object.keys(SCREENS);
+      const chip = (on, text, onclick) => `<button onclick="${onclick}" class="rounded-full px-2 py-1 ${on ? "bg-yellow-400 text-black" : "hover:bg-white/15"}">${text}</button>`;
+
+      function render() {
+        const p = new URLSearchParams({ variant, screen, ...(screen === "check" ? { state } : {}) });
+        history.replaceState(null, "", "?" + p);
+        document.getElementById("app").innerHTML = V[variant][screen]();
+        document.getElementById("label").textContent = `${variant} (${VARIANTS[variant]})`;
+        document.getElementById("screens").innerHTML = screenKeys
+          .map((s) => chip(s === screen, s, `screen='${s}';render()`)).join("");
+        document.getElementById("screens").title = SCREENS[screen];
+        document.getElementById("states").innerHTML = screen === "check"
+          ? `<span class="h-5 w-px bg-white/30"></span>` + Object.entries(STATES).map(([k, t]) => chip(k === state, t, `state='${k}';render()`)).join("")
+          : "";
+      }
+      const cycle = (d) => { variant = keys[(keys.indexOf(variant) + d + keys.length) % keys.length]; render(); };
+      const cycleScreen = (d) => { screen = screenKeys[(screenKeys.indexOf(screen) + d + screenKeys.length) % screenKeys.length]; render(); };
+      document.getElementById("prev").onclick = () => cycle(-1);
+      document.getElementById("next").onclick = () => cycle(1);
+      addEventListener("keydown", (e) => {
+        if (e.target.closest("input, textarea, [contenteditable]")) return;
+        if (e.key === "ArrowLeft") cycle(-1);
+        if (e.key === "ArrowRight") cycle(1);
+        if (e.key === "ArrowUp") { e.preventDefault(); cycleScreen(-1); }
+        if (e.key === "ArrowDown") { e.preventDefault(); cycleScreen(1); }
+      });
+      render();
+    </script>
+  </body>
+</html>
