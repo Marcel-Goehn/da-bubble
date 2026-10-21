@@ -35,15 +35,19 @@ A User who belongs to a particular Channel. A role within that Channel, not anot
 _Avoid_: Participant
 
 **Admin**:
-A Member who may change a Channel and decide who belongs to it. A Channel's creator is always one of its Admins.
-_Avoid_: Owner, Moderator
+A Member who may change a Channel and decide who belongs to it.
+_Avoid_: Moderator
+
+**Creator**:
+The User who created a Channel. Always one of its Admins, can never leave or be removed, and is the only one who may delete it.
+_Avoid_: Owner
 
 **Default Channel**:
-The Channel "Allgemein", which every User belongs to and cannot leave.
+The Channel "Allgemein", which every User belongs to and cannot leave. It has no Creator and no Admins, so nobody can change it.
 _Avoid_: Base channel, General channel
 
 **Direct Message**:
-The private Conversation between two Users, or between a User and themselves. Abbreviated DM.
+The private Conversation between two Users, or between a User and themselves (their self-DM). There is at most one per pair of Users. Abbreviated DM.
 _Avoid_: Private chat, PM
 
 **Message**:
@@ -51,12 +55,24 @@ A single post by a User in a Conversation.
 _Avoid_: Post, Chat message
 
 **Thread**:
-The Replies hanging off one Message.
+The Replies hanging off one Message, identified by that Message. Threads are one level deep.
 _Avoid_: Sub-conversation
 
 **Reply**:
-A Message inside a Thread.
+A Message inside a Thread. A Reply cannot have a Thread of its own.
 _Avoid_: Answer, Comment
+
+**Deleted Message**:
+A Message its author has deleted. It keeps its place, author and time, but its content is gone.
+_Avoid_: Removed message
+
+**Attachment**:
+A file sent as part of a Message, visible to whoever can currently see the Conversation.
+_Avoid_: Upload, File
+
+**Unread**:
+A Message or Reply by someone else that arrived after a User last opened its Conversation (or, for "N neu", its Thread) and after they joined.
+_Avoid_: New, Unseen
 
 **Reaction**:
 An emoji a User attaches to a Message; each User adds a given emoji at most once.
