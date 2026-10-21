@@ -110,7 +110,8 @@ Also strip the token syntax itself. The default parser splits a UUID into hyphen
   WITH q AS (SELECT websearch_to_tsquery('german_unaccent', :q) AS tsq,
                     '%' || f_unaccent(:qLikeEscaped) || '%' AS pat)
   SELECT p.*, ts_headline('german_unaccent', p.search_text, q.tsq,
-           'StartSel=, StopSel=, MaxFragments=2, MaxWords=20, MinWords=8') AS headline
+           'StartSel=' || chr(57344) || ', StopSel=' || chr(57345)
+             || ', MaxFragments=2, MaxWords=20, MinWords=8') AS headline
   FROM (
     SELECT m.id, m.conversation_id, m.parent_message_id, m.author_id, m.created_at,
            m.search_text, (m.search_tsv @@ q.tsq) AS fts_hit
@@ -124,7 +125,7 @@ Also strip the token syntax itself. The default parser splits a UUID into hyphen
   ) p, q
   ORDER BY p.created_at DESC, p.id DESC;
   ```
-  The `StartSel`/`StopSel` values are U+E000/U+E001. The 3-character minimum applies to the trigram branch only (see §1).
+  `chr(57344)`/`chr(57345)` are U+E000/U+E001. The 3-character minimum applies to the trigram branch only (see §1).
 
 ## Ruled out
 
