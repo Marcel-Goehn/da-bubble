@@ -2,11 +2,11 @@ import { Routes } from '@angular/router';
 
 export const routes: Routes = [
   {
-    // PROTOTYPE: throwaway route, see prototype-channel-admins/
-    path: 'prototype/channel-admins',
+    // PROTOTYPE: throwaway route, see prototype-unread-legal/
+    path: 'prototype/unread-legal',
     loadComponent: () =>
-      import('./prototype-channel-admins/prototype-channel-admins.page').then(
-        (m) => m.PrototypeChannelAdminsPage,
+      import('./prototype-unread-legal/prototype-unread-legal.page').then(
+        (m) => m.PrototypeUnreadLegalPage,
       ),
   },
 ];

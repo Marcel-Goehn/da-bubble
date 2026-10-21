@@ -2,7 +2,7 @@
 
 @import 'tailwindcss';
 
-/* PROTOTYPE: Figma tokens for the channel-admins prototype */
+/* PROTOTYPE: Figma tokens for the unread-legal prototype */
 @theme {
   --font-sans: 'Nunito', ui-sans-serif, system-ui, sans-serif;
   --color-primary: #444df2;
