@@ -1,3 +1,21 @@
 /* You can add global styles to this file, and also import other style files */
 
 @import 'tailwindcss';
+
+/* PROTOTYPE: Figma tokens for the channel-admins prototype */
+@theme {
+  --font-sans: 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  --color-primary: #444df2;
+  --color-purple-2: #797ef3;
+  --color-purple-3: #535af1;
+  --color-bg-lavender: #eceefe;
+  --color-line: #adb0d9;
+  --color-text-gray: #686868;
+  --color-danger: #e2195b;
+}
+
+.material-symbols-outlined {
+  font-size: 24px;
+  line-height: 1;
+  user-select: none;
+}
