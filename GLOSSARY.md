@@ -20,6 +20,10 @@ _Avoid_: Organization, Team, Server
 The picture that represents a User wherever they appear: one of the predefined pictures, or one the User uploaded. Every User can see it; only its owner can change or remove it.
 _Avoid_: Profile picture, Icon
 
+**Pending Email Change**:
+A new email address a User has asked for but not yet confirmed through the link sent to it. Their current email stays in effect until then. A User has at most one, and can discard it.
+_Avoid_: Unverified email, Email draft
+
 **Presence**:
 Whether a User is currently online or offline.
 _Avoid_: Status, Activity
