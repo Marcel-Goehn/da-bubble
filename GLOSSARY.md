@@ -5,8 +5,12 @@ A Slack-style chat application where people talk to each other in channels and d
 ## Language
 
 **User**:
-A person who has signed up for DA Bubble and verified their email. They're identified by an ID that never changes, even when their name or email changes.
+A person with a verified identity in DA Bubble: either someone who signed up and verified their email, or the Guest. They're identified by an ID that never changes, even when their name or email changes.
 _Avoid_: Account, Profile
+
+**Guest**:
+The one shared User anyone can sign in as from the login page to try DA Bubble without signing up. Everyone who signs in as the Guest is the same User; its name and credentials can't be changed.
+_Avoid_: Demo user, Anonymous user
 
 **Workspace**:
 The shared space every User belongs to. For now there is exactly one, and every User can see and message every other User.
