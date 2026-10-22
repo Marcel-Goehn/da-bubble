@@ -25,7 +25,7 @@ A new email address a User has asked for but not yet confirmed through the link 
 _Avoid_: Unverified email, Email draft
 
 **Presence**:
-Whether a User is currently online or offline.
+Whether a User is currently online or offline. A User is online while they have DA Bubble open in at least one tab or on at least one device; a brief disconnect doesn't make them offline.
 _Avoid_: Status, Activity
 
 ## Conversations
