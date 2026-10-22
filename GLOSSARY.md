@@ -17,7 +17,7 @@ The shared space every User belongs to. For now there is exactly one, and every 
 _Avoid_: Organization, Team, Server
 
 **Avatar**:
-The picture that represents a User wherever they appear.
+The picture that represents a User wherever they appear: one of the predefined pictures, or one the User uploaded. Every User can see it; only its owner can change or remove it.
 _Avoid_: Profile picture, Icon
 
 **Presence**:
@@ -73,6 +73,10 @@ _Avoid_: Removed message
 **Attachment**:
 A file sent as part of a Message, visible to whoever can currently see the Conversation.
 _Avoid_: Upload, File
+
+**Pending Upload**:
+A file a User has uploaded but not yet used: not yet sent as an Attachment or saved as their Avatar. Only its uploader can use it, and it's discarded if unused for about a day.
+_Avoid_: Draft attachment, Temp file
 
 **Unread**:
 A Message or Reply by someone else that arrived after a User last opened its Conversation (or, for "N neu", its Thread) and after they joined.
