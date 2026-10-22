@@ -1,0 +1,262 @@
+<!doctype html>
+<!--
+  PROTOTYPE — throwaway. Lives on branch prototype/remaining-keycloak-pages, never merged.
+  Question: how do the remaining Keycloak pages look in the Figma "Passwort zurücksetzen" card style? (issue #33)
+  Three variants (?variant=A|B|C) × ten screens (?screen=…). Open this file directly in a browser.
+  ← / → cycle variants, ↑ / ↓ cycle screens. Every value shown is one the template can actually see
+  (confirmed on Keycloak 26.8.1 by spike/spike.py; the variable each value comes from is listed under the card).
+  Copy texts are drafts in the sign-up's "du" voice; Keycloak's own messages are overridden in the theme's messages_de.properties.
+-->
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROTOTYPE · Remaining Keycloak pages</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.12"></script>
+    <style type="text/tailwindcss">
+      @theme {
+        --font-sans: "Nunito", sans-serif;
+        --color-bg: #eceefe;
+        --color-primary: #444df2;
+        --color-primary-light: #797ef3;
+        --color-field: #eceefe;
+        --color-ink: #000000;
+        --color-muted: #686868;
+        --color-success: #92c83e;
+        --color-danger: #c0392b;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen bg-bg font-sans text-ink">
+    <div class="flex min-h-screen flex-col px-4 py-8 md:px-[75px] md:py-[60px]">
+      <header class="flex items-center gap-3 text-[32px] font-bold">
+        <span class="grid grid-cols-2 gap-1"><i class="size-4 rounded bg-[#e2286f]"></i><i class="size-4 rounded bg-success"></i><i class="size-4 rounded bg-[#f9a83a]"></i><i class="size-4 rounded-full bg-[#3fa7f0]"></i></span>DABubble
+      </header>
+      <main id="app" class="flex flex-1 flex-col items-center justify-center gap-4 py-10"></main>
+      <footer class="flex justify-center gap-11 pb-10 text-lg text-primary-light"><a href="#">Impressum</a><a href="#">Datenschutz</a></footer>
+    </div>
+
+    <!-- floating switcher: not part of the design -->
+    <div class="fixed bottom-5 left-1/2 z-50 flex max-w-[95vw] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-3xl bg-neutral-900 px-3 py-2 font-mono text-xs text-white shadow-2xl ring-2 ring-yellow-400">
+      <button id="prev" class="rounded-full px-2 py-1 hover:bg-white/15">◀</button>
+      <span id="label" class="min-w-44 text-center"></span>
+      <button id="next" class="rounded-full px-2 py-1 hover:bg-white/15">▶</button>
+      <span class="h-5 w-px bg-white/30"></span>
+      <select id="screen" class="rounded bg-neutral-800 px-2 py-1"></select>
+    </div>
+
+    <script>
+      const OLD = "sofia.mueller@email.com", NEW = "sofia@neue-firma.de";
+      const VARIANTS = { A: "Figma-Karte", B: "Zwei Wege", C: "Konto-Kopf" };
+      const SCREENS = {
+        error: ["error.ftl", "Original tab after verifying elsewhere: cookie not found (400)"],
+        terms: ["terms.ftl", "Google sign-up only: privacy acceptance (TERMS_AND_CONDITIONS)"],
+        linkConfirm: ["login-idp-link-confirm.ftl", "Google login, email already has a password account"],
+        linkEmail: ["login-idp-link-email.ftl", "…link by email (default first broker login)"],
+        brokerReauth: ["login.ftl (broker)", "…link by password instead (url.loginAction contains /first-broker-login)"],
+        review: ["idp-review-user-profile.ftl", "Google data fails the user profile (practically never: Google always sends a name)"],
+        updateEmail: ["update-email.ftl (form)", "kc_action=UPDATE_EMAIL from the profile dialog (isAppInitiatedAction → Abbrechen)"],
+        pending: ["update-email.ftl (pending)", "Any full login while kc.email.pending is set"],
+        reauthPassword: ["login.ftl (re-auth, password)", "max_auth_age re-login, authenticatorConfigured('auth-password-form') = true"],
+        reauthGoogle: ["login.ftl (re-auth, Google)", "max_auth_age re-login, no password, social.providers = [google]"],
+      };
+      // what the template reads for each screen (confirmed by the spike)
+      const VARS = {
+        error: "message.summary (overridden cookieNotFoundMessage), client.baseUrl → button; no login/authenticationSession",
+        terms: "user.firstName; createForm page: no login, no authenticationSession; accept / cancel buttons",
+        linkConfirm: "brokerContext.email, idpDisplayName; submitAction=linkAccount | updateProfile (hide 'Benutzerkonto überprüfen')",
+        linkEmail: "brokerContext.email, idpDisplayName; resend link; tryAnotherWay=on",
+        brokerReauth: "login.username prefilled (no usernameHidden, no authenticatorConfigured, no brokerContext); message.summary",
+        review: "profile.attributes (firstName = Name), user.email",
+        updateEmail: "user.attributes.email (current), isAppInitiatedAction → cancel-aia",
+        pending: "user.attributes.email (current), user.attributes['kc.email.pending'] / user.email (pending); keep-old = hidden post email=<current>",
+        reauthPassword: "auth.attemptedUsername, usernameHidden, authenticatorConfigured('auth-password-form'); resetPassword link",
+        reauthGoogle: "auth.attemptedUsername, social.providers filtered to linked IdPs (google only)",
+      };
+
+      const params = new URLSearchParams(location.search);
+      let variant = params.get("variant") ?? "A";
+      let screen = params.get("screen") ?? "pending";
+
+      // ---- styling primitives (no shared layout) ----
+      const arrow = `<a href="#" class="grid size-10 place-items-center rounded-full text-primary hover:bg-bg" title="Zurück">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>`;
+      const btn = (t, cls = "") => `<button class="rounded-full bg-primary px-6 py-3 text-lg font-bold text-white hover:bg-[#535af1] ${cls}">${t}</button>`;
+      const btn2 = (t, cls = "") => `<button class="rounded-full border border-primary-light px-6 py-3 text-lg font-bold text-primary hover:bg-primary hover:text-white ${cls}">${t}</button>`;
+      const link = (t) => `<a href="#" class="text-lg text-primary-light hover:underline">${t}</a>`;
+      const g = `<svg class="size-7" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.6-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.6-.4-3.5z"/></svg>`;
+      const googleBtn = (t) => `<button class="flex w-full items-center justify-center gap-4 rounded-full bg-field py-3 text-lg text-primary hover:ring-1 hover:ring-primary-light">${g}${t}</button>`;
+      const mailI = `<svg class="size-6 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>`;
+      const lockI = `<svg class="size-6 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>`;
+      const personI = `<svg class="size-6 text-muted" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>`;
+      const field = (icon, value, ph = "", ro = false) => `<label class="flex items-center gap-5 rounded-full bg-field px-8 py-3 text-lg ${ro ? "text-muted" : ""}">${icon}
+        <input class="w-full bg-transparent outline-none placeholder:text-muted" value="${value}" placeholder="${ph}" ${ro ? "readonly" : ""}/></label>`;
+      const box = (kind, t) => `<p class="rounded-2xl px-5 py-3 text-center ${kind === "ok" ? "bg-[#eef7e1] text-[#4b7a12]" : kind === "err" ? "bg-[#fdecec] text-danger" : "bg-bg text-ink"}">${t}</p>`;
+      const or = `<div class="flex items-center gap-4 text-muted"><span class="h-px flex-1 bg-primary-light/40"></span>ODER<span class="h-px flex-1 bg-primary-light/40"></span></div>`;
+      const checkbox = (t) => `<label class="flex items-center gap-3 text-lg"><input type="checkbox" class="size-5 accent-primary" /> ${t}</label>`;
+
+      // ---- Variant A: Figma card as-is ----
+      // headline row (back arrow only where there is a way back), centred copy, fields as pills,
+      // ONE right-aligned primary button; every other way out is a small text link under it.
+      const cardA = (title, back, body, primary, links = "") => `
+        <section class="w-full max-w-[640px] rounded-[30px] bg-white px-6 py-10 md:px-10">
+          <div class="grid grid-cols-[40px_1fr_40px] items-center">${back ? arrow : "<span></span>"}
+            <h1 class="text-center text-[36px] font-extrabold leading-tight text-primary md:text-[46px]">${title}</h1></div>
+          <div class="mx-auto mt-6 flex max-w-[486px] flex-col gap-5">${body}
+            <div class="mt-2 flex justify-end">${primary}</div>
+            ${links ? `<div class="flex flex-col items-center gap-1">${links}</div>` : ""}</div>
+        </section>`;
+      const pA = (t, cls = "text-center text-xl") => `<p class="${cls}">${t}</p>`;
+      const A = {
+        error: () => cardA("Sitzung abgelaufen", false,
+          pA("Dieser Anmeldevorgang ist nicht mehr gültig, zum Beispiel weil du ihn in einem anderen Tab oder Browser abgeschlossen hast.") +
+          pA("Starte die Anmeldung einfach neu.", "text-center text-lg text-muted"), btn("Zu DABubble")),
+        terms: () => cardA("Fast geschafft", false,
+          pA("Hallo Sofia! Bevor es losgeht, brauchen wir noch deine Zustimmung.") +
+          `<div class="flex justify-center">${checkbox(`Ich stimme der <a class="text-primary-light underline" href="#">Datenschutzerklärung</a> zu.`)}</div>`,
+          btn("Weiter"), link("Abbrechen")),
+        linkConfirm: () => cardA("Konto verknüpfen", true,
+          pA(`Es gibt schon ein DABubble-Konto mit <b>${OLD}</b>.`) +
+          pA("Verknüpfe es mit Google, dann kannst du dich künftig auf beide Arten anmelden.", "text-center text-lg text-muted"),
+          btn("Mit Google verknüpfen")),
+        linkEmail: () => cardA("E-Mail bestätigen", true,
+          pA(`Wir haben dir einen Link an <b>${OLD}</b> geschickt. Öffne ihn, um dein Konto mit Google zu verknüpfen.`) +
+          box("ok", "Wir haben dir eine neue E-Mail geschickt."),
+          btn2("Erneut senden"), link("Lieber mit Passwort bestätigen")),
+        brokerReauth: () => cardA("Konto verknüpfen", true,
+          pA("Melde dich einmal mit deinem Passwort an, um dein Konto mit Google zu verknüpfen.") +
+          field(mailI, OLD, "", true) + field(lockI, "", "Passwort"),
+          btn("Verknüpfen"), link("Passwort vergessen?")),
+        review: () => cardA("Fast geschafft", false,
+          pA("Google hat uns deinen Namen nicht verraten. Wie sollen dich die anderen sehen?") +
+          field(personI, "", "Name und Nachname") + field(mailI, OLD, "", true),
+          btn("Weiter")),
+        updateEmail: () => cardA("E-Mail ändern", true,
+          pA(`Deine Adresse ist <b>${OLD}</b>. Wir schicken einen Bestätigungslink an die neue Adresse.`) +
+          field(mailI, "", "neue@email.com"), btn("Link senden")),
+        pending: () => cardA("Bestätigung ausstehend", false,
+          pA(`Wir haben einen Link an <b>${NEW}</b> gesendet. Öffne ihn, um deine neue Adresse zu bestätigen.`) +
+          field(mailI, NEW) +
+          pA("Tippfehler? Korrigiere die Adresse und sende den Link erneut.", "text-center text-muted"),
+          btn("Link erneut senden"), link(`Alte Adresse <b>${OLD}</b> behalten`)),
+        reauthPassword: () => cardA("Bitte erneut anmelden", true,
+          pA("Zur Sicherheit: Bestätige dein Passwort, bevor du deine E-Mail-Adresse änderst.") +
+          field(mailI, OLD, "", true) + field(lockI, "", "Passwort"),
+          btn("Weiter"), link("Passwort vergessen?")),
+        reauthGoogle: () => cardA("Bitte erneut anmelden", true,
+          pA("Zur Sicherheit: Melde dich noch einmal mit Google an, bevor du deine E-Mail-Adresse änderst.") +
+          field(mailI, OLD, "", true) + googleBtn("Weiter mit Google"),
+          ""),
+      };
+
+      // ---- Variant B: two ways ----
+      // the card asks one question and lists every way forward as an equal, full-width choice tile.
+      // no right-aligned button, no text links: you read the question, you pick a tile.
+      const tile = (icon, title, sub, on = false) => `<button class="flex w-full items-center gap-5 rounded-[20px] border-2 ${on ? "border-primary bg-bg" : "border-bg hover:border-primary-light"} px-6 py-4 text-left">
+        <span class="grid size-12 shrink-0 place-items-center rounded-full bg-white ring-1 ring-bg">${icon}</span>
+        <span class="flex-1"><b class="block text-lg text-primary">${title}</b><span class="text-muted">${sub}</span></span>
+        <svg class="size-5 text-primary-light" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 6 6 6-6 6"/></svg></button>`;
+      const cardB = (title, question, tiles, extra = "") => `
+        <section class="w-full max-w-[560px] rounded-[30px] bg-white px-6 py-10 md:px-10">
+          <h1 class="text-[34px] font-extrabold leading-tight text-primary">${title}</h1>
+          <p class="mt-3 text-lg">${question}</p>
+          <div class="mt-6 flex flex-col gap-3">${tiles}</div>${extra}
+        </section>`;
+      const refreshI = `<svg class="size-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></svg>`;
+      const undoI = `<svg class="size-6 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 14 4 9l5-5"/><path d="M4 9h10a6 6 0 0 1 0 12h-3"/></svg>`;
+      const B = {
+        error: () => cardB("Sitzung abgelaufen", "Dieser Anmeldevorgang ist nicht mehr gültig. Wie geht's weiter?",
+          tile(refreshI, "Neu anmelden", "Zurück zu DABubble")),
+        terms: () => cardB("Noch eine Frage, Sofia", "Darf DABubble deine Daten laut <a class='text-primary-light underline' href='#'>Datenschutzerklärung</a> verarbeiten?",
+          tile(`<span class="text-xl">✓</span>`, "Ja, zustimmen", "Weiter zu DABubble") + tile(`<span class="text-xl">✕</span>`, "Nein", "Anmeldung abbrechen")),
+        linkConfirm: () => cardB("Du hast schon ein Konto", `Mit <b>${OLD}</b> gibt es bereits ein DABubble-Konto. Wie willst du bestätigen, dass es deins ist?`,
+          tile(mailI, "Per E-Mail", `Link an ${OLD}`) + tile(lockI, "Mit Passwort", "Sofort, wenn du es noch weißt")),
+        linkEmail: () => cardB("Schau in dein Postfach", `Wir haben einen Link an <b>${OLD}</b> geschickt. Ein Klick darauf verknüpft Google mit deinem Konto.`,
+          tile(refreshI, "Erneut senden", "Nichts angekommen?") + tile(lockI, "Doch lieber mit Passwort", "Statt auf die E-Mail zu warten")),
+        brokerReauth: () => cardB("Mit Passwort bestätigen", `Melde dich als <b>${OLD}</b> an, um Google zu verknüpfen.`,
+          field(lockI, "", "Passwort") + btn("Verknüpfen", "w-full"), `<p class="mt-4 text-center">${link("Passwort vergessen?")}</p>`),
+        review: () => cardB("Wie heißt du?", "Google hat uns keinen Namen geschickt. So sehen dich die anderen:",
+          field(personI, "", "Name und Nachname") + btn("Weiter", "w-full")),
+        updateEmail: () => cardB("Neue E-Mail-Adresse", `Bisher: <b>${OLD}</b>`,
+          field(mailI, "", "neue@email.com") + btn("Bestätigungslink senden", "w-full") + btn2("Abbrechen", "w-full")),
+        pending: () => cardB("Bestätigung ausstehend", `Deine Änderung auf <b>${NEW}</b> wartet auf den Klick im Link. Was möchtest du tun?`,
+          tile(refreshI, "Link erneut senden", `an ${NEW}`) +
+          tile(mailI, "Andere Adresse eingeben", "Tippfehler korrigieren") +
+          tile(undoI, "Alte Adresse behalten", `${OLD} bleibt, die Änderung wird verworfen`)),
+        reauthPassword: () => cardB("Kurz bestätigen", `Bevor du deine E-Mail änderst: Bist du es wirklich, <b>${OLD}</b>?`,
+          field(lockI, "", "Passwort") + btn("Bestätigen", "w-full"), `<p class="mt-4 text-center">${link("Passwort vergessen?")}</p>`),
+        reauthGoogle: () => cardB("Kurz bestätigen", `Bevor du deine E-Mail änderst: Bist du es wirklich, <b>${OLD}</b>?`,
+          tile(g, "Mit Google bestätigen", "Ein Klick, wenn du bei Google angemeldet bist")),
+      };
+
+      // ---- Variant C: account header ----
+      // every card opens with WHO this is about: an account strip (initial, address, how you sign in),
+      // then a compact, left-aligned action area. The pending page shows the change as old → new.
+      const strip = (email, how, extra = "") => `<div class="flex items-center gap-4 rounded-[20px] bg-bg px-5 py-4">
+        <span class="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-xl font-bold text-white">S</span>
+        <span class="min-w-0 flex-1"><b class="block truncate text-lg">${email}</b><span class="flex items-center gap-1 text-muted">${how}</span></span>${extra}</div>`;
+      const viaPw = `${lockI.replace("size-6", "size-4")} Passwort`, viaG = `${g.replace("size-7", "size-4")} Google`;
+      const cardC = (title, top, body) => `
+        <section class="w-full max-w-[560px] rounded-[30px] bg-white px-6 py-8 md:px-10">
+          <h1 class="mb-5 text-[30px] font-extrabold leading-tight text-primary">${title}</h1>${top}
+          <div class="mt-6 flex flex-col gap-4">${body}</div>
+        </section>`;
+      const pC = (t, cls = "text-lg") => `<p class="${cls}">${t}</p>`;
+      const row = (...b) => `<div class="flex flex-wrap items-center justify-end gap-3">${b.join("")}</div>`;
+      const C = {
+        error: () => cardC("Sitzung abgelaufen", "",
+          pC("Dieser Anmeldevorgang ist nicht mehr gültig, zum Beispiel weil du ihn in einem anderen Tab abgeschlossen hast.") + row(btn("Zu DABubble"))),
+        terms: () => cardC("Willkommen bei DABubble", strip(OLD, viaG),
+          checkbox(`Ich stimme der <a class="text-primary-light underline" href="#">Datenschutzerklärung</a> zu.`) + row(link("Abbrechen"), btn("Weiter"))),
+        linkConfirm: () => cardC("Konto verknüpfen", strip(OLD, viaPw, `<span class="text-2xl text-primary-light">+</span>${g}`),
+          pC("Diese Adresse hat schon ein DABubble-Konto. Verknüpfe Google damit, um dich auf beide Arten anzumelden.") + row(btn("Verknüpfen"))),
+        linkEmail: () => cardC("E-Mail bestätigen", strip(OLD, viaPw, `<span class="text-2xl text-primary-light">+</span>${g}`),
+          pC("Wir haben dir einen Link geschickt. Öffne ihn, um die Verknüpfung abzuschließen.") + row(link("Mit Passwort statt E-Mail"), btn2("Erneut senden"))),
+        brokerReauth: () => cardC("Konto verknüpfen", strip(OLD, viaPw, `<span class="text-2xl text-primary-light">+</span>${g}`),
+          field(lockI, "", "Passwort") + row(link("Passwort vergessen?"), btn("Verknüpfen"))),
+        review: () => cardC("Fast geschafft", strip(OLD, viaG),
+          pC("Wie sollen dich die anderen sehen?") + field(personI, "", "Name und Nachname") + row(btn("Weiter"))),
+        updateEmail: () => cardC("E-Mail ändern", strip(OLD, viaPw),
+          field(mailI, "", "Neue E-Mail-Adresse") + row(link("Abbrechen"), btn("Link senden"))),
+        pending: () => cardC("Bestätigung ausstehend", strip(OLD, viaPw),
+          `<div class="flex items-center gap-3 text-lg"><s class="text-muted">${OLD}</s><span class="text-primary-light">→</span><b>${NEW}</b>
+            <span class="ml-auto rounded-full bg-[#fff4e0] px-3 py-0.5 text-sm font-bold text-[#a86400]">nicht bestätigt</span></div>` +
+          pC("Öffne den Link in der E-Mail, um die neue Adresse zu bestätigen.", "text-muted") +
+          field(mailI, NEW) + row(btn2("Alte Adresse behalten"), btn("Link erneut senden"))),
+        reauthPassword: () => cardC("Bitte erneut anmelden", strip(OLD, viaPw),
+          field(lockI, "", "Passwort") + row(link("Passwort vergessen?"), btn("Weiter"))),
+        reauthGoogle: () => cardC("Bitte erneut anmelden", strip(OLD, viaG),
+          googleBtn("Weiter mit Google")),
+      };
+
+      // ---- switcher ----
+      const V = { A, B, C };
+      const keys = Object.keys(VARIANTS), screenKeys = Object.keys(SCREENS);
+      const sel = document.getElementById("screen");
+      sel.innerHTML = screenKeys.map((s) => `<option value="${s}">${SCREENS[s][0]}</option>`).join("");
+      sel.onchange = () => { screen = sel.value; render(); };
+
+      function render() {
+        history.replaceState(null, "", "?" + new URLSearchParams({ variant, screen }));
+        document.getElementById("app").innerHTML = V[variant][screen]() +
+          `<p class="max-w-[640px] text-center font-mono text-xs text-muted">${SCREENS[screen][1]}<br/>reads: ${VARS[screen]}</p>`;
+        document.getElementById("label").textContent = `${variant} (${VARIANTS[variant]})`;
+        sel.value = screen;
+      }
+      const cycle = (d) => { variant = keys[(keys.indexOf(variant) + d + keys.length) % keys.length]; render(); };
+      const cycleScreen = (d) => { screen = screenKeys[(screenKeys.indexOf(screen) + d + screenKeys.length) % screenKeys.length]; render(); };
+      document.getElementById("prev").onclick = () => cycle(-1);
+      document.getElementById("next").onclick = () => cycle(1);
+      addEventListener("keydown", (e) => {
+        if (e.target.closest("input, textarea, select, [contenteditable]")) return;
+        if (e.key === "ArrowLeft") cycle(-1);
+        if (e.key === "ArrowRight") cycle(1);
+        if (e.key === "ArrowUp") { e.preventDefault(); cycleScreen(-1); }
+        if (e.key === "ArrowDown") { e.preventDefault(); cycleScreen(1); }
+      });
+      render();
+    </script>
+  </body>
+</html>

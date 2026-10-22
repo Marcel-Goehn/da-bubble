@@ -1,0 +1,61 @@
+{
+  "realm": "fake-google",
+  "enabled": true,
+  "sslRequired": "none",
+  "clients": [
+    {
+      "clientId": "da-bubble-broker",
+      "publicClient": false,
+      "secret": "broker-secret",
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "http://localhost:8080/realms/da-bubble/broker/google/endpoint"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "gina@example.com",
+      "email": "gina@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Gina",
+      "lastName": "G",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!x",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "bob@example.com",
+      "email": "bob@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Bob",
+      "lastName": "B",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!x",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "nona@example.com",
+      "email": "nona@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!x",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

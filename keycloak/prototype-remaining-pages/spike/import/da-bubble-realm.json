@@ -1,0 +1,184 @@
+{
+  "realm": "da-bubble",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": true,
+  "verifyEmail": true,
+  "loginWithEmailAllowed": true,
+  "attributes": {
+    "actionTokenGeneratedByUserLifespan.update-email": "86400"
+  },
+  "smtpServer": {
+    "host": "localhost",
+    "port": "1025",
+    "from": "noreply@dabubble.local",
+    "fromDisplayName": "DABubble"
+  },
+  "clients": [
+    {
+      "clientId": "da-bubble-app",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "baseUrl": "http://localhost:4200/",
+      "redirectUris": [
+        "http://localhost:4200/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "protocolMappers": [
+        {
+          "name": "email pending",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "config": {
+            "user.attribute": "kc.email.pending",
+            "claim.name": "email_pending",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "displayName": "Google (stand-in)",
+      "providerId": "oidc",
+      "enabled": true,
+      "trustEmail": true,
+      "firstBrokerLoginFlowAlias": "first broker login",
+      "config": {
+        "syncMode": "IMPORT",
+        "clientId": "da-bubble-broker",
+        "clientSecret": "broker-secret",
+        "clientAuthMethod": "client_secret_post",
+        "authorizationUrl": "http://localhost:8080/realms/fake-google/protocol/openid-connect/auth",
+        "tokenUrl": "http://localhost:8080/realms/fake-google/protocol/openid-connect/token",
+        "userInfoUrl": "http://localhost:8080/realms/fake-google/protocol/openid-connect/userinfo",
+        "issuer": "http://localhost:8080/realms/fake-google",
+        "validateSignature": "false",
+        "defaultScope": "openid email profile",
+        "pkceEnabled": "false"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "alice@example.com",
+      "email": "alice@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Alice",
+      "lastName": "A",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!x",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "username": "guest@dabubble.com",
+      "email": "guest@dabubble.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Guest",
+      "lastName": "G",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!x",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "guest",
+        "default-roles-da-bubble"
+      ]
+    },
+    {
+      "username": "bob@example.com",
+      "email": "bob@example.com",
+      "emailVerified": true,
+      "enabled": true,
+      "firstName": "Bob",
+      "lastName": "B",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "Passw0rd!x",
+          "temporary": false
+        }
+      ]
+    }
+  ],
+  "requiredActions": [
+    {
+      "alias": "UPDATE_PASSWORD",
+      "name": "Update Password",
+      "providerId": "UPDATE_PASSWORD",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 10
+    },
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 20
+    },
+    {
+      "alias": "UPDATE_PROFILE",
+      "name": "Update Profile",
+      "providerId": "UPDATE_PROFILE",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 30
+    },
+    {
+      "alias": "TERMS_AND_CONDITIONS",
+      "name": "Terms and Conditions",
+      "providerId": "TERMS_AND_CONDITIONS",
+      "enabled": true,
+      "defaultAction": true,
+      "priority": 50
+    },
+    {
+      "alias": "UPDATE_EMAIL",
+      "name": "Update Email",
+      "providerId": "UPDATE_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 60,
+      "config": {
+        "max_auth_age": "20"
+      }
+    }
+  ],
+  "loginTheme": "dump",
+  "internationalizationEnabled": true,
+  "supportedLocales": [
+    "de"
+  ],
+  "defaultLocale": "de",
+  "roles": {
+    "realm": [
+      {
+        "name": "guest"
+      }
+    ]
+  }
+}
