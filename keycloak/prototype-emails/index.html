@@ -1,0 +1,151 @@
+<!doctype html>
+<!--
+  PROTOTYPE: throwaway. Lives on branch prototype/keycloak-emails and is never merged.
+  Question: how do the Keycloak emails look? (issue #34) Verification, password reset, email-update-confirmation.
+  Design: the Figma frame "17. Gmail - email" (docs/design/pages/), a plain letter with a text link, signature and logo.
+  The password reset copies it word for word (obvious typos fixed); verification and email change follow the same pattern.
+  ?mail=verify|reset|update, ↑ / ↓ cycle. "Text-Teil" shows the plain-text part Keycloak sends with every email.
+  The email body is rendered in an iframe with inline styles only (what mail clients honour).
+  The logo is an inline SVG stand-in here; in the theme it is a PNG at ${url.resourcesUrl}/img/logo.png (confirmed by spike/emails.py).
+-->
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PROTOTYPE · Keycloak emails</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.1.12"></script>
+  </head>
+  <body class="min-h-screen bg-neutral-200 font-sans text-neutral-900">
+    <!-- stand-in mail client: not part of the design -->
+    <div class="mx-auto flex max-w-[1100px] flex-col gap-3 px-4 pt-6 pb-28">
+      <div class="rounded-xl bg-white shadow">
+        <div class="flex items-center gap-3 border-b bg-blue-50/60 px-4 py-3 text-sm">
+          <span class="w-36 shrink-0 font-bold">DABubble</span>
+          <span class="truncate"><b id="rowSubject"></b> <span class="text-neutral-500" id="rowPre"></span></span>
+          <span class="ml-auto shrink-0 text-neutral-500">10:42</span>
+        </div>
+        <div class="px-6 pt-5">
+          <h2 class="text-2xl" id="subject"></h2>
+          <p class="mt-2 text-sm text-neutral-600"><b class="text-neutral-900">DABubble</b> &lt;info@dabubble.com&gt; an <span id="to"></span></p>
+        </div>
+        <div class="flex justify-center p-4"><iframe id="mail" class="w-full border-0 bg-white" style="height: 620px"></iframe></div>
+      </div>
+      <div class="rounded-xl bg-neutral-800 p-4 font-mono text-xs leading-relaxed text-neutral-200" id="notes"></div>
+    </div>
+
+    <!-- floating switcher: not part of the design -->
+    <div class="fixed bottom-5 left-1/2 z-50 flex max-w-[95vw] -translate-x-1/2 flex-wrap items-center justify-center gap-2 rounded-3xl bg-neutral-900 px-3 py-2 font-mono text-xs text-white shadow-2xl ring-2 ring-yellow-400">
+      <button id="prev" class="rounded-full px-2 py-1 hover:bg-white/15">▲</button>
+      <select id="mailSel" class="rounded bg-neutral-800 px-2 py-1"></select>
+      <button id="next" class="rounded-full px-2 py-1 hover:bg-white/15">▼</button>
+      <span class="h-5 w-px bg-white/30"></span>
+      <label class="flex items-center gap-1"><input type="checkbox" id="text" />Text-Teil</label>
+      <label class="flex items-center gap-1"><input type="checkbox" id="mobile" />430 px</label>
+    </div>
+
+    <script>
+      const OLD = "sofia.mueller@email.com", NEW = "sofia@neue-firma.de";
+      const LINK = "http://localhost:8080/realms/da-bubble/login-actions/action-token?key=eyJhbGciOiJIUzUxMiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJh&client_id=da-bubble-app";
+
+      // every email: greeting, lead ending in ":", the link as text, lifetime line, ignore line, signature, logo.
+      // {ttl} is linkExpirationFormatter(linkExpiration) with the German theme messages ("24 Stunden", "1 Stunde").
+      const MAILS = {
+        reset: {
+          tpl: "password-reset.ftl", key: "passwordReset", ttl: "24 Stunden",
+          attr: "actionTokenGeneratedByUserLifespan.reset-credentials: 86400 (Figma says 24 h)",
+          when: "\"Passwort vergessen?\" on the login page (also from the re-login and Konto-verknüpfen pages)",
+          to: OLD, subject: "Dein Passwort zurücksetzen",
+          lead: "wir haben kürzlich eine Anfrage zum Zurücksetzen deines Passworts erhalten. Falls du diese Anfrage gestellt hast, klicke bitte auf den folgenden Link, um dein Passwort zurückzusetzen:",
+          cta: "Passwort zurücksetzen",
+          ignore: "Falls du keine Anfrage zum Zurücksetzen deines Passworts gestellt hast, ignoriere bitte diese E-Mail.",
+        },
+        verify: {
+          tpl: "email-verification.ftl", key: "emailVerification", ttl: "24 Stunden",
+          attr: "actionTokenGeneratedByUserLifespan.verify-email: 86400 (decided, same as reset)",
+          when: "After Registrieren → Passwort festlegen; again on every \"E-Mail erneut senden\" (30 s cooldown)",
+          to: OLD, subject: "Bestätige deine E-Mail-Adresse",
+          lead: "willkommen bei DABubble! Bitte bestätige deine E-Mail-Adresse, indem du auf den folgenden Link klickst:",
+          cta: "E-Mail-Adresse bestätigen",
+          ignore: "Falls du dich nicht bei DABubble registriert hast, ignoriere bitte diese E-Mail.",
+        },
+        update: {
+          tpl: "email-update-confirmation.ftl", key: "emailUpdateConfirmation", ttl: "1 Stunde",
+          attr: "actionTokenGeneratedByUserLifespan.update-email: 3600 (decided in #30)",
+          when: "\"Link senden\" / \"Link erneut senden\" on update-email.ftl; goes to the NEW address ({1} = newEmail)",
+          to: NEW, subject: "Bestätige deine neue E-Mail-Adresse",
+          lead: `wir haben eine Anfrage erhalten, die E-Mail-Adresse deines DABubble-Kontos in ${NEW} zu ändern. Falls du diese Anfrage gestellt hast, klicke bitte auf den folgenden Link, um die neue Adresse zu bestätigen:`,
+          cta: "Neue E-Mail-Adresse bestätigen",
+          ignore: "Falls du keine Änderung angefordert hast, ignoriere bitte diese E-Mail. Deine bisherige Adresse bleibt bestehen.",
+        },
+      };
+      const keep = (m) => `Bitte beachte, dass dieser Link aus Sicherheitsgründen nur ${m.ttl} gültig ist.`;
+
+      // stand-in for the logo PNG (bubble mark + wordmark, as in the Figma)
+      const LOGO = `<svg width="254" height="70" viewBox="0 0 254 70" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="DABubble">
+        <path d="M11 4h10v20H11A10 10 0 0 1 11 4z" fill="#ee1f7a"/><rect x="27" y="0" width="43" height="30" rx="5" fill="#94c83e"/>
+        <rect x="0" y="36" width="41" height="31" rx="5" fill="#fbaf3b"/><path d="M46 36h10a10 10 0 0 1 0 20H46z" fill="#40a9f5"/>
+        <g fill="#fff"><circle cx="38" cy="15" r="2.4"/><circle cx="48" cy="15" r="2.4"/><circle cx="58" cy="15" r="2.4"/>
+        <circle cx="11" cy="51" r="2.4"/><circle cx="21" cy="51" r="2.4"/><circle cx="31" cy="51" r="2.4"/></g>
+        <text x="84" y="49" font-family="Nunito,'Segoe UI',Helvetica,Arial,sans-serif" font-size="36" font-weight="700" fill="#000">DABubble</text></svg>`;
+
+      const FONT = "font-family:Roboto,'Segoe UI',Helvetica,Arial,sans-serif;";
+      const P = (t) => `<p style="margin:0 0 22px">${t}</p>`;
+      const html = (m) => `<!doctype html><html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+        <body style="margin:0;padding:0;background:#fff">
+          <div style="display:none;max-height:0;overflow:hidden">${m.lead.replace(/^./, (c) => c.toUpperCase())}</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td style="padding:8px 16px">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:900px;${FONT}font-size:16px;line-height:1.4;color:#202124">
+              <tr><td>
+                ${P("Hallo,")}
+                ${P(m.lead.replace(/^./, (c) => c.toUpperCase()))}
+                ${P(`<a href="${LINK}" style="color:#444df2;text-decoration:none">${m.cta}</a>`)}
+                ${P(keep(m))}
+                ${P(m.ignore)}
+                <p style="margin:44px 0 22px">Beste Grüße,</p>
+                ${P("Dein DABubble Team!")}
+                <div style="margin-top:8px">${LOGO}</div>
+              </td></tr></table></td></tr></table></body></html>`;
+
+      // plain-text part: same wording, the link spelled out
+      const text = (m) => ["Hallo,", "", m.lead.replace(/^./, (c) => c.toUpperCase()), "", LINK, "", keep(m), "", m.ignore, "", "", "Beste Grüße,", "", "Dein DABubble Team!"].join("\n");
+      const asText = (m) => `<!doctype html><html><body style="margin:0"><pre style="margin:0;padding:16px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-all;color:#111">${text(m)
+        .replace(/(http\S+)/g, '<a href="$1" style="color:#1a0dab">$1</a>')}</pre></body></html>`;
+
+      const params = new URLSearchParams(location.search);
+      let mail = params.get("mail") ?? "reset";
+      const keys = Object.keys(MAILS);
+
+      function render() {
+        const m = MAILS[mail];
+        const frame = document.getElementById("mail");
+        frame.srcdoc = (document.getElementById("text").checked ? asText : html)(m);
+        frame.style.maxWidth = document.getElementById("mobile").checked ? "430px" : "100%";
+        document.getElementById("rowSubject").textContent = document.getElementById("subject").textContent = m.subject;
+        document.getElementById("rowPre").textContent = "– " + m.lead.replace(/^./, (c) => c.toUpperCase());
+        document.getElementById("to").textContent = m.to;
+        document.getElementById("mailSel").value = mail;
+        document.getElementById("notes").innerHTML = [
+          `<b>${m.tpl}</b> (html/ + text/) · subject <b>${m.key}Subject</b>, body <b>${m.key}Body</b> / <b>${m.key}BodyHtml</b> in messages_de.properties`,
+          `when: ${m.when}`,
+          `to: ${m.to} · lifetime: ${m.attr} (Keycloak default 5 min)`,
+          `template sees: link, linkExpiration, linkExpirationFormatter(…), realmName, user, url, locale${mail === "update" ? ", newEmail" : ""}`,
+          `hidden preheader div = first sentence (so the inbox preview isn't "Hallo,")`,
+        ].map((l) => `<div>${l}</div>`).join("");
+        history.replaceState(null, "", "?mail=" + mail);
+      }
+
+      document.getElementById("mailSel").innerHTML = keys.map((k) => `<option value="${k}">${MAILS[k].tpl}</option>`).join("");
+      const cycle = (d) => { mail = keys[(keys.indexOf(mail) + d + keys.length) % keys.length]; render(); };
+      document.getElementById("prev").onclick = () => cycle(-1);
+      document.getElementById("next").onclick = () => cycle(1);
+      document.getElementById("mailSel").onchange = (e) => { mail = e.target.value; render(); };
+      document.getElementById("text").onchange = render;
+      document.getElementById("mobile").onchange = render;
+      addEventListener("keydown", (e) => {
+        if (e.target.closest("input, textarea, select, [contenteditable]")) return;
+        if (e.key === "ArrowUp") { e.preventDefault(); cycle(-1); } else if (e.key === "ArrowDown") { e.preventDefault(); cycle(1); }
+      });
+      render();
+    </script>
+  </body>
+</html>
