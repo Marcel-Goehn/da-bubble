@@ -108,6 +108,37 @@
       "requiredActions": []
     }
   ],
+  "identityProviders": [
+    {
+      "alias": "google",
+      "displayName": "Google",
+      "providerId": "google",
+      "enabled": "${GOOGLE_LOGIN_ENABLED:false}",
+      "trustEmail": true,
+      "storeToken": false,
+      "linkOnly": false,
+      "hideOnLogin": false,
+      "firstBrokerLoginFlowAlias": "da-bubble first broker login",
+      "config": {
+        "clientId": "${GOOGLE_CLIENT_ID:unset}",
+        "clientSecret": "${GOOGLE_CLIENT_SECRET:unset}",
+        "syncMode": "IMPORT",
+        "defaultScope": "openid email profile"
+      }
+    }
+  ],
+  "identityProviderMappers": [
+    {
+      "name": "name to firstName",
+      "identityProviderAlias": "google",
+      "identityProviderMapper": "google-user-attribute-mapper",
+      "config": {
+        "syncMode": "INHERIT",
+        "jsonField": "name",
+        "userAttribute": "firstName"
+      }
+    }
+  ],
   "requiredActions": [
     {
       "alias": "TERMS_AND_CONDITIONS",
@@ -239,6 +270,18 @@
       "alias": "da-bubble guest locked",
       "config": {
         "denyErrorMessage": "guestLockedMessage"
+      }
+    },
+    {
+      "alias": "da-bubble review profile",
+      "config": {
+        "update.profile.on.first.login": "missing"
+      }
+    },
+    {
+      "alias": "da-bubble create unique user",
+      "config": {
+        "require.password.update.after.registration": "false"
       }
     },
     {
@@ -389,6 +432,77 @@
         {
           "authenticator": "deny-access-authenticator",
           "authenticatorConfig": "da-bubble guest locked",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "da-bubble first broker login",
+      "description": "The stock first broker login without the email way and 2FA: an email that already belongs to a User is linked by confirming that User's password only",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "idp-review-profile",
+          "authenticatorConfig": "da-bubble review profile",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "da-bubble first broker login user creation or linking",
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "da-bubble first broker login user creation or linking",
+      "description": "A new email creates the User; one that already belongs to a User goes to the link confirmation",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "idp-create-user-if-unique",
+          "authenticatorConfig": "da-bubble create unique user",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "da-bubble first broker login handle existing account",
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "da-bubble first broker login handle existing account",
+      "description": "Confirm the link, then the existing User's password",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "idp-confirm-link",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "idp-username-password-form",
           "authenticatorFlow": false,
           "requirement": "REQUIRED",
           "priority": 20,

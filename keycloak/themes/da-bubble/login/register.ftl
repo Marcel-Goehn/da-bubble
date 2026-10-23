@@ -22,9 +22,7 @@
                     <div class="flex items-center gap-10 px-5 text-16 text-text-subtle">
                         <input class="size-20 shrink-0 cursor-pointer accent-accent" type="checkbox" id="termsAccepted" name="termsAccepted" value="on"
                                <#if messagesPerField.existsError('termsAccepted')>aria-invalid="true" aria-describedby="termsAccepted-error"</#if>>
-                        <#-- privacyConsent has a {0} slot for the link; Keycloak trims the edges of message values. -->
-                        <#assign consent = msg("privacyConsent", "@link@")?split("@link@")>
-                        <label for="termsAccepted">${consent[0]}<a class="link" href="${properties.appBaseUrl}/datenschutz" target="_blank" rel="noopener">${msg("privacyConsentLink")}</a>${consent[1]}</label>
+                        <@field.privacyConsentLabel for="termsAccepted"/>
                     </div>
                     <#if messagesPerField.existsError('termsAccepted')>
                         <p class="field-error px-5" id="termsAccepted-error" aria-live="polite">${kcSanitize(messagesPerField.get('termsAccepted'))?no_esc}</p>

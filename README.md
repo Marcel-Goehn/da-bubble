@@ -31,6 +31,31 @@ After changing backend code, rebuild the image with `docker compose up -d --wait
 
 "Gäste-Login" on the login page logs in as the one shared Guest (`guest@dabubble.com`, password `GUEST_PASSWORD`). The realm import creates it with the `guest` role and nothing else, so without `manage-account` the account console is closed to it, and the theme posts its credentials through the normal login. Keycloak would run a `kc_action` (UPDATE_PASSWORD, UPDATE_EMAIL, ...) for any User, so the realm's browser flow denies the Guest whenever one is requested, using the "Condition - kc_action requested" from `keycloak/extension/`. The reset flow denies the Guest too.
 
+### Google login
+
+"Anmelden mit Google" is off until you have a Google OAuth client. The realm imports the stock `google` identity provider with `enabled` set from `GOOGLE_LOGIN_ENABLED` (default `false`), and a disabled provider leaves the login with no Google button and no divider. To turn it on:
+
+1. Ask Marcel for the shared dev client's ID and secret (he sends them privately), or create your own client (checklist below).
+2. Put them in the root `.env` with `GOOGLE_LOGIN_ENABLED=true` (`.env.example` lists the keys):
+   ```
+   GOOGLE_LOGIN_ENABLED=true
+   GOOGLE_CLIENT_ID=<client id>
+   GOOGLE_CLIENT_SECRET=<client secret>
+   ```
+3. Reset the stack (`docker compose down -v && docker compose up -d --wait`). Only the realm import reads these values. To keep your data, set them in the admin console under Identity providers → google instead.
+
+The shared client's consent screen is in Testing, so only Google accounts on its test-user list can log in; anyone else gets Google's "access blocked" page. Ask Marcel to add yours.
+
+A new Google User accepts the privacy policy once on the terms page, because they never see the sign-up form's checkbox. If the email already belongs to a User, Keycloak asks for that User's password to link the two; there is no email way. Google's name becomes the User's name and their picture is ignored. The E2E journeys don't cover Google, so check it by hand after changing the realm or these pages.
+
+#### Your own Google client
+
+1. In the [Google Cloud console](https://console.cloud.google.com/), create a project (e.g. "DA Bubble Dev").
+2. Under Google Auth Platform → Branding, set up the consent screen: audience **External**, publishing status **Testing**, scopes `openid`, `email` and `profile` only.
+3. Under Audience → Test users, add every Google account that should be able to log in (up to 100).
+4. Under Clients, create an OAuth client of type **Web application** with exactly one authorized redirect URI: `http://localhost:8080/realms/da-bubble/broker/google/endpoint`. It needs no JavaScript origins, because Keycloak does the code exchange.
+5. Copy the client ID and secret into `.env` as above.
+
 ### Keycloak image
 
 Compose builds Keycloak from `keycloak/Dockerfile`: the stock image plus the provider jar from `keycloak/extension/` (Maven, built inside the image build). After changing the extension, rebuild with `docker compose up -d --wait --build keycloak`.

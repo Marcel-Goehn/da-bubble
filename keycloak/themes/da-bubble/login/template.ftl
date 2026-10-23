@@ -6,10 +6,11 @@
   this theme doesn't override still render inside the card.
 
   Extra parameters and sections:
-  - backUrl: shows the Figma's back arrow in front of the title.
+  - backUrl: shows the Figma's back arrow in front of the title; backLabel names where it goes
+    (default: back to the login).
   - section "register": the "Neu bei DABubble?" exit, top right on desktop, below the card on mobile.
 -->
-<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false backUrl="">
+<#macro registrationLayout bodyClass="" displayInfo=false displayMessage=true displayRequiredFields=false backUrl="" backLabel=msg("backToLogin")>
 <#assign pageTitle><#nested "header"></#assign>
 <!DOCTYPE html>
 <html lang="${lang}">
@@ -62,7 +63,7 @@
         <section class="w-full max-w-606 rounded-30 bg-surface px-20 py-30 md:px-50 md:py-40" aria-labelledby="kc-page-title">
             <div class="flex items-center gap-10">
                 <#if backUrl?has_content>
-                    <a class="flex size-40 shrink-0 items-center justify-center rounded-full hover:bg-hover" href="${backUrl}" aria-label="${msg("backToLogin")}">
+                    <a class="flex size-40 shrink-0 items-center justify-center rounded-full hover:bg-hover" href="${backUrl}" aria-label="${backLabel}">
                         <@icons.icon name="arrow_back"/>
                     </a>
                 </#if>

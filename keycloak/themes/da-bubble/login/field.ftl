@@ -22,3 +22,10 @@
         </#if>
     </div>
 </#macro>
+
+<#-- "Ich stimme der Datenschutzerklärung zu." for the checkbox [for], with the policy as a link. -->
+<#macro privacyConsentLabel for>
+    <#-- privacyConsent has a {0} slot for the link; Keycloak trims the edges of message values. -->
+    <#local consent = msg("privacyConsent", "@link@")?split("@link@")>
+    <label for="${for}">${consent[0]}<a class="link" href="${properties.appBaseUrl}/datenschutz" target="_blank" rel="noopener">${msg("privacyConsentLink")}</a>${consent[1]}</label>
+</#macro>

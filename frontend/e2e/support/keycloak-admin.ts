@@ -1,8 +1,8 @@
 import { APIRequestContext, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 
-const keycloakUrl = 'http://localhost:8080';
-const realm = 'da-bubble';
+export const keycloakUrl = 'http://localhost:8080';
+export const realm = 'da-bubble';
 
 /** A User the tests log in as. */
 export interface TestUser {
@@ -39,10 +39,14 @@ async function adminToken(request: APIRequestContext): Promise<string> {
 }
 
 /**
- * Creates a User through the Keycloak Admin API with a verified email, a password and no required
- * actions, so they log straight in. The app provisions them on their first request.
+ * Creates a User through the Keycloak Admin API with a verified email, a password and only the
+ * given [requiredActions] (none by default), so they log straight in. The app provisions them on
+ * their first request.
  */
-export async function createVerifiedUser(request: APIRequestContext): Promise<TestUser> {
+export async function createVerifiedUser(
+  request: APIRequestContext,
+  { requiredActions = [] as string[] } = {},
+): Promise<TestUser> {
   const user = { name: 'Erika Mustermann', email: uniqueEmail('user'), password: uniquePassword() };
   const headers = { Authorization: `Bearer ${await adminToken(request)}` };
   const created = await request.post(`${keycloakUrl}/admin/realms/${realm}/users`, {
@@ -57,12 +61,9 @@ export async function createVerifiedUser(request: APIRequestContext): Promise<Te
     },
   });
   await expect(created, 'Keycloak user creation').toBeOK();
-  // Creation adds the realm's default required actions (the privacy consent); a fixture User has none.
+  // Creation adds the realm's default required actions (the privacy consent); replace them.
   const location = created.headers()['location'];
-  const requiredActionsCleared = await request.put(location, {
-    headers,
-    data: { requiredActions: [] },
-  });
-  await expect(requiredActionsCleared, 'Keycloak required actions').toBeOK();
+  const requiredActionsSet = await request.put(location, { headers, data: { requiredActions } });
+  await expect(requiredActionsSet, 'Keycloak required actions').toBeOK();
   return user;
 }
