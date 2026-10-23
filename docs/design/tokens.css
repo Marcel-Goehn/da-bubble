@@ -1,0 +1,123 @@
+/*
+ * DA Bubble design tokens (draft), extracted from the Figma file
+ * xgLbXuX3F3WmBG0BZ2kloW (last modified 2026-10-21). Values and their sources: tokens.md.
+ *
+ * Two layers:
+ *   1. Palette: raw Figma colours as plain custom properties on :root. They generate no
+ *      utilities, so components cannot use them directly.
+ *   2. Semantic: Tailwind 4 @theme tokens referencing the palette. Components use only these
+ *      (bg-surface, text-muted, border-focus, …), so a contrast fix is a one-line change here.
+ *
+ * Usage: @import 'tailwindcss'; then @import './tokens.css'; (the Keycloak theme imports it too).
+ * Fonts: Nunito comes from @fontsource-variable/nunito (self-hosted), imported where the app loads it.
+ */
+
+/* ── 1. Palette ─────────────────────────────────────────────────────────────── */
+
+:root {
+  --palette-purple-1: #444df2; /* "Purple 1" */
+  --palette-purple-2: #797ef3; /* "Purple 2" */
+  --palette-purple-3: #535af1; /* "Purple 3" */
+  --palette-purple-deep: #313ae5; /* unnamed: intro gradient start */
+  --palette-lavender: #adb0d9; /* "Ligth purple (Lines)" */
+  --palette-lavender-light: #eceefe; /* "Bg color" */
+  --palette-white: #ffffff; /* "White" */
+  --palette-black: #000000; /* "Black" */
+  --palette-gray: #686868; /* "Text gray" */
+  --palette-gray-light: #e6e6e6; /* unnamed: avatar hover ring */
+  --palette-slate: #42526e; /* "menu color" */
+  --palette-green: #92c83e; /* "online green" */
+  --palette-pink: #ed1e79; /* "Rosa error" */
+  --palette-blue: #1381ff; /* unnamed: email link on the profile card */
+}
+
+/* ── 2. Semantic tokens ─────────────────────────────────────────────────────── */
+
+@theme {
+  /* Only our tokens exist: no stray Tailwind palette, radii or shadows. */
+  --color-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --text-*: initial;
+
+  /* Surfaces */
+  --color-page: var(--palette-lavender-light); /* app and login background */
+  --color-surface: var(--palette-white); /* panels, dialogs, cards, dropdowns */
+  --color-hover: var(--palette-lavender-light); /* row / icon button hover and selected bg */
+  --color-field: var(--palette-lavender-light); /* filled inputs on the login pages */
+
+  /* Text */
+  --color-text: var(--palette-black);
+  --color-text-muted: var(--palette-gray); /* times, placeholders, status, hints */
+  --color-text-subtle: var(--palette-slate); /* privacy checkbox label */
+  --color-text-inverse: var(--palette-white); /* on accent buttons and the own bubble */
+  --color-interactive: var(--palette-purple-3); /* text links, active/hover menu text */
+  --color-interactive-hover: var(--palette-purple-1);
+  --color-link-soft: var(--palette-purple-2); /* "Passwort vergessen?", channel subtitle */
+  --color-link-external: var(--palette-blue); /* mailto on the profile card */
+
+  /* Accent (buttons, focus) */
+  --color-accent: var(--palette-purple-1); /* primary button, secondary button text */
+  --color-accent-hover: var(--palette-purple-2); /* primary button hover */
+  --color-accent-secondary-hover: var(--palette-purple-3); /* secondary button hover fill */
+  --color-disabled: var(--palette-gray); /* disabled primary button fill */
+
+  /* Borders */
+  --color-border: var(--palette-lavender); /* inputs, cards, separators, reaction chips */
+  --color-border-hover: var(--palette-purple-2);
+  --color-border-focus: var(--palette-purple-1);
+  --color-avatar-ring-hover: var(--palette-gray-light);
+  --color-avatar-ring-selected: var(--palette-lavender-light);
+
+  /* Messages */
+  --color-bubble-own: var(--palette-purple-2);
+  --color-bubble-other: var(--palette-lavender-light);
+
+  /* Status */
+  --color-online: var(--palette-green);
+  --color-offline: var(--palette-gray);
+  --color-error: var(--palette-pink);
+
+  /* Intro gradient: bg-linear-to-t from-intro-start to-intro-end */
+  --color-intro-start: var(--palette-purple-deep);
+  --color-intro-end: var(--palette-purple-2);
+
+  /* Typography: Nunito only. Sizes as used on the screens, px ÷ 16. */
+  --font-sans: 'Nunito Variable', 'Nunito', ui-sans-serif, system-ui, sans-serif;
+
+  --text-14: 0.875rem; /* timestamps, "Letzte Antwort", field errors */
+  --text-14--line-height: 1.364;
+  --text-16: 1rem; /* reaction counts, privacy checkbox, "hat reagiert" */
+  --text-16--line-height: 1.364;
+  --text-17: 1.0625rem; /* mobile buttons, links and inputs on the login pages */
+  --text-17--line-height: 1.364;
+  --text-18: 1.125rem; /* body: messages, menu rows, inputs, buttons */
+  --text-18--line-height: 1.364;
+  --text-20: 1.25rem; /* section headings ("Channels"), profile labels */
+  --text-20--line-height: 1.364;
+  --text-24: 1.5rem; /* panel and dialog titles, search field */
+  --text-24--line-height: 1.364;
+  --text-32: 2rem; /* names on the profile card / user menu, mobile page titles */
+  --text-32--line-height: 1.2;
+  --text-46: 2.875rem; /* desktop page titles ("Anmeldung") */
+  --text-46--line-height: 1.2;
+
+  /* Spacing: 1 step = 1 Figma px (in rem), so p-20 gap-15 read like the Figma. */
+  --spacing: 0.0625rem;
+
+  /* Radii (rounded-full for pills, circles and 100/500 px values) */
+  --radius-5: 5px;
+  --radius-10: 10px;
+  --radius-15: 15px;
+  --radius-20: 20px; /* composer, menu buttons, icon buttons, dropdowns */
+  --radius-25: 25px; /* reaction bar, primary/secondary buttons */
+  --radius-30: 30px; /* panels, dialogs, speech bubbles, text boxes */
+  --radius-40: 40px; /* "Text box + ICON" */
+
+  /* Shadows */
+  --shadow-header: 0 2px 10px rgb(0 0 0 / 0.08); /* panel headers, @ / # dropdowns */
+  --shadow-overlay: 0 6px 10px rgb(0 0 0 / 0.2); /* dialogs, popovers, profile card */
+  --shadow-overlay-up: 0 -3px 10px rgb(0 0 0 / 0.2); /* mobile bottom sheets */
+  --shadow-tab: 4px 4px 7px rgb(0 0 0 / 0.2); /* "Workspace-Menü schließen" tab */
+  --shadow-avatar: 0 2px 10px rgb(0 0 0 / 0.1); /* own Avatar beside own Messages */
+}
