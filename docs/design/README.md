@@ -2,7 +2,7 @@
 
 PNG exports of the DA Bubble Figma, so agents can read the design without Figma access.
 
-Figma: https://www.figma.com/design/xQSIqpJwAEhYIsSjoVBNcL/DABubble--Slack-Clone---Copy-?node-id=117-2933
+Figma: https://www.figma.com/design/xgLbXuX3F3WmBG0BZ2kloW
 
 **The Figma is fixed**: v1 is exactly what these frames show.
 
