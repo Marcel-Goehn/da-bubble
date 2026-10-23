@@ -69,6 +69,7 @@
   --color-border-focus: var(--palette-purple-1);
   --color-avatar-ring-hover: var(--palette-gray-light);
   --color-avatar-ring-selected: var(--palette-lavender-light);
+  --color-avatar-placeholder: var(--palette-gray-light); /* no Avatar yet */
 
   /* Messages */
   --color-bubble-own: var(--palette-purple-2);
@@ -121,4 +122,13 @@
   --shadow-overlay-up: 0 -3px 10px rgb(0 0 0 / 0.2); /* mobile bottom sheets */
   --shadow-tab: 4px 4px 7px rgb(0 0 0 / 0.2); /* "Workspace-Menü schließen" tab */
   --shadow-avatar: 0 2px 10px rgb(0 0 0 / 0.1); /* own Avatar beside own Messages */
+
+  /* Animations */
+  --animate-slide-in: slide-in 300ms ease-out; /* "Konto erfolgreich erstellt!" toast */
+
+  @keyframes slide-in {
+    from {
+      transform: translateX(100%);
+    }
+  }
 }

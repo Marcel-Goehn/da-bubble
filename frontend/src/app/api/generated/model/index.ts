@@ -6,6 +6,8 @@
  */
 
 export * from './fieldErrorDto';
+export * from './predefinedAvatar';
 export * from './problemCode';
 export * from './problemDto';
+export * from './setAvatarRequest';
 export * from './userDto';

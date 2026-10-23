@@ -6,12 +6,17 @@ import { Icon } from './icon';
 export type Presence = 'online' | 'offline';
 
 /** The diameters the Figma uses for Avatars, in px. */
-export type AvatarSize = 40 | 50 | 60;
+export type AvatarSize = 40 | 50 | 60 | 168;
 
-const sizes: Record<AvatarSize, string> = { 40: 'size-40', 50: 'size-50', 60: 'size-60' };
+const sizes: Record<AvatarSize, string> = {
+  40: 'size-40',
+  50: 'size-50',
+  60: 'size-60',
+  168: 'size-168',
+};
 
 /**
- * A User's Avatar as a circle, named by the User's name, with a placeholder while they have none. Given
+ * A User's Avatar as a circle, named by the User's name, with a grey silhouette while they have none. Given
  * a Presence, it shows the online / offline dot at the bottom right.
  */
 @Component({
@@ -30,10 +35,10 @@ const sizes: Record<AvatarSize, string> = { 40: 'size-40', 50: 'size-50', 60: 's
     } @else {
       <span
         role="img"
-        class="flex size-full items-center justify-center rounded-full bg-hover text-text-muted"
+        class="flex size-full items-center justify-center rounded-full bg-avatar-placeholder text-text-muted"
         [attr.aria-label]="name()"
       >
-        <app-icon name="person" />
+        <app-icon name="personFilled" fillContainer />
       </span>
     }
     @if (presence(); as presence) {

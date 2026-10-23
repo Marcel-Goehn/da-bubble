@@ -1,5 +1,5 @@
 import { Provider, signal } from '@angular/core';
-import Keycloak, { KeycloakLoginOptions } from 'keycloak-js';
+import Keycloak, { KeycloakLoginOptions, KeycloakLogoutOptions } from 'keycloak-js';
 import { KEYCLOAK_EVENT_SIGNAL, KeycloakEvent, KeycloakEventType } from 'keycloak-angular';
 
 export interface FakeKeycloakOptions {
@@ -9,7 +9,7 @@ export interface FakeKeycloakOptions {
 
 /**
  * Stands in for keycloak-js in component tests: no network, no redirects. Holds what the app reads from
- * Keycloak (authenticated, token) and records what it asks Keycloak to do (login).
+ * Keycloak (authenticated, token) and records what it asks Keycloak to do (login, logout).
  */
 export class FakeKeycloak {
   authenticated: boolean;
@@ -18,6 +18,10 @@ export class FakeKeycloak {
   resourceAccess = {};
 
   readonly login = vi.fn((options?: KeycloakLoginOptions) => {
+    void options;
+    return Promise.resolve();
+  });
+  readonly logout = vi.fn((options?: KeycloakLogoutOptions) => {
     void options;
     return Promise.resolve();
   });

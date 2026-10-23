@@ -23,6 +23,7 @@ import type {
 } from 'rxjs';
 
 import type {
+  SetAvatarRequest,
   UserDto
 } from '../model';
 
@@ -109,6 +110,40 @@ export class MeService {
       }
     );
   }
+ setAvatar<TData = UserDto>(setAvatarRequest: SetAvatarRequest, options?: HttpClientBodyOptions): Observable<TData>;
+ setAvatar<TData = UserDto>(setAvatarRequest: SetAvatarRequest, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ setAvatar<TData = UserDto>(setAvatarRequest: SetAvatarRequest, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  setAvatar<TData = UserDto>(
+    setAvatarRequest: SetAvatarRequest, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.put<TData>(
+      `/api/me/avatar`,
+      setAvatarRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.put<TData>(
+      `/api/me/avatar`,
+      setAvatarRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.put<TData>(
+      `/api/me/avatar`,
+      setAvatarRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
 };
 
 export type GetMeClientResult = NonNullable<UserDto>
+export type SetAvatarClientResult = NonNullable<UserDto>

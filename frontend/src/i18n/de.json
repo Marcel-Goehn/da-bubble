@@ -1,4 +1,15 @@
 {
+  "app": {
+    "name": "DABubble"
+  },
+  "avatarStep": {
+    "avatar": "Avatar {number}",
+    "chooseFromList": "Aus der Liste wählen",
+    "continue": "Weiter",
+    "created": "Konto erfolgreich erstellt!",
+    "logout": "Abmelden",
+    "title": "Wähle deinen Avatar"
+  },
   "dialog": {
     "close": "Schließen"
   },

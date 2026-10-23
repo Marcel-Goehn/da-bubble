@@ -13,6 +13,10 @@
         "required" : [ "code", "field" ],
         "type" : "object"
       },
+      "PredefinedAvatar" : {
+        "enum" : [ "AVATAR_1", "AVATAR_2", "AVATAR_3", "AVATAR_4", "AVATAR_5", "AVATAR_6" ],
+        "type" : "string"
+      },
       "ProblemCode" : {
         "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "UNAUTHENTICATED", "NOT_FOUND", "CONFLICT", "INTERNAL_ERROR" ],
         "type" : "string"
@@ -48,10 +52,23 @@
         "required" : [ "code", "detail", "errors", "instance", "status", "title", "type" ],
         "type" : "object"
       },
+      "SetAvatarRequest" : {
+        "properties" : {
+          "avatar" : {
+            "$ref" : "#/components/schemas/PredefinedAvatar"
+          }
+        },
+        "required" : [ "avatar" ],
+        "type" : "object"
+      },
       "UserDto" : {
         "properties" : {
           "avatar" : {
-            "type" : [ "string", "null" ]
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/PredefinedAvatar"
+            }, {
+              "type" : "null"
+            } ]
           },
           "email" : {
             "type" : "string"
@@ -78,6 +95,34 @@
     "/api/me" : {
       "get" : {
         "operationId" : "getMe",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "me" ]
+      }
+    },
+    "/api/me/avatar" : {
+      "put" : {
+        "operationId" : "setAvatar",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetAvatarRequest"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "content" : {

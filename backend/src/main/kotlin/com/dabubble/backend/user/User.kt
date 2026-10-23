@@ -1,6 +1,8 @@
 package com.dabubble.backend.user
 
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.Id
 import jakarta.persistence.Table
 import java.time.Instant
@@ -14,7 +16,9 @@ class User(
     val id: UUID,
     var name: String,
     var email: String,
-    var avatar: String?,
+    // null until the User picks one on the Avatar step.
+    @Enumerated(EnumType.STRING)
+    var avatar: PredefinedAvatar?,
     val createdAt: Instant,
 ) {
     companion object {

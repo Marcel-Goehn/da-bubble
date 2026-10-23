@@ -12,7 +12,7 @@ const ada: UserDto = {
   id: '7d1e0c2a-0000-4000-8000-000000000001',
   name: 'Ada Lovelace',
   email: 'ada@example.com',
-  avatar: null,
+  avatar: 'AVATAR_1',
 };
 
 async function renderApp(keycloak: FakeKeycloak) {

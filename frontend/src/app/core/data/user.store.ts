@@ -1,9 +1,10 @@
 import { inject, Service, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { MeService } from '../../api/generated/me/me.service';
-import { UserDto } from '../../api/generated/model';
+import { PredefinedAvatar, UserDto } from '../../api/generated/model';
 
 export type { UserDto };
+export { PredefinedAvatar };
 
 /** Users, starting with the logged-in one ("me"). */
 @Service()
@@ -15,7 +16,14 @@ export class UserStore {
   readonly me = this.meState.asReadonly();
 
   /** Fetches the logged-in User. The backend creates them on this first request. */
-  async loadMe(): Promise<void> {
-    this.meState.set(await firstValueFrom(this.meService.getMe()));
+  async loadMe(): Promise<UserDto> {
+    const me = await firstValueFrom(this.meService.getMe());
+    this.meState.set(me);
+    return me;
+  }
+
+  /** Gives the logged-in User one of the predefined Avatars. */
+  async setAvatar(avatar: PredefinedAvatar): Promise<void> {
+    this.meState.set(await firstValueFrom(this.meService.setAvatar({ avatar })));
   }
 }

@@ -4,10 +4,10 @@
  * DA Bubble API
  * OpenAPI spec version: v1
  */
+import type { PredefinedAvatar } from './predefinedAvatar';
 
 export interface UserDto {
-  /** @nullable */
-  avatar: string | null;
+  avatar: PredefinedAvatar | null;
   email: string;
   id: string;
   name: string;

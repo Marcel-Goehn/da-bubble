@@ -51,6 +51,7 @@ Components use only these. Tailwind prefixes the utility, so the text tokens rea
 | `disabled` | gray | disabled primary button |
 | `border` / `border-hover` / `border-focus` | lavender / purple-2 / purple-1 | inputs, cards, composer |
 | `avatar-ring-hover` / `avatar-ring-selected` | gray-light / lavender-light | Avatar picker |
+| `avatar-placeholder` | gray-light | Grey silhouette of a User without an Avatar (not in the Figma) |
 | `bubble-own` / `bubble-other` | purple-2 / lavender-light | speech bubbles |
 | `online` / `offline` | green / gray | Presence dot |
 | `error` | pink | field errors |
@@ -144,6 +145,12 @@ Radii are in px, so they don't scale with font size. That's intentional.
 | `shadow-avatar` | `0 2px 10px rgb(0 0 0 / .1)` | 27 | own Avatar beside own Messages |
 
 The "Nachricht bearbeiten" popover uses `0 6px 14px` (7 uses). The difference isn't visible, so it's merged into `shadow-overlay`. Borders are 1 px everywhere except the Avatar picker rings (4/8 px) and the hide-menu icon (2/2.5 px).
+
+## Animations
+
+| Token | Value | Where |
+|---|---|---|
+| `animate-slide-in` | `slide-in 300ms ease-out` (from `translateX(100%)`) | "Konto erfolgreich erstellt!" toast; applied under `motion-safe:` only |
 
 ## Not in the Figma
 

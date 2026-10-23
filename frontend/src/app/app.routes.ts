@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
-import { meGuard } from './core/data/me.guard';
+import { avatarStepGuard, meGuard } from './core/data/me.guard';
 
 export const routes: Routes = [
   {
@@ -8,6 +8,11 @@ export const routes: Routes = [
     path: '',
     canActivate: [authGuard],
     children: [
+      {
+        path: 'avatar',
+        canActivate: [avatarStepGuard],
+        loadComponent: () => import('./features/avatar-step/avatar-step').then((m) => m.AvatarStep),
+      },
       {
         path: '',
         canActivate: [meGuard],

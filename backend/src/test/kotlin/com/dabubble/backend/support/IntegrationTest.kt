@@ -6,6 +6,7 @@ import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTe
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.test.web.servlet.client.RestTestClient
 import java.util.UUID
@@ -70,5 +71,18 @@ abstract class IntegrationTest {
             .get()
             .uri(uri)
             .header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            .exchange()
+
+    protected fun put(
+        uri: String,
+        token: String,
+        json: String,
+    ): RestTestClient.ResponseSpec =
+        client
+            .put()
+            .uri(uri)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(json)
             .exchange()
 }
