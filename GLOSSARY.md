@@ -51,7 +51,7 @@ The User who created a Channel. Always one of its Admins, can never leave or be 
 _Avoid_: Owner
 
 **Default Channel**:
-The Channel "Allgemein", which every User belongs to and cannot leave. It has no Creator and no Admins, so nobody can change it.
+The Channel every User belongs to and cannot leave, called "Allgemein" in German and "General" in English. It has no Creator and no Admins, so nobody can change it.
 _Avoid_: Base channel, General channel
 
 **Direct Message**:
