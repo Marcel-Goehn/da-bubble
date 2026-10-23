@@ -1,0 +1,5 @@
+# Only the extension goes into the image; compose bind-mounts the rest.
+*
+!Dockerfile
+!extension/pom.xml
+!extension/src

@@ -18,9 +18,16 @@
                 <#if realm.resetPasswordAllowed>
                     <a class="link-soft self-center" href="${url.loginResetCredentialsUrl}">${msg("doForgotPassword")}</a>
                 </#if>
-                <div class="flex justify-center">
+                <div class="flex flex-wrap justify-center gap-20 md:gap-30">
                     <button class="button-primary" name="login" id="kc-login" type="submit">${msg("doLogIn")}</button>
+                    <#-- Submits the Guest form below, so the fields above stay empty. -->
+                    <button class="button-secondary" id="kc-login-guest" type="submit" form="kc-form-guest">${msg("doGuestLogIn")}</button>
                 </div>
+            </form>
+            <#-- The Guest's credentials, posted through the normal login (and so the app's PKCE flow). -->
+            <form id="kc-form-guest" class="hidden" action="${url.loginAction}" method="post" onsubmit="document.getElementById('kc-login-guest').disabled = true; return true;">
+                <input type="hidden" name="username" value="guest@dabubble.com">
+                <input type="hidden" name="password" value="${properties.guestPassword}">
             </form>
         </#if>
     <#elseif section = "socialProviders">

@@ -27,6 +27,14 @@ cd frontend && npm install && npm start
 
 After changing backend code, rebuild the image with `docker compose up -d --wait --build backend`.
 
+### Guest
+
+"Gäste-Login" on the login page logs in as the one shared Guest (`guest@dabubble.com`, password `GUEST_PASSWORD`). The realm import creates it with the `guest` role and nothing else, so without `manage-account` the account console is closed to it, and the theme posts its credentials through the normal login. Keycloak would run a `kc_action` (UPDATE_PASSWORD, UPDATE_EMAIL, ...) for any User, so the realm's browser flow denies the Guest whenever one is requested, using the "Condition - kc_action requested" from `keycloak/extension/`. The reset flow denies the Guest too.
+
+### Keycloak image
+
+Compose builds Keycloak from `keycloak/Dockerfile`: the stock image plus the provider jar from `keycloak/extension/` (Maven, built inside the image build). After changing the extension, rebuild with `docker compose up -d --wait --build keycloak`.
+
 ### Host mode
 
 To run the backend from your IDE or Gradle against the same stack:

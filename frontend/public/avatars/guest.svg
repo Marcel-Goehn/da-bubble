@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!-- The Guest's fixed Avatar, in the palette and line style of the 6 predefined characters. -->
+  <rect width="128" height="128" fill="#adb0d9"/>
+  <path d="M22 128c4-22 20-34 42-34s38 12 42 34z" fill="#797ef3"/>
+  <path d="M54 82h20v18c-6 5-14 5-20 0z" fill="#f3b48f"/>
+  <ellipse cx="64" cy="58" rx="27" ry="30" fill="#f8c6a3"/>
+  <path d="M35 52c0-20 13-31 29-31s29 11 29 31c-9-6-20-9-29-9s-20 3-29 9z" fill="#444df2"/>
+  <rect x="29" y="47" width="70" height="9" rx="4.5" fill="#444df2"/>
+  <g fill="none" stroke="#1b1464" stroke-linecap="round" stroke-width="3.5">
+    <path d="M47 61c3-2 6-2 9 0M72 61c3-2 6-2 9 0"/>
+    <path d="M65 64c2 4 1 7-2 8"/>
+    <path d="M54 76c6 5 14 5 20 0"/>
+  </g>
+  <circle cx="51" cy="66" r="3" fill="#1b1464"/>
+  <circle cx="77" cy="66" r="3" fill="#1b1464"/>
+</svg>

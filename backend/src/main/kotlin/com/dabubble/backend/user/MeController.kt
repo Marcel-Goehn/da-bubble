@@ -1,5 +1,7 @@
 package com.dabubble.backend.user
 
+import com.dabubble.backend.problem.ProblemCode
+import com.dabubble.backend.problem.ProblemException
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.web.bind.annotation.GetMapping
@@ -24,12 +26,15 @@ class MeController(
     @GetMapping
     fun getMe(user: User): UserDto = UserDto.from(user)
 
-    // An unknown id never binds to PredefinedAvatar, so it is a BAD_REQUEST problem.
+    // An unknown id never binds to PredefinedAvatar, so it is a BAD_REQUEST problem, as is the Guest's.
     @PutMapping("/avatar")
     fun setAvatar(
         user: User,
         @RequestBody request: SetAvatarRequest,
     ): UserDto {
+        if (request.avatar == PredefinedAvatar.GUEST) {
+            throw ProblemException(ProblemCode.BAD_REQUEST, "The Guest Avatar can't be picked")
+        }
         user.avatar = request.avatar
         return UserDto.from(users.save(user))
     }

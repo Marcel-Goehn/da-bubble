@@ -20,6 +20,8 @@ class User(
     @Enumerated(EnumType.STRING)
     var avatar: PredefinedAvatar?,
     val createdAt: Instant,
+    // From the `guest` realm role at provisioning.
+    val isGuest: Boolean = false,
 ) {
     companion object {
         const val NAME_MAX_LENGTH = 50

@@ -15,4 +15,5 @@ export const PredefinedAvatar = {
   AVATAR_4: 'AVATAR_4',
   AVATAR_5: 'AVATAR_5',
   AVATAR_6: 'AVATAR_6',
+  GUEST: 'GUEST',
 } as const;

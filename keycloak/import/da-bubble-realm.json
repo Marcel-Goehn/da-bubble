@@ -11,6 +11,8 @@
   "registrationAllowed": true,
   "registrationEmailAsUsername": true,
   "registrationFlow": "da-bubble registration",
+  "browserFlow": "da-bubble browser",
+  "resetCredentialsFlow": "da-bubble reset credentials",
   "resetPasswordAllowed": true,
   "rememberMe": false,
   "verifyEmail": true,
@@ -19,6 +21,14 @@
   "attributes": {
     "actionTokenGeneratedByUserLifespan.verify-email": "86400",
     "actionTokenGeneratedByUserLifespan.reset-credentials": "86400"
+  },
+  "roles": {
+    "realm": [
+      {
+        "name": "guest",
+        "description": "The Guest: the one shared User anyone can log in as from the login page"
+      }
+    ]
   },
   "smtpServer": {
     "host": "mailpit",
@@ -84,6 +94,18 @@
       "clientRoles": {
         "realm-management": ["manage-users", "view-users"]
       }
+    },
+    {
+      "username": "guest@dabubble.com",
+      "email": "guest@dabubble.com",
+      "emailVerified": true,
+      "firstName": "Guest",
+      "enabled": true,
+      "credentials": [
+        { "type": "password", "value": "${GUEST_PASSWORD:guest-dev-password}", "temporary": false }
+      ],
+      "realmRoles": ["guest"],
+      "requiredActions": []
     }
   ],
   "requiredActions": [
@@ -207,6 +229,19 @@
   ],
   "authenticatorConfig": [
     {
+      "alias": "da-bubble user is the guest",
+      "config": {
+        "condUserRole": "guest",
+        "negate": "false"
+      }
+    },
+    {
+      "alias": "da-bubble guest locked",
+      "config": {
+        "denyErrorMessage": "guestLockedMessage"
+      }
+    },
+    {
       "alias": "da-bubble password after verification",
       "config": {
         "always_set_password_on_register_form": "false"
@@ -214,6 +249,153 @@
     }
   ],
   "authenticationFlows": [
+    {
+      "alias": "da-bubble browser",
+      "description": "The stock browser login without 2FA, then the Guest lock: Keycloak runs any kc_action for any User, so the Guest is denied whenever one is requested",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "da-bubble browser login",
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "da-bubble guest lock",
+          "requirement": "CONDITIONAL",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "da-bubble browser login",
+      "description": "SSO cookie, identity provider redirect or the login form",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "identity-provider-redirector",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-username-password-form",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "da-bubble guest lock",
+      "description": "Denies the Guest any kc_action (UPDATE_PASSWORD, UPDATE_EMAIL, UPDATE_PROFILE, ...), so nobody can change the shared account",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-role",
+          "authenticatorConfig": "da-bubble user is the guest",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "conditional-kc-action",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "deny-access-authenticator",
+          "authenticatorConfig": "da-bubble guest locked",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "da-bubble reset credentials",
+      "description": "The stock reset without 2FA, except that the Guest's password can't be reset (the Guest never receives mail)",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "reset-credentials-choose-user",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "flowAlias": "da-bubble reset credentials guest lock",
+          "requirement": "CONDITIONAL",
+          "priority": 20,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "reset-credential-email",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 30,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "reset-password",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 40,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "alias": "da-bubble reset credentials guest lock",
+      "description": "Denies the reset once the chosen User turns out to be the Guest",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "conditional-user-role",
+          "authenticatorConfig": "da-bubble user is the guest",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "deny-access-authenticator",
+          "authenticatorConfig": "da-bubble guest locked",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 20,
+          "userSetupAllowed": false
+        }
+      ]
+    },
     {
       "alias": "da-bubble registration",
       "description": "Registration with the privacy checkbox (Terms and conditions) required",

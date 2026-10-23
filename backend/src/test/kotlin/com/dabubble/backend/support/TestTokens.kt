@@ -30,6 +30,7 @@ object TestTokens {
         emailVerified: Boolean = true,
         audience: String = AUDIENCE,
         issuer: String = ISSUER,
+        realmRoles: List<String> = listOf("default-roles-da-bubble"),
     ): String {
         val now = Instant.now()
         val claims =
@@ -44,9 +45,16 @@ object TestTokens {
                 .claim("name", name)
                 .claim("email", email)
                 .claim("email_verified", emailVerified)
+                .claim("realm_access", mapOf("roles" to realmRoles))
                 .build()
         val jwt = SignedJWT(JWSHeader.Builder(JWSAlgorithm.RS256).keyID("test").build(), claims)
         jwt.sign(RSASSASigner(keyPair.private))
         return jwt.serialize()
+    }
+
+    /** The Guest's token: the `guest` realm role and nothing else, as the imported Guest has. */
+    fun guest(sub: UUID = UUID.randomUUID()): String {
+        val roles = listOf("guest")
+        return user(sub, name = "Guest", email = "guest@dabubble.com", realmRoles = roles)
     }
 }

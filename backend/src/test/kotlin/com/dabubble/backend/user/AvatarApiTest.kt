@@ -49,4 +49,24 @@ class AvatarApiTest : IntegrationTest() {
             .jsonPath("$.avatar")
             .isEqualTo(null)
     }
+
+    @Test
+    fun `the Guest Avatar can't be picked`() {
+        val token = TestTokens.user()
+
+        put("/api/me/avatar", token, """{"avatar":"GUEST"}""")
+            .expectStatus()
+            .isBadRequest
+            .expectHeader()
+            .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+            .expectBody()
+            .json("""{"status":400,"code":"BAD_REQUEST"}""", JsonCompareMode.LENIENT)
+
+        get("/api/me", token)
+            .expectStatus()
+            .isOk
+            .expectBody()
+            .jsonPath("$.avatar")
+            .isEqualTo(null)
+    }
 }

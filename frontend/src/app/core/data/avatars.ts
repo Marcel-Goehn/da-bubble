@@ -7,10 +7,13 @@ const pictures: Record<PredefinedAvatar, string> = {
   AVATAR_4: '/avatars/4.webp',
   AVATAR_5: '/avatars/5.webp',
   AVATAR_6: '/avatars/6.webp',
+  GUEST: '/avatars/guest.svg',
 };
 
-/** The predefined Avatars in the order the Avatar step shows them. */
-export const predefinedAvatars = Object.keys(pictures) as PredefinedAvatar[];
+/** The predefined Avatars a User can pick, in the order the Avatar step shows them; the Guest's isn't one. */
+export const predefinedAvatars = (Object.keys(pictures) as PredefinedAvatar[]).filter(
+  (avatar) => avatar !== 'GUEST',
+);
 
 /** The static picture of [avatar], or `null` while the User has none (shown as a silhouette). */
 export function avatarUrl(avatar: PredefinedAvatar): string;

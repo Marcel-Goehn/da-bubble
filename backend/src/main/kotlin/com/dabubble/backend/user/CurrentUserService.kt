@@ -24,18 +24,24 @@ class CurrentUserService(
         val id = UUID.fromString(jwt.subject)
         val email = requireNotNull(jwt.getClaimAsString("email")) { "A verified token always carries an email" }
         val now = clock.now()
+        val realmRoles = jwt.getClaimAsMap("realm_access")?.get("roles") as? List<*>
+        val isGuest = realmRoles.orEmpty().contains(GUEST_ROLE)
 
         // A concurrent first request waits on this row and then inserts nothing, so only one provisions.
         val inserted =
             jdbc
                 .sql(
                     """
-                    INSERT INTO users (id, name, email, created_at) VALUES (:id, :name, :email, :createdAt)
+                    INSERT INTO users (id, name, email, avatar, is_guest, created_at)
+                    VALUES (:id, :name, :email, :avatar, :isGuest, :createdAt)
                     ON CONFLICT (id) DO NOTHING
                     """.trimIndent(),
                 ).param("id", id)
                 .param("name", initialName(jwt.getClaimAsString("name"), email))
                 .param("email", email)
+                // The Guest never sees the Avatar step.
+                .param("avatar", if (isGuest) PredefinedAvatar.GUEST.name else null)
+                .param("isGuest", isGuest)
                 .param("createdAt", now.atOffset(ZoneOffset.UTC))
                 .update() == 1
         if (inserted) {
@@ -44,6 +50,10 @@ class CurrentUserService(
         }
 
         return users.findById(id).orElseThrow().apply { this.email = email }
+    }
+
+    private companion object {
+        const val GUEST_ROLE = "guest"
     }
 }
 

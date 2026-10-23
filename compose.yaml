@@ -32,7 +32,8 @@ services:
       retries: 20
 
   keycloak:
-    image: quay.io/keycloak/keycloak:26.8.1
+    # The stock image plus the provider jar from keycloak/extension (the Guest lock).
+    build: ./keycloak
     command: start-dev --import-realm
     # The realm JSON's ${...} placeholders read these; .env is optional and the JSON has defaults.
     env_file:
