@@ -1,4 +1,4 @@
-package com.da_bubble.backend
+package com.dabubble.backend
 
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
@@ -7,5 +7,5 @@ import org.springframework.boot.runApplication
 class BackendApplication
 
 fun main(args: Array<String>) {
-	runApplication<BackendApplication>(*args)
+    runApplication<BackendApplication>(*args)
 }

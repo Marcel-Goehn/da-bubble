@@ -1,0 +1,4 @@
+# Default rules (buildUponDefaultConfig). Findings fail the build via failOnSeverity in build.gradle.kts;
+# warningsAsErrors covers config warnings (deprecated or unknown properties in this file).
+config:
+  warningsAsErrors: true
