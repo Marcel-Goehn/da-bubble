@@ -25,7 +25,11 @@
                 "input": "public"
               }
             ],
-            "styles": ["src/styles.css"]
+            "styles": ["src/styles.css"],
+            "loader": {
+              ".svg": "text"
+            },
+            "allowedCommonJsDependencies": ["@messageformat/core"]
           },
           "configurations": {
             "production": {

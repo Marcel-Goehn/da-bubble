@@ -1,3 +1,15 @@
-/* You can add global styles to this file, and also import other style files */
-
 @import 'tailwindcss';
+@import './tokens.css';
+@import '@fontsource-variable/nunito';
+@import '@angular/cdk/overlay-prebuilt.css';
+
+@layer base {
+  body {
+    @apply bg-page text-18 text-text;
+  }
+
+  /* The Figma has no focus state; keyboard users still need one (docs/design/tokens.md). */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-border-focus;
+  }
+}

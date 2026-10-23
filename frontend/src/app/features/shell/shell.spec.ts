@@ -2,6 +2,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { TestBed } from '@angular/core/testing';
 import { RouterOutlet } from '@angular/router';
 import { render, screen, within } from '@testing-library/angular';
+import { expectNoA11yViolations } from '../../../testing/a11y';
 import { FakeKeycloak, provideFakeKeycloak } from '../../../testing/fake-keycloak';
 import { provideApi } from '../../core/api/api.providers';
 import { routes } from '../../app.routes';
@@ -34,6 +35,7 @@ describe('Shell', () => {
     await navigation;
 
     expect(await within(screen.getByRole('main')).findByText('Ada Lovelace')).toBeTruthy();
+    await expectNoA11yViolations();
     http.verify();
   });
 

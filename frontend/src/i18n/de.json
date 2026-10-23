@@ -1,0 +1,9 @@
+{
+  "dialog": {
+    "close": "Schließen"
+  },
+  "presence": {
+    "online": "Aktiv",
+    "offline": "Abwesend"
+  }
+}
