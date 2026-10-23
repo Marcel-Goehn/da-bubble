@@ -14,7 +14,9 @@
     "lint:i18n": "transloco-keys-manager find --input src/app --translations-path src/i18n --langs de en --emit-error-on-extra-keys",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run lint && npm run lint:i18n && npm run format:check && npm run test -- --watch=false"
+    "build:keycloak-theme": "node scripts/build-keycloak-theme.mjs",
+    "check:keycloak-theme": "node scripts/build-keycloak-theme.mjs --check",
+    "check": "npm run lint && npm run lint:i18n && npm run format:check && npm run check:keycloak-theme && npm run test -- --watch=false"
   },
   "private": true,
   "packageManager": "npm@11.19.0",
@@ -42,6 +44,7 @@
     "@eslint/js": "^10.0.1",
     "@jsverse/transloco-keys-manager": "^8.1.1",
     "@material-symbols/svg-400": "^0.48.1",
+    "@tailwindcss/cli": "^4.3.3",
     "@tailwindcss/postcss": "^4.1.12",
     "@testing-library/angular": "^19.6.0",
     "@testing-library/dom": "^10.4.2",

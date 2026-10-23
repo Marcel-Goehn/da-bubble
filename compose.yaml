@@ -53,6 +53,8 @@ services:
       - "8080:8080"
     volumes:
       - ./keycloak/import:/opt/keycloak/data/import:ro
+      # start-dev turns theme caching off, so edits to the theme show on the next page load.
+      - ./keycloak/themes/da-bubble:/opt/keycloak/themes/da-bubble:ro
     depends_on:
       postgres:
         condition: service_healthy

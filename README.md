@@ -38,6 +38,18 @@ cd backend && ./gradlew bootRun
 
 The backend's defaults point at the stack's published ports on `localhost`, and it reads the root `.env` too. `docker compose start backend` switches back.
 
+### Keycloak theme
+
+The login pages and emails are the hand-written `da-bubble` theme in `keycloak/themes/da-bubble/` (FreeMarker, parent `base`, German and English bundles). Compose bind-mounts it and `start-dev` doesn't cache themes, so `.ftl` and message edits show on the next page load. Verification and reset emails land in Mailpit.
+
+The theme's CSS is Tailwind with the app's `tokens.css`, built from `frontend/src/keycloak-theme.css`. After changing classes in a `.ftl` file or the tokens, rebuild it; the result is committed, and `npm run check` fails while it's stale:
+
+```bash
+cd frontend && npm run build:keycloak-theme
+```
+
+The email lifetimes ("24 Stunden") are written out in `email/messages/`; keep them in step with the realm's `actionTokenGeneratedByUserLifespan.*` attributes.
+
 ### Reset
 
 ```bash

@@ -1,0 +1,89 @@
+/*
+ * Stylesheet of the Keycloak login theme (keycloak/themes/da-bubble/login), built from the same
+ * tokens as the app. `npm run build:keycloak-theme` compiles it into the theme's
+ * resources/css/login.css, which is committed so the compose stack runs without npm;
+ * `npm run check` fails when that file is stale.
+ *
+ * It lives here rather than next to the theme because Tailwind resolves its imports from
+ * frontend/node_modules.
+ */
+
+@import 'tailwindcss' source(none);
+@import './tokens.css';
+
+@source '../../keycloak/themes/da-bubble/login';
+
+/* Nunito, self-hosted: the build copies these two files into the theme's resources/fonts. */
+@font-face {
+  font-family: 'Nunito Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url('../fonts/nunito-latin-ext-wght-normal.woff2') format('woff2-variations');
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Nunito Variable';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 1000;
+  src: url('../fonts/nunito-latin-wght-normal.woff2') format('woff2-variations');
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@layer base {
+  body {
+    @apply bg-page font-sans text-18 text-text;
+  }
+
+  /* Same as the app: the Figma has no focus state, keyboard users still need one. */
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-border-focus;
+  }
+}
+
+/* The pieces every page repeats. Component states: docs/design/tokens.md. */
+@layer components {
+  /* Login input (2.–6.): filled pill, icon on the left. */
+  .field {
+    @apply w-full rounded-full border border-transparent bg-field py-18 pr-32 pl-78 text-18 font-medium text-text placeholder:text-text-muted hover:border-text-muted focus:border-border-focus aria-invalid:border-error;
+  }
+
+  .field-icon {
+    @apply pointer-events-none absolute top-1/2 left-32 size-24 -translate-y-1/2 fill-text-muted;
+  }
+
+  .field-error {
+    @apply mt-5 px-32 text-14 text-error;
+  }
+
+  /* Buttons 10. and 11., as the app's Button directive. */
+  .button-primary,
+  .button-secondary {
+    @apply inline-flex cursor-pointer items-center justify-center gap-10 rounded-25 border px-25 py-12 text-18 font-bold transition-colors;
+  }
+
+  .button-primary {
+    @apply border-transparent bg-accent text-text-inverse enabled:hover:bg-accent-hover enabled:active:bg-accent disabled:cursor-not-allowed disabled:bg-disabled;
+  }
+
+  .button-secondary {
+    @apply border-accent-hover bg-surface text-accent hover:bg-accent-secondary-hover hover:text-text-inverse active:bg-accent active:text-text-inverse;
+  }
+
+  /* Soft link (8., 9.): "Passwort vergessen?", "Konto erstellen", the legal links. */
+  .link-soft {
+    @apply rounded-full px-15 py-5 text-link-soft transition-colors hover:bg-hover hover:text-accent;
+  }
+
+  /* Text link inside running text: underlined, so it doesn't rely on colour alone. */
+  .link {
+    @apply text-interactive underline underline-offset-2 hover:text-interactive-hover;
+  }
+}
