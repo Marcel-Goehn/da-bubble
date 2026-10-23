@@ -64,3 +64,15 @@ This deletes the Postgres and SeaweedFS volumes: all app data, every Keycloak us
 cd backend && ./gradlew check
 cd frontend && npm run check
 ```
+
+### E2E and Lighthouse
+
+Before merging UI, auth, realtime or Keycloak changes, run the Playwright journeys and the Lighthouse gate. The first time, install the browser with `npx playwright install chromium`.
+
+```bash
+cd frontend
+npm run e2e         # resets the stack (down -v && up -d --wait), then runs the journeys
+npm run lighthouse  # starts the stack if needed; fails below 90 for Accessibility
+```
+
+Both start `ng serve --configuration production` themselves, so stop a running `ng serve` first. The journeys live in `frontend/e2e/`: `support/` holds the fixtures (Users created through the Keycloak Admin API, a Mailpit reader, the axe check every visited screen runs). Failures leave a trace and the HTML report in `frontend/playwright-report/` (`npx playwright show-report`); Lighthouse's reports are attached there too.

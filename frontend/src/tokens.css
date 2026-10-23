@@ -54,7 +54,9 @@
   --color-text-inverse: var(--palette-white); /* on accent buttons and the own bubble */
   --color-interactive: var(--palette-purple-3); /* text links, active/hover menu text */
   --color-interactive-hover: var(--palette-purple-1);
-  --color-link-soft: var(--palette-purple-2); /* "Passwort vergessen?", channel subtitle */
+  --color-link-soft: var(
+    --palette-purple-1
+  ); /* "Passwort vergessen?", channel subtitle; Figma: purple-2, fails contrast */
   --color-link-external: var(--palette-blue); /* mailto on the profile card */
 
   /* Accent (buttons, focus) */
