@@ -1,0 +1,100 @@
+{
+  "components" : {
+    "schemas" : {
+      "FieldErrorDto" : {
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "field" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "code", "field" ],
+        "type" : "object"
+      },
+      "ProblemCode" : {
+        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "UNAUTHENTICATED", "NOT_FOUND", "CONFLICT", "INTERNAL_ERROR" ],
+        "type" : "string"
+      },
+      "ProblemDto" : {
+        "properties" : {
+          "code" : {
+            "$ref" : "#/components/schemas/ProblemCode"
+          },
+          "detail" : {
+            "type" : [ "string", "null" ]
+          },
+          "errors" : {
+            "items" : {
+              "$ref" : "#/components/schemas/FieldErrorDto"
+            },
+            "type" : "array"
+          },
+          "instance" : {
+            "type" : [ "string", "null" ]
+          },
+          "status" : {
+            "format" : "int32",
+            "type" : "integer"
+          },
+          "title" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "code", "detail", "errors", "instance", "status", "title", "type" ],
+        "type" : "object"
+      },
+      "UserDto" : {
+        "properties" : {
+          "avatar" : {
+            "type" : [ "string", "null" ]
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "avatar", "email", "id", "name" ],
+        "type" : "object"
+      }
+    }
+  },
+  "info" : {
+    "title" : "DA Bubble API",
+    "version" : "v1"
+  },
+  "openapi" : "3.1.0",
+  "paths" : {
+    "/api/me" : {
+      "get" : {
+        "operationId" : "getMe",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "me" ]
+      }
+    }
+  },
+  "servers" : [ {
+    "url" : "/"
+  } ]
+}
