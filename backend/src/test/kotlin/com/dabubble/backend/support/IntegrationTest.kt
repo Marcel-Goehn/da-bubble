@@ -1,13 +1,17 @@
 package com.dabubble.backend.support
 
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureRestTestClient
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.web.server.LocalServerPort
+import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.Import
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
+import org.springframework.messaging.simp.user.SimpUserRegistry
 import org.springframework.test.web.servlet.client.RestTestClient
 import java.util.UUID
 
@@ -27,6 +31,29 @@ abstract class IntegrationTest {
 
     @Autowired
     protected lateinit var clock: MutableClock
+
+    @Autowired
+    protected lateinit var scheduler: ManualScheduler
+
+    @Autowired
+    private lateinit var context: ApplicationContext
+
+    @LocalServerPort
+    private var port: Int = 0
+
+    private var stompClient: StompTestClient? = null
+
+    /** STOMP sessions to the app; each test's sessions are disconnected after it. */
+    protected val stomp: StompTestClient
+        get() {
+            val registry = context.getBean(SimpUserRegistry::class.java)
+            return stompClient ?: StompTestClient(port, registry).also { stompClient = it }
+        }
+
+    @AfterEach
+    fun disconnectStomp() {
+        stompClient?.disconnectAll()
+    }
 
     @BeforeEach
     fun resetState() {
@@ -51,6 +78,7 @@ abstract class IntegrationTest {
                 """.trimIndent(),
             ).update()
         clock.reset()
+        scheduler.reset()
     }
 
     protected fun countRows(

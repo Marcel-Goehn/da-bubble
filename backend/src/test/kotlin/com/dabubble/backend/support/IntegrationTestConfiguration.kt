@@ -26,4 +26,8 @@ class IntegrationTestConfiguration {
     @Bean
     @Primary
     fun mutableClock(): MutableClock = MutableClock()
+
+    @Bean
+    @Primary
+    fun manualScheduler(): ManualScheduler = ManualScheduler()
 }

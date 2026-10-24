@@ -1,5 +1,6 @@
 package com.dabubble.backend.security
 
+import com.dabubble.backend.realtime.RealtimeConfig
 import com.dabubble.backend.user.CurrentUserFilter
 import com.dabubble.backend.user.CurrentUserService
 import org.springframework.beans.factory.annotation.Qualifier
@@ -25,7 +26,8 @@ import org.springframework.web.servlet.HandlerExceptionResolver
 
 @Configuration
 class SecurityConfig {
-    // The health endpoint stays public for the compose healthcheck; everything else needs a bearer JWT.
+    // The health endpoint stays public for the compose healthcheck and the WebSocket handshake for STOMP;
+    // everything else needs a bearer JWT.
     @Bean
     fun securityFilterChain(
         http: HttpSecurity,
@@ -36,6 +38,8 @@ class SecurityConfig {
         http {
             authorizeHttpRequests {
                 authorize("/actuator/health", permitAll)
+                // The STOMP CONNECT frame carries the token instead (StompAuthInterceptor).
+                authorize(RealtimeConfig.ENDPOINT, permitAll)
                 authorize(anyRequest, authenticated)
             }
             oauth2ResourceServer {

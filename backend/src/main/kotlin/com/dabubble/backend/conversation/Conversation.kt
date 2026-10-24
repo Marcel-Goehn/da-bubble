@@ -45,6 +45,13 @@ class Conversation private constructor(
         }
     }
 
+    /** Who a new Message here concerns: a Channel's current Members, or the one or two Users of a DM. */
+    fun recipients(): Set<UUID> =
+        when (kind) {
+            ConversationKind.CHANNEL -> memberships.mapTo(mutableSetOf()) { it.userId }
+            ConversationKind.DIRECT_MESSAGE -> setOfNotNull(userLow, userHigh)
+        }
+
     /** The other User of a DM, or the User themselves for their self-DM; `null` for a Channel. */
     fun partnerOf(userId: UUID): UUID? =
         when {

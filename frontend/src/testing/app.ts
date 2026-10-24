@@ -6,9 +6,11 @@ import { routes } from '../app/app.routes';
 import { provideApi } from '../app/core/api/api.providers';
 import { ConversationDto } from '../app/core/data/conversation.store';
 import { MessageDto } from '../app/core/data/message.store';
+import { RealtimeService } from '../app/core/data/realtime.service';
 import { UserDto } from '../app/core/data/user.store';
 import { Language } from '../app/core/i18n/i18n.providers';
 import { FakeKeycloak, provideFakeKeycloak } from './fake-keycloak';
+import { FakeRealtimeService } from './fake-realtime';
 import { provideI18nTesting } from './i18n';
 import { FakeIntersectionObserver } from './intersection-observer';
 
@@ -95,9 +97,12 @@ export async function startApp({
       provideHttpClientTesting(),
       provideFakeKeycloak(keycloak),
       provideI18nTesting(lang),
+      FakeRealtimeService,
+      { provide: RealtimeService, useExisting: FakeRealtimeService },
     ],
   });
   const http = TestBed.inject(HttpTestingController);
+  const realtime = TestBed.inject(FakeRealtimeService);
   const navigation = result.navigate(url);
   (await vi.waitFor(() => http.expectOne('/api/me'))).flush(me);
   if (me.avatar !== null) {
@@ -108,7 +113,7 @@ export async function startApp({
       request.flush(conversations);
     }
   }
-  return { ...result, http, keycloak, navigation, users };
+  return { ...result, http, keycloak, navigation, realtime, users };
 }
 
 /** [startApp], then waits for the navigation, answers the Users request and lets rendering settle. */

@@ -51,6 +51,17 @@ export class ConversationStore {
   }
 
   /**
+   * Fetches the sidebar again and replaces what's held, catching up on whatever changed meanwhile. Replaced
+   * rather than merged, so a Conversation the User lost access to meanwhile disappears.
+   */
+  async refresh(): Promise<void> {
+    const conversations = await firstValueFrom(this.api.listConversations());
+    this.byId.set(new Map(conversations.map((c) => [c.id, c])));
+    // Counts as loaded: a later `load` needn't fetch again.
+    this.loading = Promise.resolve();
+  }
+
+  /**
    * The Conversation a route opens. One missing from the sidebar is asked for, so the error interceptor
    * sends the User to `/` when they can't see it.
    */

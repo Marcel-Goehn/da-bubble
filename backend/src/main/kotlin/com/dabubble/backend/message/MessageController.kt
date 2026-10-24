@@ -4,11 +4,14 @@ import com.dabubble.backend.conversation.ConversationRepository
 import com.dabubble.backend.conversation.requireVisibleTo
 import com.dabubble.backend.problem.ProblemCode
 import com.dabubble.backend.problem.ProblemException
+import com.dabubble.backend.realtime.MessageCreatedEvent
+import com.dabubble.backend.realtime.RealtimePublisher
 import com.dabubble.backend.time.now
 import com.dabubble.backend.user.User
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Limit
 import org.springframework.http.HttpStatus
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -25,6 +28,7 @@ import java.time.Clock
 class MessageController(
     private val conversations: ConversationRepository,
     private val messages: MessageRepository,
+    private val realtime: RealtimePublisher,
     private val clock: Clock,
 ) {
     /** A page of the Conversation's Messages, newest first; without a cursor the newest page. */
@@ -52,14 +56,17 @@ class MessageController(
     }
 
     @PostMapping
+    @Transactional
     @ResponseStatus(HttpStatus.CREATED)
     fun sendMessage(
         user: User,
         @PathVariable conversationId: Long,
         @RequestBody request: SendMessageRequest,
     ): MessageDto {
-        conversations.requireVisibleTo(conversationId, user.id)
-        return MessageDto.from(messages.save(Message.send(conversationId, user.id, request.text, clock.now())))
+        val conversation = conversations.requireVisibleTo(conversationId, user.id)
+        val message = MessageDto.from(messages.save(Message.send(conversationId, user.id, request.text, clock.now())))
+        realtime.toUsers(conversation.recipients(), MessageCreatedEvent(message))
+        return message
     }
 
     private companion object {

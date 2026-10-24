@@ -40,6 +40,19 @@
         "required" : [ "code", "field" ],
         "type" : "object"
       },
+      "MessageCreatedEvent" : {
+        "properties" : {
+          "message" : {
+            "$ref" : "#/components/schemas/MessageDto"
+          },
+          "type" : {
+            "enum" : [ "message.created" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "message", "type" ],
+        "type" : "object"
+      },
       "MessageDto" : {
         "properties" : {
           "authorId" : {
@@ -130,6 +143,17 @@
         },
         "required" : [ "code", "detail", "errors", "instance", "status", "title", "type" ],
         "type" : "object"
+      },
+      "RealtimeEvent" : {
+        "discriminator" : {
+          "mapping" : {
+            "message.created" : "#/components/schemas/MessageCreatedEvent"
+          },
+          "propertyName" : "type"
+        },
+        "oneOf" : [ {
+          "$ref" : "#/components/schemas/MessageCreatedEvent"
+        } ]
       },
       "SendMessageRequest" : {
         "properties" : {

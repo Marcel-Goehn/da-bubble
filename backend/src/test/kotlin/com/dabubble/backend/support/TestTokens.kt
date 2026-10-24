@@ -31,6 +31,7 @@ object TestTokens {
         audience: String = AUDIENCE,
         issuer: String = ISSUER,
         realmRoles: List<String> = listOf("default-roles-da-bubble"),
+        expiresAt: Instant = Instant.now() + Duration.ofMinutes(5),
     ): String {
         val now = Instant.now()
         val claims =
@@ -40,7 +41,7 @@ object TestTokens {
                 .subject(sub.toString())
                 .audience(listOf(audience, "account"))
                 .issueTime(Date.from(now))
-                .expirationTime(Date.from(now + Duration.ofMinutes(5)))
+                .expirationTime(Date.from(expiresAt))
                 .claim("azp", "da-bubble-app")
                 .claim("name", name)
                 .claim("email", email)
