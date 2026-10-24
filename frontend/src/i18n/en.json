@@ -21,6 +21,12 @@
   "conversation": {
     "directMessage": "Direct message"
   },
+  "deleteMessage": {
+    "title": "Delete message?",
+    "text": "The message and its attachments will be removed for everyone. This can't be undone. Replies in the thread are kept.",
+    "cancel": "Cancel",
+    "confirm": "Delete"
+  },
   "dialog": {
     "close": "Close"
   },
@@ -33,7 +39,9 @@
   "errors": {
     "conversationUnavailable": "This channel or direct message doesn't exist, or you don't have access to it.",
     "generic": "Something went wrong. Please reload the page.",
-    "sendFailed": "Your message couldn't be sent. Please try again."
+    "sendFailed": "Your message couldn't be sent. Please try again.",
+    "editFailed": "Your change couldn't be saved. Please try again.",
+    "deleteFailed": "The message couldn't be deleted. Please try again."
   },
   "legal": {
     "back": "Back to DABubble",
@@ -60,7 +68,14 @@
   },
   "message": {
     "time": "{time}",
-    "unknownAuthor": "Unknown"
+    "unknownAuthor": "Unknown",
+    "edited": "(edited)",
+    "deleted": "This message was deleted.",
+    "actions": "More actions",
+    "edit": "Edit message",
+    "delete": "Delete message",
+    "cancel": "Cancel",
+    "save": "Save"
   },
   "messages": {
     "label": "Messages"

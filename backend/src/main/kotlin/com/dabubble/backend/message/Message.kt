@@ -28,6 +28,48 @@ class Message private constructor(
 
     var deletedAt: Instant? = null
 
+    /** Replaces the text and sets edited at; only the author may, and not once it's deleted. */
+    fun edit(
+        userId: UUID,
+        text: String,
+        at: Instant,
+    ) {
+        requireAuthor(userId)
+        if (deletedAt != null) {
+            throw ProblemException(ProblemCode.MESSAGE_DELETED, "A Deleted Message can't be edited")
+        }
+        // TODO(#66): may be blank once it has Attachments.
+        if (text.isBlank()) {
+            throw ProblemException(ProblemCode.MESSAGE_EMPTY, "A Message needs text or an Attachment")
+        }
+        this.text = text
+        editedAt = at
+    }
+
+    /**
+     * Makes it a Deleted Message: its content is erased, its place, author and time stay. Only the author may.
+     * Returns whether anything changed, which it doesn't for one deleted already.
+     * TODO(#59, #66): erase its Mentions, Reactions and Attachments once they exist.
+     */
+    fun delete(
+        userId: UUID,
+        at: Instant,
+    ): Boolean {
+        requireAuthor(userId)
+        if (deletedAt != null) {
+            return false
+        }
+        text = ""
+        deletedAt = at
+        return true
+    }
+
+    private fun requireAuthor(userId: UUID) {
+        if (userId != authorId) {
+            throw ProblemException(ProblemCode.NOT_MESSAGE_AUTHOR, "Only its author may change a Message")
+        }
+    }
+
     companion object {
         /** A new top-level Message. TODO(#66): may be blank once it has Attachments. */
         fun send(

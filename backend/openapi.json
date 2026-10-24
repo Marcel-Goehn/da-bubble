@@ -45,6 +45,15 @@
         "required" : [ "conversation", "type" ],
         "type" : "object"
       },
+      "EditMessageRequest" : {
+        "properties" : {
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "text" ],
+        "type" : "object"
+      },
       "FieldErrorDto" : {
         "properties" : {
           "code" : {
@@ -122,6 +131,19 @@
         "required" : [ "messages", "nextCursor" ],
         "type" : "object"
       },
+      "MessageUpdatedEvent" : {
+        "properties" : {
+          "message" : {
+            "$ref" : "#/components/schemas/MessageDto"
+          },
+          "type" : {
+            "enum" : [ "message.updated" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "message", "type" ],
+        "type" : "object"
+      },
       "PredefinedAvatar" : {
         "enum" : [ "AVATAR_1", "AVATAR_2", "AVATAR_3", "AVATAR_4", "AVATAR_5", "AVATAR_6", "GUEST" ],
         "type" : "string"
@@ -144,7 +166,7 @@
         "type" : "object"
       },
       "ProblemCode" : {
-        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "UNAUTHENTICATED", "NOT_FOUND", "CONFLICT", "INTERNAL_ERROR" ],
+        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "INTERNAL_ERROR" ],
         "type" : "string"
       },
       "ProblemDto" : {
@@ -183,12 +205,15 @@
           "mapping" : {
             "conversation.upserted" : "#/components/schemas/ConversationUpsertedEvent",
             "message.created" : "#/components/schemas/MessageCreatedEvent",
+            "message.updated" : "#/components/schemas/MessageUpdatedEvent",
             "presence.changed" : "#/components/schemas/PresenceChangedEvent"
           },
           "propertyName" : "type"
         },
         "oneOf" : [ {
           "$ref" : "#/components/schemas/MessageCreatedEvent"
+        }, {
+          "$ref" : "#/components/schemas/MessageUpdatedEvent"
         }, {
           "$ref" : "#/components/schemas/ConversationUpsertedEvent"
         }, {
@@ -329,6 +354,84 @@
               }
             },
             "description" : "Created"
+          }
+        },
+        "tags" : [ "messages" ]
+      }
+    },
+    "/api/conversations/{conversationId}/messages/{messageId}" : {
+      "delete" : {
+        "operationId" : "deleteMessage",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "conversationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "messageId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "messages" ]
+      },
+      "put" : {
+        "operationId" : "editMessage",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "conversationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "messageId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EditMessageRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageDto"
+                }
+              }
+            },
+            "description" : "OK"
           }
         },
         "tags" : [ "messages" ]

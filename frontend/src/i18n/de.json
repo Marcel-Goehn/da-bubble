@@ -21,6 +21,12 @@
   "conversation": {
     "directMessage": "Direktnachricht"
   },
+  "deleteMessage": {
+    "title": "Nachricht löschen?",
+    "text": "Die Nachricht und ihre Anhänge werden für alle entfernt. Das lässt sich nicht rückgängig machen. Antworten im Thread bleiben erhalten.",
+    "cancel": "Abbrechen",
+    "confirm": "Löschen"
+  },
   "dialog": {
     "close": "Schließen"
   },
@@ -33,7 +39,9 @@
   "errors": {
     "conversationUnavailable": "Diesen Channel oder diese Direktnachricht gibt es nicht, oder du hast keinen Zugriff darauf.",
     "generic": "Etwas ist schiefgelaufen. Bitte lade die Seite neu.",
-    "sendFailed": "Deine Nachricht konnte nicht gesendet werden. Bitte versuche es noch einmal."
+    "sendFailed": "Deine Nachricht konnte nicht gesendet werden. Bitte versuche es noch einmal.",
+    "editFailed": "Deine Änderung konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
+    "deleteFailed": "Die Nachricht konnte nicht gelöscht werden. Bitte versuche es noch einmal."
   },
   "legal": {
     "back": "Zurück zu DABubble",
@@ -60,7 +68,14 @@
   },
   "message": {
     "time": "{time} Uhr",
-    "unknownAuthor": "Unbekannt"
+    "unknownAuthor": "Unbekannt",
+    "edited": "(bearbeitet)",
+    "deleted": "Diese Nachricht wurde gelöscht.",
+    "actions": "Weitere Aktionen",
+    "edit": "Nachricht bearbeiten",
+    "delete": "Nachricht löschen",
+    "cancel": "Abbrechen",
+    "save": "Speichern"
   },
   "messages": {
     "label": "Nachrichten"

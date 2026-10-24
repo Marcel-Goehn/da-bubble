@@ -19,7 +19,7 @@ import java.util.UUID
 @Tag(name = "directMessages")
 class DirectMessageController(
     private val directMessages: DirectMessageService,
-    private val sender: MessageSender,
+    private val writer: MessageWriter,
 ) {
     /** Sends to the DM with [partnerId]; the first Message creates it. */
     @PostMapping
@@ -29,5 +29,5 @@ class DirectMessageController(
         user: User,
         @PathVariable partnerId: UUID,
         @RequestBody request: SendMessageRequest,
-    ): MessageDto = sender.send(directMessages.findOrCreate(user.id, partnerId), user.id, request.text)
+    ): MessageDto = writer.send(directMessages.findOrCreate(user.id, partnerId), user.id, request.text)
 }

@@ -23,6 +23,7 @@ import type {
 } from 'rxjs';
 
 import type {
+  EditMessageRequest,
   ListMessagesParams,
   MessageDto,
   MessagePageDto,
@@ -221,6 +222,81 @@ export class MessagesService {
     return this.http.post<TData>(
       `/api/conversations/${conversationId}/messages`,
       sendMessageRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
+ deleteMessage<TData = MessageDto>(conversationId: number,
+    messageId: number, options?: HttpClientBodyOptions): Observable<TData>;
+ deleteMessage<TData = MessageDto>(conversationId: number,
+    messageId: number, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ deleteMessage<TData = MessageDto>(conversationId: number,
+    messageId: number, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  deleteMessage<TData = MessageDto>(
+    conversationId: number,
+    messageId: number, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.delete<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.delete<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.delete<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
+ editMessage<TData = MessageDto>(conversationId: number,
+    messageId: number,
+    editMessageRequest: EditMessageRequest, options?: HttpClientBodyOptions): Observable<TData>;
+ editMessage<TData = MessageDto>(conversationId: number,
+    messageId: number,
+    editMessageRequest: EditMessageRequest, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ editMessage<TData = MessageDto>(conversationId: number,
+    messageId: number,
+    editMessageRequest: EditMessageRequest, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  editMessage<TData = MessageDto>(
+    conversationId: number,
+    messageId: number,
+    editMessageRequest: EditMessageRequest, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.put<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}`,
+      editMessageRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.put<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}`,
+      editMessageRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.put<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}`,
+      editMessageRequest,{
         ...(options as Omit<NonNullable<typeof options>, 'observe'>),
         observe: 'body',
       }

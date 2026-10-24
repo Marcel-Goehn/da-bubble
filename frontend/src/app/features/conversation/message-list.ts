@@ -9,13 +9,17 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { Dialog } from '@angular/cdk/dialog';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { firstValueFrom } from 'rxjs';
 import { avatarUrl } from '../../core/data/avatars';
 import { MessageDto, MessageStore } from '../../core/data/message.store';
 import { PresenceStore } from '../../core/data/presence.store';
 import { UserStore } from '../../core/data/user.store';
+import { ErrorService } from '../../core/errors/error.service';
 import { MessageBubble } from '../../shared/ui/message-bubble';
 import { ProfileCards } from '../profile/profile-cards';
+import { DeleteMessageDialog } from './delete-message-dialog';
 
 /** How close to the bottom, in px, still counts as at the bottom. */
 const bottomSlackPx = 40;
@@ -67,8 +71,16 @@ interface Rendered {
               [presence]="presence.of(message.authorId)"
               [text]="message.text"
               [createdAt]="message.createdAt"
+              [edited]="message.editedAt !== null"
+              [deleted]="message.deletedAt !== null"
               [own]="message.authorId === users.me()?.id"
+              [editing]="editingId() === message.id"
+              [saving]="savingId() === message.id"
               (authorSelected)="profiles.open(message.authorId)"
+              (editRequested)="editingId.set(message.id)"
+              (editCancelled)="editingId.set(null)"
+              (editSaved)="saveEdit(message, $event)"
+              (deleteRequested)="confirmDelete(message, $event)"
             />
           </li>
         }
@@ -82,6 +94,14 @@ export class MessageList {
   protected readonly presence = inject(PresenceStore);
   protected readonly profiles = inject(ProfileCards);
   protected readonly avatarUrl = avatarUrl;
+  /** The User's own Message being edited in place, if any; one at a time. */
+  protected readonly editingId = signal<number | null>(null);
+  /** The Message whose edit is being saved, if any. */
+  protected readonly savingId = signal<number | null>(null);
+
+  private readonly dialog = inject(Dialog);
+  private readonly errors = inject(ErrorService);
+  private readonly transloco = inject(TranslocoService);
 
   private readonly scroller = viewChild.required<ElementRef<HTMLElement>>('scroller');
   private readonly olderSentinel = viewChild.required<ElementRef<HTMLElement>>('olderSentinel');
@@ -141,6 +161,43 @@ export class MessageList {
       this.measure();
       this.reobserveOlder();
     });
+  }
+
+  /** Saves the edited [text] of [message]; a failed save keeps the editor open, so it can be retried. */
+  protected async saveEdit(message: MessageDto, text: string): Promise<void> {
+    // Unchanged text isn't an edit, so it isn't marked "(bearbeitet)".
+    if (text === message.text) {
+      this.editingId.set(null);
+      return;
+    }
+    this.savingId.set(message.id);
+    try {
+      await this.store.edit(message, text);
+      this.editingId.update((id) => (id === message.id ? null : id));
+    } catch {
+      this.errors.show(this.transloco.translate('errors.editFailed'));
+    } finally {
+      this.savingId.set(null);
+    }
+  }
+
+  /**
+   * Deletes [message] once the User confirms in the dialog. Focus goes back to its ⋮ [trigger], or to the
+   * list once the Message is deleted and the ⋮ gone, rather than to the page.
+   */
+  protected async confirmDelete(message: MessageDto, trigger: HTMLElement): Promise<void> {
+    const dialogRef = this.dialog.open<boolean>(DeleteMessageDialog, { restoreFocus: false });
+    if ((await firstValueFrom(dialogRef.closed)) !== true) {
+      trigger.focus();
+      return;
+    }
+    try {
+      await this.store.delete(message);
+      this.scroller().nativeElement.focus();
+    } catch {
+      this.errors.show(this.transloco.translate('errors.deleteFailed'));
+      trigger.focus();
+    }
   }
 
   /** Asks the observer about the new layout; it reports on observe, but otherwise only when the view changes. */

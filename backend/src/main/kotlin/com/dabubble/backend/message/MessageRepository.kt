@@ -1,5 +1,7 @@
 package com.dabubble.backend.message
 
+import com.dabubble.backend.problem.ProblemCode
+import com.dabubble.backend.problem.ProblemException
 import org.springframework.data.domain.Limit
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -33,4 +35,17 @@ interface MessageRepository : JpaRepository<Message, Long> {
         id: Long,
         limit: Limit,
     ): List<Message>
+
+    fun findByIdAndConversationId(
+        id: Long,
+        conversationId: Long,
+    ): Message?
 }
+
+/** The Message [id] of the Conversation [conversationId], which the caller has checked the User can see. */
+fun MessageRepository.requireIn(
+    conversationId: Long,
+    id: Long,
+): Message =
+    findByIdAndConversationId(id = id, conversationId = conversationId)
+        ?: throw ProblemException(ProblemCode.NOT_FOUND, "No Message $id in Conversation $conversationId")

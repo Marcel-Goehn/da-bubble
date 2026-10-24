@@ -115,9 +115,28 @@ export class MessageStore {
     return sent;
   }
 
+  /** Replaces the text of the User's own [message] with [text]. */
+  async edit(message: MessageDto, text: string): Promise<void> {
+    this.replace(
+      await firstValueFrom(this.api.editMessage(message.conversationId, message.id, { text })),
+    );
+  }
+
+  /** Deletes the User's own [message] for everyone; it stays as a Deleted Message. */
+  async delete(message: MessageDto): Promise<void> {
+    this.replace(await firstValueFrom(this.api.deleteMessage(message.conversationId, message.id)));
+  }
+
   /** Adds a Message pushed live; with the connection up, nothing before it was missed. */
   upsert(message: MessageDto): void {
     this.merge([message], { contiguous: true });
+  }
+
+  /** Takes an edited or deleted [message] if the window holds it; one it doesn't hold isn't missed. */
+  replace(message: MessageDto): void {
+    if (this.byId().has(message.id)) {
+      this.byId.update((map) => new Map(map).set(message.id, message));
+    }
   }
 
   /** Empties the window for [conversationId] and returns the generation pages for it must carry. */

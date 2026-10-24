@@ -132,6 +132,68 @@ class RealtimeApiTest : IntegrationTest() {
         assertEquals(MessageCreatedEvent(sent), tab.awaitEvent())
     }
 
+    @Test
+    fun `an edit and a delete reach every tab of the Conversation's Users, with the bumped activity`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        val adaToken = provision(ada)
+        provision(alan)
+        val dm = directMessage(ada, alan)
+        val sent = send(adaToken, "Hallo", dm)
+        val tabs = listOf(adaToken, adaToken, TestTokens.user(alan)).map { stomp.connect(it) }
+
+        clock.set(clock.instant() + Duration.ofMinutes(1))
+        val edited = editMessage(adaToken, dm, sent.id)
+        clock.set(clock.instant() + Duration.ofMinutes(1))
+        val deleted = deleteMessage(adaToken, dm, sent.id)
+
+        tabs.forEach { tab ->
+            listOf(edited, deleted).forEach { message ->
+                assertEquals(MessageUpdatedEvent(message), tab.awaitEvent())
+                val upserted = tab.awaitEvent() as ConversationUpsertedEvent
+                assertEquals(message.deletedAt ?: message.editedAt, upserted.conversation.lastActivityAt)
+            }
+        }
+    }
+
+    @Test
+    fun `a rejected edit and a repeated delete push nothing`() {
+        val token = provision()
+        val sent = send(token, "Hallo")
+        deleteMessage(token, 1, sent.id)
+        val tab = stomp.connect(token)
+
+        put("/api/conversations/1/messages/${sent.id}", token, """{"text":"Neu"}""").expectStatus().isEqualTo(409)
+        deleteMessage(token, 1, sent.id)
+        val after = send(token, "Danach")
+
+        assertEquals(MessageCreatedEvent(after), tab.awaitEvent())
+    }
+
+    private fun editMessage(
+        token: String,
+        conversationId: Long,
+        messageId: Long,
+    ): MessageDto =
+        put("/api/conversations/$conversationId/messages/$messageId", token, """{"text":"Bearbeitet"}""")
+            .expectStatus()
+            .isOk
+            .expectBody(MessageDto::class.java)
+            .returnResult()
+            .responseBody!!
+
+    private fun deleteMessage(
+        token: String,
+        conversationId: Long,
+        messageId: Long,
+    ): MessageDto =
+        delete("/api/conversations/$conversationId/messages/$messageId", token)
+            .expectStatus()
+            .isOk
+            .expectBody(MessageDto::class.java)
+            .returnResult()
+            .responseBody!!
+
     private fun provision(sub: UUID = UUID.randomUUID()): String {
         val token = TestTokens.user(sub)
         get("/api/me", token).expectStatus().isOk

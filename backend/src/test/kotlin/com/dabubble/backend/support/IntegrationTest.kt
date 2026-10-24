@@ -119,6 +119,16 @@ abstract class IntegrationTest {
             .body(json)
             .exchange()
 
+    protected fun delete(
+        uri: String,
+        token: String,
+    ): RestTestClient.ResponseSpec =
+        client
+            .delete()
+            .uri(uri)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            .exchange()
+
     protected fun post(
         uri: String,
         token: String,

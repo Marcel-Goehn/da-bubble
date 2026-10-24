@@ -16,14 +16,21 @@ import java.util.UUID
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type")
 @JsonSubTypes(
     JsonSubTypes.Type(MessageCreatedEvent::class, name = MessageCreatedEvent.TYPE),
+    JsonSubTypes.Type(MessageUpdatedEvent::class, name = MessageUpdatedEvent.TYPE),
     JsonSubTypes.Type(ConversationUpsertedEvent::class, name = ConversationUpsertedEvent.TYPE),
     JsonSubTypes.Type(PresenceChangedEvent::class, name = PresenceChangedEvent.TYPE),
 )
 @Schema(
-    oneOf = [MessageCreatedEvent::class, ConversationUpsertedEvent::class, PresenceChangedEvent::class],
+    oneOf = [
+        MessageCreatedEvent::class,
+        MessageUpdatedEvent::class,
+        ConversationUpsertedEvent::class,
+        PresenceChangedEvent::class,
+    ],
     discriminatorProperty = "type",
     discriminatorMapping = [
         DiscriminatorMapping(MessageCreatedEvent.TYPE, schema = MessageCreatedEvent::class),
+        DiscriminatorMapping(MessageUpdatedEvent.TYPE, schema = MessageUpdatedEvent::class),
         DiscriminatorMapping(ConversationUpsertedEvent.TYPE, schema = ConversationUpsertedEvent::class),
         DiscriminatorMapping(PresenceChangedEvent.TYPE, schema = PresenceChangedEvent::class),
     ],
@@ -41,6 +48,18 @@ data class MessageCreatedEvent(
 
     companion object {
         const val TYPE = "message.created"
+    }
+}
+
+/** A Message was edited or deleted; [message] is as it is now. */
+data class MessageUpdatedEvent(
+    val message: MessageDto,
+) : RealtimeEvent {
+    @get:Schema(allowableValues = [TYPE])
+    override val type get() = TYPE
+
+    companion object {
+        const val TYPE = "message.updated"
     }
 }
 

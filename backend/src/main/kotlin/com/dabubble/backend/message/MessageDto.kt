@@ -39,3 +39,8 @@ data class SendMessageRequest(
     @field:Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     val text: String,
 )
+
+data class EditMessageRequest(
+    @field:Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    val text: String,
+)

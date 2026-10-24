@@ -6,6 +6,7 @@
  */
 import type { ConversationUpsertedEvent } from './conversationUpsertedEvent';
 import type { MessageCreatedEvent } from './messageCreatedEvent';
+import type { MessageUpdatedEvent } from './messageUpdatedEvent';
 import type { PresenceChangedEvent } from './presenceChangedEvent';
 
-export type RealtimeEvent = MessageCreatedEvent | ConversationUpsertedEvent | PresenceChangedEvent;
+export type RealtimeEvent = MessageCreatedEvent | MessageUpdatedEvent | ConversationUpsertedEvent | PresenceChangedEvent;
