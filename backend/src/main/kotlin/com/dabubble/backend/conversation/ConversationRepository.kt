@@ -1,5 +1,7 @@
 package com.dabubble.backend.conversation
 
+import com.dabubble.backend.problem.ProblemCode
+import com.dabubble.backend.problem.ProblemException
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import java.util.UUID
@@ -30,3 +32,14 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
         userId: UUID,
     ): Conversation?
 }
+
+/**
+ * The Conversation [id] if [userId] can see it. Otherwise not found rather than forbidden, so a Channel's
+ * existence isn't revealed to non-Members.
+ */
+fun ConversationRepository.requireVisibleTo(
+    id: Long,
+    userId: UUID,
+): Conversation =
+    findVisibleTo(id, userId)
+        ?: throw ProblemException(ProblemCode.NOT_FOUND, "No visible Conversation $id")

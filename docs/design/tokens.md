@@ -115,7 +115,7 @@ Layout reference (desktop 1920×1080): page padding 20 at the sides, 25 top, pan
 
 | Token | px | Uses | Where |
 |---|---|---|---|
-| `rounded-full` | 100 / 500 / ≥ ½ height | 151 + 20 | login inputs, menu rows, pills, Avatars (35/40/42/50/60) |
+| `rounded-full` | 100 / 500 / ≥ ½ height | 151 + 20 | login inputs, menu rows, pills, Avatars (35/40/42/50/60/70) |
 | `rounded-30` | 30 | 931 | panels, dialogs, speech bubbles, text boxes, time separators |
 | `rounded-25` | 25 | 69 + 90 | buttons (49 high, so effectively pills), reaction bar |
 | `rounded-20` | 20 | 756 | composer, icon buttons, menu buttons, dropdowns, reaction chips |

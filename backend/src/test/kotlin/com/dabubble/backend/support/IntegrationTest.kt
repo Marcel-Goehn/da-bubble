@@ -85,4 +85,56 @@ abstract class IntegrationTest {
             .contentType(MediaType.APPLICATION_JSON)
             .body(json)
             .exchange()
+
+    protected fun post(
+        uri: String,
+        token: String,
+        json: String,
+    ): RestTestClient.ResponseSpec =
+        client
+            .post()
+            .uri(uri)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(json)
+            .exchange()
+
+    protected fun channel(
+        name: String,
+        members: List<UUID>,
+    ): Long {
+        val id =
+            jdbc
+                .sql(
+                    "INSERT INTO conversations (kind, name, created_at) VALUES ('CHANNEL', :name, now()) RETURNING id",
+                ).param("name", name)
+                .query(Long::class.java)
+                .single()
+        members.forEach {
+            jdbc
+                .sql("INSERT INTO memberships (conversation_id, user_id, joined_at) VALUES (:id, :user, now())")
+                .param("id", id)
+                .param("user", it)
+                .update()
+        }
+        return id
+    }
+
+    // Sorted the way Conversation.directMessage stores the pair.
+    protected fun directMessage(
+        a: UUID,
+        b: UUID,
+    ): Long {
+        val (low, high) = listOf(a, b).sortedBy { it.toString() }
+        return jdbc
+            .sql(
+                """
+                INSERT INTO conversations (kind, user_low, user_high, created_at)
+                VALUES ('DIRECT_MESSAGE', :low, :high, now()) RETURNING id
+                """.trimIndent(),
+            ).param("low", low)
+            .param("high", high)
+            .query(Long::class.java)
+            .single()
+    }
 }

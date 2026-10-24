@@ -8,6 +8,7 @@ import leftPanelOpen from '@material-symbols/svg-400/outlined/left_panel_open.sv
 import logout from '@material-symbols/svg-400/outlined/logout.svg';
 import person from '@material-symbols/svg-400/outlined/person.svg';
 import personFilled from '@material-symbols/svg-400/outlined/person-fill.svg';
+import sendFilled from '@material-symbols/svg-400/outlined/send-fill.svg';
 import tag from '@material-symbols/svg-400/outlined/tag.svg';
 import workspaces from '@material-symbols/svg-400/outlined/workspaces.svg';
 
@@ -26,6 +27,7 @@ export const icons = {
   logout,
   person,
   personFilled,
+  sendFilled,
   tag,
   workspaces,
 } as const;

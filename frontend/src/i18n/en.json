@@ -13,6 +13,10 @@
   "channel": {
     "default": "General"
   },
+  "composer": {
+    "placeholder": "Message #{channel}",
+    "send": "Send message"
+  },
   "conversation": {
     "directMessage": "Direct message"
   },
@@ -21,7 +25,8 @@
   },
   "errors": {
     "conversationUnavailable": "This channel or direct message doesn't exist, or you don't have access to it.",
-    "generic": "Something went wrong. Please reload the page."
+    "generic": "Something went wrong. Please reload the page.",
+    "sendFailed": "Your message couldn't be sent. Please try again."
   },
   "legal": {
     "back": "Back to DABubble",
@@ -45,6 +50,13 @@
       "rightsTitle": "Your rights",
       "rightsText": "You have the right to access, correct and delete your data, to restrict its processing, to data portability, and to complain to a supervisory authority. Contact the address in the legal notice to do so."
     }
+  },
+  "message": {
+    "time": "{time}",
+    "unknownAuthor": "Unknown"
+  },
+  "messages": {
+    "label": "Messages"
   },
   "presence": {
     "online": "Online",

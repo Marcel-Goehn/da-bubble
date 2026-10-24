@@ -11,6 +11,7 @@ enum class ProblemCode(
 ) {
     BAD_REQUEST(HttpStatus.BAD_REQUEST),
     VALIDATION_FAILED(HttpStatus.BAD_REQUEST),
+    MESSAGE_EMPTY(HttpStatus.BAD_REQUEST),
     UNAUTHENTICATED(HttpStatus.UNAUTHORIZED),
     NOT_FOUND(HttpStatus.NOT_FOUND),
     CONFLICT(HttpStatus.CONFLICT),

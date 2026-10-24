@@ -13,6 +13,10 @@
   "channel": {
     "default": "Allgemein"
   },
+  "composer": {
+    "placeholder": "Nachricht an #{channel}",
+    "send": "Nachricht senden"
+  },
   "conversation": {
     "directMessage": "Direktnachricht"
   },
@@ -21,7 +25,8 @@
   },
   "errors": {
     "conversationUnavailable": "Diesen Channel oder diese Direktnachricht gibt es nicht, oder du hast keinen Zugriff darauf.",
-    "generic": "Etwas ist schiefgelaufen. Bitte lade die Seite neu."
+    "generic": "Etwas ist schiefgelaufen. Bitte lade die Seite neu.",
+    "sendFailed": "Deine Nachricht konnte nicht gesendet werden. Bitte versuche es noch einmal."
   },
   "legal": {
     "back": "Zurück zu DABubble",
@@ -45,6 +50,13 @@
       "rightsTitle": "Deine Rechte",
       "rightsText": "Du hast das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung deiner Daten sowie auf Datenübertragbarkeit und Beschwerde bei einer Aufsichtsbehörde. Wende dich dafür an die im Impressum genannte Adresse."
     }
+  },
+  "message": {
+    "time": "{time} Uhr",
+    "unknownAuthor": "Unbekannt"
+  },
+  "messages": {
+    "label": "Nachrichten"
   },
   "presence": {
     "online": "Aktiv",

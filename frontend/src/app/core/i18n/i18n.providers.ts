@@ -21,6 +21,9 @@ import { firstValueFrom } from 'rxjs';
 export const languages = ['de', 'en'] as const;
 export type Language = (typeof languages)[number];
 
+/** The locale each language formats dates and numbers in. */
+export const locales: Record<Language, string> = { de: 'de-DE', en: 'en-US' };
+
 /** German for any `de*` browser language, English for everything else. */
 export function browserLanguage(preferred: readonly string[]): Language {
   return preferred[0]?.toLowerCase().startsWith('de') ? 'de' : 'en';
@@ -52,7 +55,7 @@ export function provideI18n(): EnvironmentProviders[] {
       loader: BundledLoader,
     }),
     provideTranslocoMessageformat(),
-    ...provideTranslocoLocale({ langToLocaleMapping: { de: 'de-DE', en: 'en-US' } }),
+    ...provideTranslocoLocale({ langToLocaleMapping: locales }),
     provideAppInitializer(() => {
       const transloco = inject(TranslocoService);
       const document = inject(DOCUMENT);

@@ -1,9 +1,10 @@
 import { EnvironmentProviders, importProvidersFrom } from '@angular/core';
 import { TranslocoTestingModule } from '@jsverse/transloco';
+import { provideTranslocoLocale } from '@jsverse/transloco-locale';
 import { provideTranslocoMessageformat } from '@jsverse/transloco-messageformat';
 import de from '../i18n/de.json';
 import en from '../i18n/en.json';
-import { Language, languages } from '../app/core/i18n/i18n.providers';
+import { Language, languages, locales } from '../app/core/i18n/i18n.providers';
 
 /**
  * The real German and English translations, loaded synchronously, so component tests can find elements
@@ -19,5 +20,6 @@ export function provideI18nTesting(lang: Language = 'de'): EnvironmentProviders[
       }),
     ),
     provideTranslocoMessageformat(),
+    ...provideTranslocoLocale({ langToLocaleMapping: locales }),
   ];
 }

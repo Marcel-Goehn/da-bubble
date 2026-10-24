@@ -19,3 +19,8 @@
   writing-mode: vertical-rl;
   rotate: 180deg;
 }
+
+/* Turns off the browser's scroll anchoring where the app keeps the position itself (the Message list). */
+@utility overflow-anchor-none {
+  overflow-anchor: none;
+}

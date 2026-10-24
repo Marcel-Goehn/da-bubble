@@ -11,6 +11,7 @@ export type ProblemCode = typeof ProblemCode[keyof typeof ProblemCode];
 export const ProblemCode = {
   BAD_REQUEST: 'BAD_REQUEST',
   VALIDATION_FAILED: 'VALIDATION_FAILED',
+  MESSAGE_EMPTY: 'MESSAGE_EMPTY',
   UNAUTHENTICATED: 'UNAUTHENTICATED',
   NOT_FOUND: 'NOT_FOUND',
   CONFLICT: 'CONFLICT',

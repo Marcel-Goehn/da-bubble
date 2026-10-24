@@ -79,6 +79,8 @@ describe('Avatar step', () => {
       await within(await screen.findByRole('main')).findByRole('heading', { name: 'Allgemein' }),
     ).toBeTruthy();
     expect(TestBed.inject(Router).url).toBe('/channel/1');
+    http.expectOne('/api/users').flush([{ ...ada, avatar: 'AVATAR_3' }]);
+    http.expectOne('/api/conversations/1/messages').flush({ messages: [], nextCursor: null });
     http.verify();
   });
 

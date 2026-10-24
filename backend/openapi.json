@@ -40,12 +40,64 @@
         "required" : [ "code", "field" ],
         "type" : "object"
       },
+      "MessageDto" : {
+        "properties" : {
+          "authorId" : {
+            "format" : "uuid",
+            "type" : "string"
+          },
+          "conversationId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "createdAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "deletedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "editedAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "parentMessageId" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          },
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "authorId", "conversationId", "createdAt", "deletedAt", "editedAt", "id", "parentMessageId", "text" ],
+        "type" : "object"
+      },
+      "MessagePageDto" : {
+        "properties" : {
+          "messages" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MessageDto"
+            },
+            "type" : "array"
+          },
+          "nextCursor" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "messages", "nextCursor" ],
+        "type" : "object"
+      },
       "PredefinedAvatar" : {
         "enum" : [ "AVATAR_1", "AVATAR_2", "AVATAR_3", "AVATAR_4", "AVATAR_5", "AVATAR_6", "GUEST" ],
         "type" : "string"
       },
       "ProblemCode" : {
-        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "UNAUTHENTICATED", "NOT_FOUND", "CONFLICT", "INTERNAL_ERROR" ],
+        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "UNAUTHENTICATED", "NOT_FOUND", "CONFLICT", "INTERNAL_ERROR" ],
         "type" : "string"
       },
       "ProblemDto" : {
@@ -77,6 +129,15 @@
           }
         },
         "required" : [ "code", "detail", "errors", "instance", "status", "title", "type" ],
+        "type" : "object"
+      },
+      "SendMessageRequest" : {
+        "properties" : {
+          "text" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "text" ],
         "type" : "object"
       },
       "SetAvatarRequest" : {
@@ -138,6 +199,75 @@
           }
         },
         "tags" : [ "conversations" ]
+      }
+    },
+    "/api/conversations/{conversationId}/messages" : {
+      "get" : {
+        "operationId" : "listMessages",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "conversationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessagePageDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "messages" ]
+      },
+      "post" : {
+        "operationId" : "sendMessage",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "conversationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageDto"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "messages" ]
       }
     },
     "/api/conversations/{id}" : {
@@ -211,6 +341,27 @@
           }
         },
         "tags" : [ "me" ]
+      }
+    },
+    "/api/users" : {
+      "get" : {
+        "operationId" : "listUsers",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/UserDto"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "users" ]
       }
     }
   },

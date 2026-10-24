@@ -11,6 +11,7 @@ import {
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { filter, map } from 'rxjs';
 import { ConversationStore } from '../../core/data/conversation.store';
+import { UserStore } from '../../core/data/user.store';
 import { ErrorService } from '../../core/errors/error.service';
 import { Icon } from '../../shared/ui/icon';
 import { Sidebar } from '../sidebar/sidebar';
@@ -99,8 +100,8 @@ export class Shell {
   constructor() {
     const errors = inject(ErrorService);
     const transloco = inject(TranslocoService);
-    inject(ConversationStore)
-      .load()
-      .catch(() => errors.show(transloco.translate('errors.generic')));
+    Promise.all([inject(ConversationStore).load(), inject(UserStore).load()]).catch(() =>
+      errors.show(transloco.translate('errors.generic')),
+    );
   }
 }
