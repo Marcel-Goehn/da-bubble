@@ -45,7 +45,7 @@ describe('Sidebar', () => {
     const dms = within(screen.getByRole('list', { name: 'Direktnachrichten' }));
 
     expect(channels.getByRole('link', { name: 'Büro' }).getAttribute('href')).toBe('/channel/5');
-    expect(dms.getByRole('link', { name: 'Ada Lovelace (Du)' }).getAttribute('href')).toBe(
+    expect(dms.getByRole('link', { name: /Ada Lovelace \(Du\)$/ }).getAttribute('href')).toBe(
       `/dm/${ada.id}`,
     );
     await expectNoA11yViolations();

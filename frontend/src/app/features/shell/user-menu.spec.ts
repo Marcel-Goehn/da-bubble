@@ -6,7 +6,7 @@ import { expectNoA11yViolations } from '../../../testing/a11y';
 import { renderApp } from '../../../testing/app';
 
 function trigger(): HTMLElement {
-  return screen.getByRole('button', { name: 'Ada Lovelace' });
+  return screen.getByRole('button', { name: /^Ada Lovelace/ });
 }
 
 async function openMenu(): Promise<HTMLElement> {

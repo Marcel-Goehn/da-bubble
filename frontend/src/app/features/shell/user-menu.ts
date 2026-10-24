@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import Keycloak from 'keycloak-js';
 import { avatarUrl } from '../../core/data/avatars';
+import { PresenceStore } from '../../core/data/presence.store';
 import { UserStore } from '../../core/data/user.store';
 import { Avatar } from '../../shared/ui/avatar';
 import { Icon } from '../../shared/ui/icon';
@@ -30,7 +31,13 @@ const itemClasses =
     >
       <!-- The name is the trigger's accessible name, so it stays for screen readers on mobile. -->
       <span class="text-32 font-bold max-lg:sr-only">{{ me().name }}</span>
-      <app-avatar [src]="avatarUrl(me().avatar)" [name]="me().name" [size]="60" decorative />
+      <app-avatar
+        [src]="avatarUrl(me().avatar)"
+        [name]="me().name"
+        [size]="60"
+        [presence]="presence.of(me().id)"
+        decorative
+      />
       <app-icon name="keyboardArrowDown" class="max-lg:hidden" />
     </button>
 
@@ -73,6 +80,7 @@ export class UserMenu {
 
   // The shell's guard has loaded the User.
   protected readonly me = computed(() => this.users.me()!);
+  protected readonly presence = inject(PresenceStore);
   protected readonly avatarUrl = avatarUrl;
   protected readonly itemClasses = itemClasses;
 

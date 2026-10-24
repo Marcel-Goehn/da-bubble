@@ -14,6 +14,8 @@ export * from './messageCreatedEventType';
 export * from './messageDto';
 export * from './messagePageDto';
 export * from './predefinedAvatar';
+export * from './presenceChangedEvent';
+export * from './presenceChangedEventType';
 export * from './problemCode';
 export * from './problemDto';
 export * from './realtimeEvent';

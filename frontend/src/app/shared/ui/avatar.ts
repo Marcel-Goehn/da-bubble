@@ -1,9 +1,8 @@
 import { NgOptimizedImage } from '@angular/common';
 import { booleanAttribute, Component, computed, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { Presence } from '../../core/data/presence.store';
 import { Icon } from './icon';
-
-export type Presence = 'online' | 'offline';
 
 /** The diameters the Figma uses for Avatars, in px. */
 export type AvatarSize = 40 | 50 | 60 | 70 | 168;

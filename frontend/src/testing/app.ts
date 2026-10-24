@@ -1,5 +1,5 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { render } from '@testing-library/angular';
 import { App } from '../app/app';
 import { routes } from '../app/app.routes';
@@ -114,6 +114,12 @@ export async function startApp({
     }
   }
   return { ...result, http, keycloak, navigation, realtime, users };
+}
+
+/** Lets the stores' awaited responses land, then rendering finish. */
+export async function settle(fixture: ComponentFixture<unknown>): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve));
+  await fixture.whenStable();
 }
 
 /** [startApp], then waits for the navigation, answers the Users request and lets rendering settle. */

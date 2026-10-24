@@ -5,17 +5,25 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping
 import io.swagger.v3.oas.annotations.media.Schema
+import java.util.UUID
 
 /**
- * What the server pushes over STOMP after a write commits, discriminated on `type`. Each event carries the
- * same full DTO the REST API returns, and the spec publishes the union, so the frontend gets it typed (ADR 0004).
+ * What the server pushes over STOMP, discriminated on `type`: after a write commits, with the same full DTO
+ * the REST API returns, or when a User's Presence changes. The spec publishes the union, so the frontend gets
+ * it typed (ADR 0004).
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type")
-@JsonSubTypes(JsonSubTypes.Type(MessageCreatedEvent::class, name = MessageCreatedEvent.TYPE))
+@JsonSubTypes(
+    JsonSubTypes.Type(MessageCreatedEvent::class, name = MessageCreatedEvent.TYPE),
+    JsonSubTypes.Type(PresenceChangedEvent::class, name = PresenceChangedEvent.TYPE),
+)
 @Schema(
-    oneOf = [MessageCreatedEvent::class],
+    oneOf = [MessageCreatedEvent::class, PresenceChangedEvent::class],
     discriminatorProperty = "type",
-    discriminatorMapping = [DiscriminatorMapping(MessageCreatedEvent.TYPE, schema = MessageCreatedEvent::class)],
+    discriminatorMapping = [
+        DiscriminatorMapping(MessageCreatedEvent.TYPE, schema = MessageCreatedEvent::class),
+        DiscriminatorMapping(PresenceChangedEvent.TYPE, schema = PresenceChangedEvent::class),
+    ],
 )
 sealed interface RealtimeEvent {
     val type: String
@@ -30,5 +38,18 @@ data class MessageCreatedEvent(
 
     companion object {
         const val TYPE = "message.created"
+    }
+}
+
+/** A User went online or offline; sent to the whole Workspace. */
+data class PresenceChangedEvent(
+    val userId: UUID,
+    val online: Boolean,
+) : RealtimeEvent {
+    @get:Schema(allowableValues = [TYPE])
+    override val type get() = TYPE
+
+    companion object {
+        const val TYPE = "presence.changed"
     }
 }

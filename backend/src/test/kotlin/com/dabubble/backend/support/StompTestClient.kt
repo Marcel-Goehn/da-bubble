@@ -34,7 +34,7 @@ class StompTestClient(
         }
     private val open = mutableListOf<StompTestSession>()
 
-    /** A connected session subscribed to the User's event queue, as every tab of the app is. */
+    /** A connected session subscribed to the User's event queue and the Workspace topic, as every tab of the app is. */
     fun connect(token: String): StompTestSession {
         val session = start(token, SignedJWT.parse(token).jwtClaimsSet.subject)
         session.awaitConnected()
@@ -74,6 +74,7 @@ class StompTestSession(
     private val error = CompletableFuture<String>()
     private val closed = CompletableFuture<Unit>()
     private val events = LinkedBlockingQueue<RealtimeEvent>()
+    private val workspaceEvents = LinkedBlockingQueue<RealtimeEvent>()
 
     internal val handler =
         object : StompSessionHandlerAdapter() {
@@ -116,8 +117,9 @@ class StompTestSession(
     internal fun awaitConnected() {
         val session = connected.get(TIMEOUT.seconds, TimeUnit.SECONDS)
         val before = subscribedCount()
-        subscribe(session, EVENTS)
-        await().atMost(TIMEOUT).until { subscribedCount() > before }
+        subscribe(session, EVENTS, events)
+        subscribe(session, WORKSPACE, workspaceEvents)
+        await().atMost(TIMEOUT).until { subscribedCount() >= before + 2 }
     }
 
     internal fun awaitError(): String = error.get(TIMEOUT.seconds, TimeUnit.SECONDS)
@@ -130,20 +132,33 @@ class StompTestSession(
     }
 
     /** The next event pushed to this session; fails if none arrives in time. */
-    fun awaitEvent(): RealtimeEvent = events.poll(TIMEOUT.seconds, TimeUnit.SECONDS) ?: fail("No event arrived")
+    fun awaitEvent(): RealtimeEvent = events.next()
+
+    /** The next event pushed to the Workspace topic; fails if none arrives in time. */
+    fun awaitWorkspaceEvent(): RealtimeEvent = workspaceEvents.next()
+
+    private fun LinkedBlockingQueue<RealtimeEvent>.next(): RealtimeEvent =
+        poll(TIMEOUT.seconds, TimeUnit.SECONDS) ?: fail("No event arrived")
 
     /** Waits until the server closes the connection; fails if it stays open. */
     fun awaitClosed() {
         closed.get(TIMEOUT.seconds, TimeUnit.SECONDS)
     }
 
-    internal fun disconnect() {
-        connected.getNow(null)?.takeIf { it.isConnected }?.disconnect()
+    /** Closes this tab, as closing it in the browser does, and waits until the server has seen it close. */
+    fun disconnect() {
+        val session = connected.getNow(null)?.takeIf { it.isConnected } ?: return
+        val before = sessionCount()
+        session.disconnect()
+        await().atMost(TIMEOUT).until { sessionCount() < before }
     }
+
+    private fun sessionCount(): Int = userId?.let { userRegistry.getUser(it) }?.sessions?.size ?: 0
 
     private fun subscribe(
         session: StompSession,
         destination: String,
+        into: LinkedBlockingQueue<RealtimeEvent>,
     ) {
         session.subscribe(
             destination,
@@ -154,7 +169,7 @@ class StompTestSession(
                     headers: StompHeaders,
                     payload: Any?,
                 ) {
-                    events += payload as RealtimeEvent
+                    into += payload as RealtimeEvent
                 }
             },
         )
@@ -165,11 +180,12 @@ class StompTestSession(
     // server's, so the new subscription is told apart by the count of the User's subscriptions.
     private fun subscribedCount(): Int =
         userRegistry
-            .findSubscriptions { it.session.user.name == userId && it.destination == EVENTS }
+            .findSubscriptions { it.session.user.name == userId && it.destination in setOf(EVENTS, WORKSPACE) }
             .size
 
     private companion object {
         const val EVENTS = "/user/queue/events"
+        const val WORKSPACE = "/topic/workspace"
         val TIMEOUT: Duration = Duration.ofSeconds(5)
     }
 }

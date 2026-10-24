@@ -6,7 +6,7 @@ import org.springframework.transaction.support.TransactionSynchronization
 import org.springframework.transaction.support.TransactionSynchronizationManager
 import java.util.UUID
 
-/** Pushes [RealtimeEvent]s to the Users they concern, only once the write that caused them has committed. */
+/** Pushes [RealtimeEvent]s to the Users they concern: those caused by a write only once it has committed. */
 @Component
 class RealtimePublisher(
     private val messaging: SimpMessagingTemplate,
@@ -29,7 +29,14 @@ class RealtimePublisher(
         )
     }
 
+    /** Sends [event] to every open tab of the Workspace now; for events no write causes, such as Presence. */
+    fun toWorkspace(event: RealtimeEvent) {
+        messaging.convertAndSend(WORKSPACE, event)
+    }
+
     private companion object {
+        const val WORKSPACE = "/topic/workspace"
+
         // Clients subscribe to `/user/queue/events`; the user destination prefix is added when resolving.
         const val USER_EVENTS = "/queue/events"
     }

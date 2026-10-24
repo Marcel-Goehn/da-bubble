@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { screen, waitFor, within } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
@@ -12,18 +12,13 @@ import {
   message,
   renderApp,
   RenderAppOptions,
+  settle,
 } from '../../../testing/app';
 import { FakeIntersectionObserver } from '../../../testing/intersection-observer';
 import { MessageDto } from '../../core/data/message.store';
 
 const conversations = [defaultChannel, channel(3, 'Entwicklerteam'), directMessage(2, ada.id)];
 const users = [ada, alan];
-
-/** Lets the store's awaited responses land, then rendering finish. */
-async function settle(fixture: ComponentFixture<unknown>): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve));
-  await fixture.whenStable();
-}
 
 /** Opens [url] and answers its newest page with [messages] (newest first, as the API sends them). */
 async function openChannel(

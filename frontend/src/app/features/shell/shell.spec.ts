@@ -18,7 +18,7 @@ describe('Shell', () => {
   it('loads the logged-in User and the sidebar with their token', async () => {
     const { http } = await renderApp({ keycloak: new FakeKeycloak({ token: 'ada-token' }) });
 
-    expect(screen.getByRole('button', { name: 'Ada Lovelace' }).textContent).toContain(
+    expect(screen.getByRole('button', { name: /^Ada Lovelace/ }).textContent).toContain(
       'Ada Lovelace',
     );
     expect(screen.getByRole('navigation', { name: 'Workspace-Menü' })).toBeTruthy();
@@ -70,7 +70,7 @@ describe('Shell', () => {
 
     expect(frame().dataset['pane']).toBe('main');
     expect(
-      within(screen.getByRole('main')).getByRole('heading', { name: 'Ada Lovelace (Du)' }),
+      within(screen.getByRole('main')).getByRole('heading', { name: /Ada Lovelace \(Du\)$/ }),
     ).toBeTruthy();
     await expectNoA11yViolations();
   });

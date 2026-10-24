@@ -2,11 +2,12 @@ import { inject, Service } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 import { RxStomp } from '@stomp/rx-stomp';
 import Keycloak from 'keycloak-js';
-import { map, Observable } from 'rxjs';
+import { map, merge, Observable } from 'rxjs';
 import { RealtimeEvent } from '../../api/generated/model';
 import { ErrorService } from '../errors/error.service';
 import { ConversationStore } from './conversation.store';
 import { MessageStore } from './message.store';
+import { PresenceStore } from './presence.store';
 
 export type { RealtimeEvent };
 
@@ -31,6 +32,7 @@ export class RealtimeService {
   private readonly keycloak = inject(Keycloak);
   private readonly conversations = inject(ConversationStore);
   private readonly messages = inject(MessageStore);
+  private readonly presence = inject(PresenceStore);
   private readonly errors = inject(ErrorService);
   private readonly transloco = inject(TranslocoService);
   private started = false;
@@ -66,27 +68,34 @@ export class RealtimeService {
     });
     stomp.activate();
     return {
-      events: stomp
-        .watch({ destination: '/user/queue/events' })
-        .pipe(map((frame) => JSON.parse(frame.body) as RealtimeEvent)),
+      // The User's own events, and those for the whole Workspace such as Presence.
+      events: merge(
+        stomp.watch({ destination: '/user/queue/events' }),
+        stomp.watch({ destination: '/topic/workspace' }),
+      ).pipe(map((frame) => JSON.parse(frame.body) as RealtimeEvent)),
       connected: stomp.connected$.pipe(map(() => undefined)),
     };
   }
 
   /**
-   * Refetches what may have changed while disconnected (there is no replay): the sidebar and the open
-   * Conversation's newest page, merged by id. A failure waits for the next reconnect.
+   * Refetches what may have changed while disconnected (there is no replay): the sidebar, Presence and the
+   * open Conversation's newest page, merged by id. A failure waits for the next reconnect.
    */
   private async catchUp(): Promise<void> {
-    await Promise.all([this.conversations.refresh(), this.messages.refreshNewest()]).catch(() =>
-      this.errors.show(this.transloco.translate('errors.generic')),
-    );
+    await Promise.all([
+      this.conversations.refresh(),
+      this.presence.refresh(),
+      this.messages.refreshNewest(),
+    ]).catch(() => this.errors.show(this.transloco.translate('errors.generic')));
   }
 
   private route(event: RealtimeEvent): void {
     switch (event.type) {
       case 'message.created':
         this.messages.upsert(event.message);
+        break;
+      case 'presence.changed':
+        this.presence.set(event.userId, event.online);
         break;
     }
   }

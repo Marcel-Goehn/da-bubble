@@ -12,6 +12,7 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { avatarUrl } from '../../core/data/avatars';
 import { MessageDto, MessageStore } from '../../core/data/message.store';
+import { PresenceStore } from '../../core/data/presence.store';
 import { UserStore } from '../../core/data/user.store';
 import { MessageBubble } from '../../shared/ui/message-bubble';
 
@@ -56,6 +57,7 @@ interface Rendered {
             <app-message-bubble
               [authorName]="author?.name ?? ('message.unknownAuthor' | transloco)"
               [avatarSrc]="avatarUrl(author?.avatar ?? null)"
+              [presence]="presence.of(message.authorId)"
               [text]="message.text"
               [createdAt]="message.createdAt"
               [own]="message.authorId === users.me()?.id"
@@ -69,6 +71,7 @@ interface Rendered {
 export class MessageList {
   protected readonly store = inject(MessageStore);
   protected readonly users = inject(UserStore);
+  protected readonly presence = inject(PresenceStore);
   protected readonly avatarUrl = avatarUrl;
 
   private readonly scroller = viewChild.required<ElementRef<HTMLElement>>('scroller');

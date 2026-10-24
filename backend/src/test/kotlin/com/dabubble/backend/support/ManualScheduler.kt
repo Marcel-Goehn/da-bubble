@@ -2,6 +2,8 @@ package com.dabubble.backend.support
 
 import com.dabubble.backend.time.ScheduledTask
 import com.dabubble.backend.time.Scheduler
+import org.awaitility.Awaitility.await
+import java.time.Duration
 import java.time.Instant
 
 /** A [Scheduler] whose tasks run only when a test calls [runDue], so nothing waits for real time. */
@@ -30,6 +32,11 @@ class ManualScheduler : Scheduler {
                 pending.filter { !it.instant.isAfter(instant) }.sortedBy { it.instant }.also { pending -= it }
             }
         due.forEach { it.task.run() }
+    }
+
+    /** Waits until a task is scheduled for [instant], when what schedules it reacts to network traffic. */
+    fun awaitTaskAt(instant: Instant) {
+        await().atMost(Duration.ofSeconds(5)).until { synchronized(this) { pending.any { it.instant == instant } } }
     }
 
     @Synchronized

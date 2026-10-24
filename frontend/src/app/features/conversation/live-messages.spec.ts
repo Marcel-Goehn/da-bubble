@@ -1,16 +1,18 @@
-import { ComponentFixture } from '@angular/core/testing';
 import { screen, within } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
-import { ada, alan, channel, defaultChannel, message, renderApp } from '../../../testing/app';
+import {
+  ada,
+  alan,
+  channel,
+  defaultChannel,
+  message,
+  renderApp,
+  settle,
+} from '../../../testing/app';
 import { FakeIntersectionObserver } from '../../../testing/intersection-observer';
 import { MessageDto } from '../../core/data/message.store';
 
 const users = [ada, alan];
-
-async function settle(fixture: ComponentFixture<unknown>): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve));
-  await fixture.whenStable();
-}
 
 /** Opens the Default Channel with [messages] (newest first, as the API sends them) as its newest page. */
 async function openChannel(messages: MessageDto[], nextCursor: string | null = null) {

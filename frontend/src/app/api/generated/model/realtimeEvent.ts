@@ -5,5 +5,6 @@
  * OpenAPI spec version: v1
  */
 import type { MessageCreatedEvent } from './messageCreatedEvent';
+import type { PresenceChangedEvent } from './presenceChangedEvent';
 
-export type RealtimeEvent = MessageCreatedEvent;
+export type RealtimeEvent = MessageCreatedEvent | PresenceChangedEvent;

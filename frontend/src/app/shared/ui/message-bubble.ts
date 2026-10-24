@@ -1,6 +1,7 @@
 import { booleanAttribute, Component, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { DateFormatOptions, TranslocoDatePipe } from '@jsverse/transloco-locale';
+import { Presence } from '../../core/data/presence.store';
 import { Avatar } from './avatar';
 
 /**
@@ -18,6 +19,7 @@ import { Avatar } from './avatar';
       [class.rounded-full]="own()"
       [src]="avatarSrc()"
       [name]="authorName()"
+      [presence]="presence()"
       [size]="70"
       decorative
     />
@@ -45,6 +47,7 @@ export class MessageBubble {
   readonly authorName = input.required<string>();
   /** The author's Avatar URL; `null` while they have none. */
   readonly avatarSrc = input.required<string | null>();
+  readonly presence = input<Presence>();
   readonly text = input.required<string>();
   /** When the Message was sent, as an ISO instant. */
   readonly createdAt = input.required<string>();

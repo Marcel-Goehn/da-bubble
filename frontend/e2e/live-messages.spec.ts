@@ -4,7 +4,7 @@ import { expectNoA11yViolations } from './support/a11y';
 import { expect, logIn, test } from './support/fixtures';
 import { createVerifiedUser, TestUser } from './support/keycloak-admin';
 
-test('a Message sent in one browser shows up live in another', async ({
+test("a Message sent in one browser, and its sender's Presence, show up live in another", async ({
   browser,
   request,
   user,
@@ -28,7 +28,18 @@ test('a Message sent in one browser shows up live in another', async ({
     sender.page.getByRole('region', { name: 'Nachrichten' }).getByText(text),
   ).toHaveCount(1);
   await expectNoA11yViolations(reader.page);
-  await Promise.all([sender.page.context().close(), reader.page.context().close()]);
+
+  // The sender's Avatar beside their Message shows them online, and offline once their browser is gone for
+  // longer than the 15 s grace.
+  const senderPresence = reader.page
+    .getByRole('region', { name: 'Nachrichten' })
+    .getByRole('listitem')
+    .filter({ hasText: text })
+    .getByRole('img');
+  await expect(senderPresence).toHaveAccessibleName('Aktiv');
+  await sender.page.context().close();
+  await expect(senderPresence).toHaveAccessibleName('Abwesend', { timeout: 30_000 });
+  await reader.page.context().close();
 });
 
 /**

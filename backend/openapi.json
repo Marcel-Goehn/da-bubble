@@ -109,6 +109,23 @@
         "enum" : [ "AVATAR_1", "AVATAR_2", "AVATAR_3", "AVATAR_4", "AVATAR_5", "AVATAR_6", "GUEST" ],
         "type" : "string"
       },
+      "PresenceChangedEvent" : {
+        "properties" : {
+          "online" : {
+            "type" : "boolean"
+          },
+          "type" : {
+            "enum" : [ "presence.changed" ],
+            "type" : "string"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "online", "type", "userId" ],
+        "type" : "object"
+      },
       "ProblemCode" : {
         "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "UNAUTHENTICATED", "NOT_FOUND", "CONFLICT", "INTERNAL_ERROR" ],
         "type" : "string"
@@ -147,12 +164,15 @@
       "RealtimeEvent" : {
         "discriminator" : {
           "mapping" : {
-            "message.created" : "#/components/schemas/MessageCreatedEvent"
+            "message.created" : "#/components/schemas/MessageCreatedEvent",
+            "presence.changed" : "#/components/schemas/PresenceChangedEvent"
           },
           "propertyName" : "type"
         },
         "oneOf" : [ {
           "$ref" : "#/components/schemas/MessageCreatedEvent"
+        }, {
+          "$ref" : "#/components/schemas/PresenceChangedEvent"
         } ]
       },
       "SendMessageRequest" : {
@@ -365,6 +385,28 @@
           }
         },
         "tags" : [ "me" ]
+      }
+    },
+    "/api/presence" : {
+      "get" : {
+        "operationId" : "listOnline",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "format" : "uuid",
+                    "type" : "string"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "presence" ]
       }
     },
     "/api/users" : {

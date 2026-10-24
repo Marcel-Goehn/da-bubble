@@ -3,6 +3,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { avatarUrl } from '../../core/data/avatars';
 import { ConversationStore } from '../../core/data/conversation.store';
+import { PresenceStore } from '../../core/data/presence.store';
 import { UserStore } from '../../core/data/user.store';
 import { Avatar } from '../../shared/ui/avatar';
 import { ChannelNamePipe } from '../../shared/ui/channel-name.pipe';
@@ -90,6 +91,7 @@ const activeRowClasses = 'bg-hover font-bold text-menu-active';
               <app-avatar
                 [src]="avatarUrl(row.partner.avatar)"
                 [name]="row.partner.name"
+                [presence]="presence.of(row.partner.id)"
                 decorative
               />
               <span class="truncate">
@@ -110,6 +112,7 @@ export class Sidebar {
   private readonly conversations = inject(ConversationStore);
   private readonly users = inject(UserStore);
 
+  protected readonly presence = inject(PresenceStore);
   protected readonly rowClasses = rowClasses;
   protected readonly activeRowClasses = activeRowClasses;
   protected readonly avatarUrl = avatarUrl;

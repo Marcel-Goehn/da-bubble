@@ -6,6 +6,7 @@ import { avatarUrl } from '../../core/data/avatars';
 import { ConversationStore } from '../../core/data/conversation.store';
 import { DraftKey, DraftService } from '../../core/data/draft.service';
 import { MessageStore } from '../../core/data/message.store';
+import { PresenceStore } from '../../core/data/presence.store';
 import { UserStore } from '../../core/data/user.store';
 import { ErrorService } from '../../core/errors/error.service';
 import { Avatar } from '../../shared/ui/avatar';
@@ -33,7 +34,12 @@ import { MessageList } from './message-list';
             <app-icon name="tag" />
             {{ channel | channelName }}
           } @else if (partner(); as partner) {
-            <app-avatar [src]="avatarUrl(partner.avatar)" [name]="partner.name" decorative />
+            <app-avatar
+              [src]="avatarUrl(partner.avatar)"
+              [name]="partner.name"
+              [presence]="presence.of(partner.id)"
+              decorative
+            />
             @if (partner.id === me()?.id) {
               {{ 'sidebar.selfDm' | transloco: { name: partner.name } }}
             } @else {
@@ -70,6 +76,7 @@ export class ConversationPane {
   private readonly params = toSignal(inject(ActivatedRoute).paramMap, { requireSync: true });
 
   protected readonly drafts = inject(DraftService);
+  protected readonly presence = inject(PresenceStore);
   protected readonly avatarUrl = avatarUrl;
   protected readonly me = this.users.me;
   protected readonly channel = computed(() => {

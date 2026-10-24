@@ -1,10 +1,12 @@
 export * from './conversations/conversations.service';
 export * from './me/me.service';
 export * from './messages/messages.service';
+export * from './presence/presence.service';
 export * from './users/users.service';
 export type { OrvalHttpResourceOptions, OrvalHttpResourceRequestExtension, ResolvedResourceState, ResourceState } from './conversations/conversations.resource';
 export { applyOrvalRequestExtension, toResourceState } from './conversations/conversations.resource';
 export * from './conversations/conversations.resource';
 export * from './me/me.resource';
 export * from './messages/messages.resource';
+export * from './presence/presence.resource';
 export * from './users/users.resource';
