@@ -1,11 +1,14 @@
+import { NgTemplateOutlet } from '@angular/common';
 import {
   afterNextRender,
   afterRenderEffect,
+  booleanAttribute,
   Component,
   DestroyRef,
   effect,
   ElementRef,
   inject,
+  input,
   signal,
   viewChild,
 } from '@angular/core';
@@ -13,7 +16,7 @@ import { Dialog } from '@angular/cdk/dialog';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { firstValueFrom } from 'rxjs';
 import { avatarUrl } from '../../core/data/avatars';
-import { MessageDto, MessageStore } from '../../core/data/message.store';
+import { MessageDto, MessageStore, MessageWindowView } from '../../core/data/message.store';
 import { PresenceStore } from '../../core/data/presence.store';
 import { UserStore } from '../../core/data/user.store';
 import { ErrorService } from '../../core/errors/error.service';
@@ -32,63 +35,90 @@ interface OlderReport {
 
 /** What the list showed at the last render, to tell an older page from a new Message. */
 interface Rendered {
-  conversationId: number | null;
+  /** What the window held Messages of; another one starts at the bottom again. */
+  key: unknown;
   oldestId: number | undefined;
   newestId: number | undefined;
 }
 
 /**
- * The open Conversation's Messages, oldest at the top. It opens at the bottom, loads the older page when the
+ * A window of Messages, the open Conversation's or the open Thread's, oldest at the top. It opens at the bottom, loads the older page when the
  * User scrolls up to the top, keeps what they're reading in place while that page is added above, and
  * follows new Messages only while they're at the bottom. Projected content goes above the oldest Message
  * once the beginning is reached.
  */
 @Component({
   selector: 'app-message-list',
-  imports: [MessageBubble, TranslocoPipe],
+  imports: [MessageBubble, NgTemplateOutlet, TranslocoPipe],
   template: `
     <div
       class="flex h-full flex-col overflow-y-auto overflow-anchor-none"
       role="region"
       tabindex="0"
-      [attr.aria-label]="'messages.label' | transloco"
+      [attr.aria-label]="label()"
       (scroll)="measure()"
       #scroller
     >
       <div class="h-1 shrink-0" data-testid="older-messages" #olderSentinel></div>
       <div class="mt-auto"></div>
-      <!-- What the Conversation starts with, once the User has scrolled back to its beginning. -->
-      @if (!store.hasOlder()) {
+      <!-- What the list starts with, once the User has scrolled back to its beginning. -->
+      @if (!window().hasOlder()) {
         <ng-content />
       }
+      <!-- Always on top: older pages go in below it, between it and the Messages already shown. -->
+      @if (lead(); as lead) {
+        <ng-container *ngTemplateOutlet="bubble; context: { $implicit: lead }" />
+        @if (lead.replyCount > 0) {
+          <p class="flex items-center gap-20 px-16 text-text-muted lg:px-45">
+            {{ 'thread.replyCount' | transloco: { count: lead.replyCount } }}
+            <span class="h-px flex-1 bg-border" aria-hidden="true"></span>
+          </p>
+        }
+      }
       <ol class="py-20">
-        @for (message of store.messages(); track message.id) {
-          @let author = users.user(message.authorId);
+        @for (message of window().messages(); track message.id) {
           <li>
-            <app-message-bubble
-              [authorName]="author?.name ?? ('message.unknownAuthor' | transloco)"
-              [avatarSrc]="avatarUrl(author?.avatar ?? null)"
-              [presence]="presence.of(message.authorId)"
-              [text]="message.text"
-              [createdAt]="message.createdAt"
-              [edited]="message.editedAt !== null"
-              [deleted]="message.deletedAt !== null"
-              [own]="message.authorId === users.me()?.id"
-              [editing]="editingId() === message.id"
-              [saving]="savingId() === message.id"
-              (authorSelected)="profiles.open(message.authorId)"
-              (editRequested)="editingId.set(message.id)"
-              (editCancelled)="editingId.set(null)"
-              (editSaved)="saveEdit(message, $event)"
-              (deleteRequested)="confirmDelete(message, $event)"
-            />
+            <ng-container *ngTemplateOutlet="bubble; context: { $implicit: message }" />
           </li>
         }
       </ol>
     </div>
+
+    <ng-template #bubble let-message>
+      @let author = users.user(message.authorId);
+      <app-message-bubble
+        [authorName]="author?.name ?? ('message.unknownAuthor' | transloco)"
+        [avatarSrc]="avatarUrl(author?.avatar ?? null)"
+        [presence]="presence.of(message.authorId)"
+        [text]="message.text"
+        [createdAt]="message.createdAt"
+        [edited]="message.editedAt !== null"
+        [deleted]="message.deletedAt !== null"
+        [own]="message.authorId === users.me()?.id"
+        [editing]="editingId() === message.id"
+        [saving]="savingId() === message.id"
+        [replyCount]="message.replyCount"
+        [lastReplyAt]="message.lastReplyAt"
+        [threadLink]="opensThreads() ? ['thread', message.id] : null"
+        (authorSelected)="profiles.open(message.authorId)"
+        (editRequested)="editingId.set(message.id)"
+        (editCancelled)="editingId.set(null)"
+        (editSaved)="saveEdit(message, $event)"
+        (deleteRequested)="confirmDelete(message, $event)"
+      />
+    </ng-template>
   `,
 })
 export class MessageList {
+  /** The Messages to show: the open Conversation's or the open Thread's. */
+  readonly window = input.required<MessageWindowView>();
+  /** Names the list for assistive technology. */
+  readonly label = input.required<string>();
+  /** Whether its Messages open Threads, which Replies don't. */
+  readonly opensThreads = input(false, { transform: booleanAttribute });
+  /** A Message always shown above the others, with the count of Replies below it: a Thread's parent. */
+  readonly lead = input<MessageDto | null>(null);
+
   protected readonly store = inject(MessageStore);
   protected readonly users = inject(UserStore);
   protected readonly presence = inject(PresenceStore);
@@ -109,7 +139,7 @@ export class MessageList {
   private observer: IntersectionObserver | undefined;
   private atBottom = true;
   private distanceFromBottom = 0;
-  private rendered: Rendered = { conversationId: null, oldestId: undefined, newestId: undefined };
+  private rendered: Rendered = { key: null, oldestId: undefined, newestId: undefined };
 
   constructor() {
     const destroyRef = inject(DestroyRef);
@@ -118,7 +148,7 @@ export class MessageList {
         (entries) =>
           this.olderReport.set({
             inView: entries.at(-1)?.isIntersecting ?? false,
-            messages: this.store.messages(),
+            messages: this.window().messages(),
           }),
         { root: this.scroller().nativeElement },
       );
@@ -131,21 +161,22 @@ export class MessageList {
     // Re-runs when a page finishes, so a short page with the top still in view loads the next one.
     effect(() => {
       const report = this.olderReport();
-      const current = report?.inView === true && report.messages === this.store.messages();
-      if (current && this.store.hasOlder() && !this.store.loadingOlder()) {
-        void this.store.loadOlder();
+      const window = this.window();
+      const current = report?.inView === true && report.messages === window.messages();
+      if (current && window.hasOlder() && !window.loadingOlder()) {
+        void window.loadOlder();
       }
     });
 
     afterRenderEffect(() => {
-      const messages = this.store.messages();
+      const messages = this.window().messages();
       const next: Rendered = {
-        conversationId: this.store.conversationId(),
+        key: this.window().key(),
         oldestId: messages.at(0)?.id,
         newestId: messages.at(-1)?.id,
       };
       const scroller = this.scroller().nativeElement;
-      if (next.conversationId !== this.rendered.conversationId) {
+      if (next.key !== this.rendered.key) {
         this.atBottom = true;
       } else if (
         next.newestId === this.rendered.newestId &&

@@ -79,7 +79,19 @@ export function message(
     createdAt,
     editedAt: null,
     deletedAt: null,
+    replyCount: 0,
+    lastReplyAt: null,
   };
+}
+
+/** A Reply by [authorId] in the Thread of [parentId], sent at [createdAt] (an ISO instant). */
+export function reply(
+  id: number,
+  parentId: number,
+  text: string,
+  options: { authorId?: string; conversationId?: number; createdAt?: string } = {},
+): MessageDto {
+  return { ...message(id, text, options), parentMessageId: parentId };
 }
 
 export const grace: UserDto = {

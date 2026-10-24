@@ -6,8 +6,10 @@
  */
 import type { MessageCreatedEventType } from './messageCreatedEventType';
 import type { MessageDto } from './messageDto';
+import type { ThreadSummaryDto } from './threadSummaryDto';
 
 export interface MessageCreatedEvent {
   message: MessageDto;
+  thread: ThreadSummaryDto | null;
   type: MessageCreatedEventType;
 }

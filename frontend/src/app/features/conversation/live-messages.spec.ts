@@ -34,7 +34,11 @@ describe('Live Messages', () => {
   it('shows a Message another User sends to the open Channel', async () => {
     const { realtime, fixture } = await openChannel([message(1, 'Erste')]);
 
-    realtime.emit({ type: 'message.created', message: message(2, 'Live', { authorId: alan.id }) });
+    realtime.emit({
+      type: 'message.created',
+      message: message(2, 'Live', { authorId: alan.id }),
+      thread: null,
+    });
     await settle(fixture);
 
     expect(shownTexts()).toEqual(['Erste', 'Live']);
@@ -46,6 +50,7 @@ describe('Live Messages', () => {
     realtime.emit({
       type: 'message.created',
       message: message(2, 'Woanders', { conversationId: 3 }),
+      thread: null,
     });
     await settle(fixture);
 
@@ -59,7 +64,7 @@ describe('Live Messages', () => {
     await user.type(composer(), 'Hallo{Enter}');
     http.expectOne('/api/conversations/1/messages').flush(message(1, 'Hallo'));
     await settle(fixture);
-    realtime.emit({ type: 'message.created', message: message(1, 'Hallo') });
+    realtime.emit({ type: 'message.created', message: message(1, 'Hallo'), thread: null });
     await settle(fixture);
 
     expect(shownTexts()).toEqual(['Hallo']);
@@ -70,7 +75,7 @@ describe('Live Messages', () => {
     const { realtime, http, fixture } = await openChannel([]);
 
     await user.type(composer(), 'Hallo{Enter}');
-    realtime.emit({ type: 'message.created', message: message(1, 'Hallo') });
+    realtime.emit({ type: 'message.created', message: message(1, 'Hallo'), thread: null });
     await settle(fixture);
     http.expectOne('/api/conversations/1/messages').flush(message(1, 'Hallo'));
     await settle(fixture);
@@ -143,7 +148,7 @@ describe('Catching up after a reconnect', () => {
 
     realtime.reconnect();
     const sidebar = await vi.waitFor(() => http.expectOne('/api/conversations'));
-    realtime.emit({ type: 'message.created', message: message(101, 'Live') });
+    realtime.emit({ type: 'message.created', message: message(101, 'Live'), thread: null });
     sidebar.flush([defaultChannel]);
     http.expectOne('/api/conversations/1/messages').flush({
       messages: [message(101, 'Live'), message(100, 'Neueste'), message(52, 'Älteste')],

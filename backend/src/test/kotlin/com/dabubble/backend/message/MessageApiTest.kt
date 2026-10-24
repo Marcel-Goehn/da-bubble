@@ -25,7 +25,8 @@ class MessageApiTest : IntegrationTest() {
                 """
                 {
                   "id":1,"conversationId":1,"authorId":"$ada","parentMessageId":null,"text":"Hallo zusammen",
-                  "createdAt":"2026-01-15T09:30:00.123456Z","editedAt":null,"deletedAt":null
+                  "createdAt":"2026-01-15T09:30:00.123456Z","editedAt":null,"deletedAt":null,
+                  "replyCount":0,"lastReplyAt":null
                 }
                 """.trimIndent(),
                 JsonCompareMode.STRICT,

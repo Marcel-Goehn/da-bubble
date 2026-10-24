@@ -3,6 +3,7 @@ package com.dabubble.backend.realtime
 import com.dabubble.backend.conversation.ConversationDto
 import com.dabubble.backend.conversation.ConversationKind
 import com.dabubble.backend.message.MessageDto
+import com.dabubble.backend.message.ThreadSummaryDto
 import com.dabubble.backend.support.IntegrationTest
 import com.dabubble.backend.support.TestTokens
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -22,7 +23,7 @@ class RealtimeApiTest : IntegrationTest() {
 
         val sent = send(ada, "Hallo zusammen")
 
-        (adaTabs + alanTab).forEach { assertEquals(MessageCreatedEvent(sent), it.awaitEvent()) }
+        (adaTabs + alanTab).forEach { assertEquals(MessageCreatedEvent(sent, null), it.awaitEvent()) }
     }
 
     @Test
@@ -38,8 +39,8 @@ class RealtimeApiTest : IntegrationTest() {
         // A Message everyone sees, so the absence of the first is observed without waiting for nothing.
         val public = send(adaToken, "Für alle")
 
-        assertEquals(MessageCreatedEvent(secret), alanTab.awaitEvent())
-        assertEquals(MessageCreatedEvent(public), graceTab.awaitEvent())
+        assertEquals(MessageCreatedEvent(secret, null), alanTab.awaitEvent())
+        assertEquals(MessageCreatedEvent(public, null), graceTab.awaitEvent())
     }
 
     @Test
@@ -54,8 +55,8 @@ class RealtimeApiTest : IntegrationTest() {
         val secret = send(adaToken, "Nur für dich", dm)
         val public = send(adaToken, "Für alle")
 
-        assertEquals(MessageCreatedEvent(secret), alanTab.awaitEvent())
-        assertEquals(MessageCreatedEvent(public), graceTab.awaitEvent())
+        assertEquals(MessageCreatedEvent(secret, null), alanTab.awaitEvent())
+        assertEquals(MessageCreatedEvent(public, null), graceTab.awaitEvent())
     }
 
     @Test
@@ -74,7 +75,7 @@ class RealtimeApiTest : IntegrationTest() {
                 .responseBody!!
 
         listOf(adaTab to alan, alanTab to ada).forEach { (tab, partner) ->
-            assertEquals(MessageCreatedEvent(sent), tab.awaitEvent())
+            assertEquals(MessageCreatedEvent(sent, null), tab.awaitEvent())
             assertEquals(
                 ConversationUpsertedEvent(
                     ConversationDto(
@@ -118,7 +119,7 @@ class RealtimeApiTest : IntegrationTest() {
 
         expiring.awaitClosed()
         val sent = send(token, "Noch da?")
-        assertEquals(MessageCreatedEvent(sent), later.awaitEvent())
+        assertEquals(MessageCreatedEvent(sent, null), later.awaitEvent())
     }
 
     @Test
@@ -129,7 +130,7 @@ class RealtimeApiTest : IntegrationTest() {
         post("/api/conversations/1/messages", token, """{"text":" "}""").expectStatus().isBadRequest
         val sent = send(token, "Danach")
 
-        assertEquals(MessageCreatedEvent(sent), tab.awaitEvent())
+        assertEquals(MessageCreatedEvent(sent, null), tab.awaitEvent())
     }
 
     @Test
@@ -157,6 +158,34 @@ class RealtimeApiTest : IntegrationTest() {
     }
 
     @Test
+    fun `a Reply reaches the Conversation's Users with its parent's new reply count and last-reply time`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        val adaToken = provision(ada)
+        val alanToken = provision(alan)
+        val dm = directMessage(ada, alan)
+        val parent = send(adaToken, "Frage", dm)
+        send(alanToken, "Erst mal oben", dm)
+        val tabs = listOf(adaToken, alanToken).map { stomp.connect(it) }
+
+        clock.set(clock.instant() + Duration.ofMinutes(1))
+        val first = reply(alanToken, dm, parent.id, "Erste Antwort")
+        clock.set(clock.instant() + Duration.ofMinutes(1))
+        val second = reply(adaToken, dm, parent.id, "Zweite Antwort")
+
+        tabs.forEach { tab ->
+            listOf(first to 1, second to 2).forEach { (reply, count) ->
+                assertEquals(
+                    MessageCreatedEvent(reply, ThreadSummaryDto(parent.id, count, reply.createdAt)),
+                    tab.awaitEvent(),
+                )
+                val upserted = tab.awaitEvent() as ConversationUpsertedEvent
+                assertEquals(reply.createdAt, upserted.conversation.lastActivityAt)
+            }
+        }
+    }
+
+    @Test
     fun `a rejected edit and a repeated delete push nothing`() {
         val token = provision()
         val sent = send(token, "Hallo")
@@ -167,8 +196,21 @@ class RealtimeApiTest : IntegrationTest() {
         deleteMessage(token, 1, sent.id)
         val after = send(token, "Danach")
 
-        assertEquals(MessageCreatedEvent(after), tab.awaitEvent())
+        assertEquals(MessageCreatedEvent(after, null), tab.awaitEvent())
     }
+
+    private fun reply(
+        token: String,
+        conversationId: Long,
+        parentId: Long,
+        text: String,
+    ): MessageDto =
+        post("/api/conversations/$conversationId/messages/$parentId/replies", token, """{"text":"$text"}""")
+            .expectStatus()
+            .isCreated
+            .expectBody(MessageDto::class.java)
+            .returnResult()
+            .responseBody!!
 
     private fun editMessage(
         token: String,

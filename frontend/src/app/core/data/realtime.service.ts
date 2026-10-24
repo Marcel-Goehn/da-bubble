@@ -92,7 +92,7 @@ export class RealtimeService {
   private route(event: RealtimeEvent): void {
     switch (event.type) {
       case 'message.created':
-        this.messages.upsert(event.message);
+        this.messages.upsert(event.message, event.thread);
         break;
       case 'message.updated':
         this.messages.replace(event.message);

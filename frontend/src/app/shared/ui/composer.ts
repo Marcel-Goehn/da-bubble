@@ -1,4 +1,13 @@
-import { booleanAttribute, Component, computed, input, model, output } from '@angular/core';
+import {
+  booleanAttribute,
+  Component,
+  computed,
+  ElementRef,
+  input,
+  model,
+  output,
+  viewChild,
+} from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Icon } from './icon';
 
@@ -48,6 +57,13 @@ export class Composer {
   readonly send = output<string>();
 
   protected readonly canSend = computed(() => !this.busy() && this.text().trim() !== '');
+
+  private readonly textarea = viewChild.required<ElementRef<HTMLTextAreaElement>>('textarea');
+
+  /** Moves focus into the text box, e.g. when the pane it belongs to opens. */
+  focus(): void {
+    this.textarea().nativeElement.focus();
+  }
 
   protected enter(event: Event): void {
     // An Enter that confirms an IME composition isn't meant to send.

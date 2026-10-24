@@ -4,6 +4,7 @@ import arrowDropDown from '@material-symbols/svg-400/outlined/arrow_drop_down.sv
 import block from '@material-symbols/svg-400/outlined/block.svg';
 import chatBubble from '@material-symbols/svg-400/outlined/chat_bubble.svg';
 import close from '@material-symbols/svg-400/outlined/close.svg';
+import comment from '@material-symbols/svg-400/outlined/comment.svg';
 import keyboardArrowDown from '@material-symbols/svg-400/outlined/keyboard_arrow_down.svg';
 import leftPanelClose from '@material-symbols/svg-400/outlined/left_panel_close.svg';
 import leftPanelOpen from '@material-symbols/svg-400/outlined/left_panel_open.svg';
@@ -27,6 +28,7 @@ export const icons = {
   block,
   chatBubble,
   close,
+  comment,
   keyboardArrowDown,
   leftPanelClose,
   leftPanelOpen,

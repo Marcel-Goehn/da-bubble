@@ -13,19 +13,28 @@ data class MessageDto(
     val createdAt: Instant,
     val editedAt: Instant?,
     val deletedAt: Instant?,
+    /** How many Replies its Thread has, Deleted ones included; always 0 for a Reply. */
+    val replyCount: Int,
+    /** When the newest Reply in its Thread was sent; `null` without one. */
+    val lastReplyAt: Instant?,
 ) {
     companion object {
-        fun from(message: Message) =
-            MessageDto(
-                id = checkNotNull(message.id),
-                conversationId = message.conversationId,
-                authorId = message.authorId,
-                parentMessageId = message.parentMessageId,
-                text = message.text,
-                createdAt = message.createdAt,
-                editedAt = message.editedAt,
-                deletedAt = message.deletedAt,
-            )
+        /** [message] with its Thread's [summary], `null` while it has no Replies. */
+        fun from(
+            message: Message,
+            summary: ThreadSummary?,
+        ) = MessageDto(
+            id = checkNotNull(message.id),
+            conversationId = message.conversationId,
+            authorId = message.authorId,
+            parentMessageId = message.parentMessageId,
+            text = message.text,
+            createdAt = message.createdAt,
+            editedAt = message.editedAt,
+            deletedAt = message.deletedAt,
+            replyCount = summary?.replyCount?.toInt() ?: 0,
+            lastReplyAt = summary?.lastReplyAt,
+        )
     }
 }
 
@@ -33,6 +42,23 @@ data class MessageDto(
 data class MessagePageDto(
     val messages: List<MessageDto>,
     val nextCursor: String?,
+)
+
+/**
+ * One page of a Thread's Replies, newest first, with its [parent] Message as it is now; [nextCursor] asks for
+ * the older page, `null` at the first Reply.
+ */
+data class ThreadPageDto(
+    val parent: MessageDto,
+    val replies: List<MessageDto>,
+    val nextCursor: String?,
+)
+
+/** A Thread as its parent Message shows it, after a Reply was added to it. */
+data class ThreadSummaryDto(
+    val parentMessageId: Long,
+    val replyCount: Int,
+    val lastReplyAt: Instant,
 )
 
 data class SendMessageRequest(

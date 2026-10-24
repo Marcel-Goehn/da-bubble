@@ -1,10 +1,10 @@
 import { Service, signal } from '@angular/core';
 
 /**
- * Whose composer a draft belongs to: a Channel's, or a DM's by partner, which keeps it while the first
- * Message creates the DM. TODO(#58): `thread:${messageId}`.
+ * Whose composer a draft belongs to: a Channel's, a DM's by partner, which keeps it while the first
+ * Message creates the DM, or a Thread's by its parent Message.
  */
-export type DraftKey = `conversation:${number}` | `dm:${string}`;
+export type DraftKey = `conversation:${number}` | `dm:${string}` | `thread:${number}`;
 
 /** The unsent text of each composer, kept in memory while the User switches between Conversations. */
 @Service()

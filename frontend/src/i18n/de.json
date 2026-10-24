@@ -16,7 +16,8 @@
   "composer": {
     "placeholder": "Nachricht an #{channel}",
     "send": "Nachricht senden",
-    "placeholderDm": "Nachricht an {name}"
+    "placeholderDm": "Nachricht an {name}",
+    "placeholderThread": "Antworten …"
   },
   "conversation": {
     "directMessage": "Direktnachricht"
@@ -97,7 +98,11 @@
   },
   "thread": {
     "title": "Thread",
-    "close": "Thread schließen"
+    "close": "Thread schließen",
+    "replyCount": "{count, plural, =1 {1 Antwort} other {# Antworten}}",
+    "lastReply": "Letzte Antwort {time}",
+    "reply": "Im Thread antworten",
+    "messages": "Nachrichten im Thread"
   },
   "toast": {
     "dismiss": "Hinweis schließen"

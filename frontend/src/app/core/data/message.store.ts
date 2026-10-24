@@ -1,106 +1,70 @@
-import { computed, inject, Service, signal } from '@angular/core';
+import { HttpContext } from '@angular/common/http';
+import { inject, Service, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { DirectMessagesService } from '../../api/generated/direct-messages/direct-messages.service';
 import { MessagesService } from '../../api/generated/messages/messages.service';
-import { MessageDto, MessagePageDto } from '../../api/generated/model';
+import { MessageDto, ThreadSummaryDto } from '../../api/generated/model';
+import { ThreadsService } from '../../api/generated/threads/threads.service';
+import { ROUTED_READ } from '../errors/error.interceptor';
+import { MessageWindow, MessageWindowView } from './message-window';
 
-export type { MessageDto };
+export type { MessageDto, ThreadSummaryDto };
+export type { MessageWindowView };
 
-/** Oldest first, as the list shows them; ties on the timestamp fall back to the id, as the API orders them. */
-function byCreation(a: MessageDto, b: MessageDto): number {
-  return Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.id - b.id;
+/** A Thread, identified by its parent Message, in that Message's Conversation. */
+export interface ThreadKey {
+  conversationId: number;
+  parentId: number;
 }
 
 /**
- * The open Conversation's window of Messages: its newest page, plus the older pages scrolled to so far.
- * TODO(#58): the open Thread.
+ * The Messages the User has open: the open Conversation's window of top-level Messages, and the open
+ * Thread's window of Replies with its parent. Edits, deletes and new reply counts reach both.
  */
 @Service()
 export class MessageStore {
   private readonly api = inject(MessagesService);
   private readonly directMessagesApi = inject(DirectMessagesService);
-  private readonly byId = signal(new Map<number, MessageDto>());
-  private readonly openId = signal<number | null>(null);
-  private readonly cursor = signal<string | null>(null);
-  private readonly loadingOlderState = signal(false);
-  // Bumped by every open, so a page that arrives after the User moved on is dropped.
-  private generation = 0;
-  // The newest Message held with nothing missing between it and the oldest one, which a catch-up must reach.
-  private reached: MessageDto | null = null;
+  private readonly threadsApi = inject(ThreadsService);
+  private readonly parentState = signal<MessageDto | null>(null);
 
-  /** The Conversation whose Messages the store holds. */
-  readonly conversationId = this.openId.asReadonly();
-  readonly messages = computed(() => [...this.byId().values()].sort(byCreation));
-  /** Whether there are Messages before the oldest one held. */
-  readonly hasOlder = computed(() => this.cursor() !== null);
-  readonly loadingOlder = this.loadingOlderState.asReadonly();
+  /** The open Conversation's top-level Messages. */
+  readonly conversation = new MessageWindow<number>(
+    (conversationId, cursor) =>
+      firstValueFrom(this.api.listMessages(conversationId, cursor ? { cursor } : undefined)),
+    (conversationId, message) =>
+      message.conversationId === conversationId && message.parentMessageId === null,
+  );
 
-  /** Replaces the window with the newest page of [conversationId]. */
-  async open(conversationId: number): Promise<void> {
-    const generation = this.reset(conversationId);
-    this.applyPage(generation, await firstValueFrom(this.api.listMessages(conversationId)));
+  /** The open Thread's Replies. */
+  readonly thread = new MessageWindow<ThreadKey>(
+    (key, cursor) => this.fetchThread(key, cursor),
+    (key, message) => message.parentMessageId === key.parentId,
+  );
+
+  /** The open Thread's parent Message, once its first page has loaded. */
+  readonly threadParent = this.parentState.asReadonly();
+
+  /** Replaces the Thread window with the newest Replies of [key] and its parent. */
+  openThread(key: ThreadKey): Promise<void> {
+    this.parentState.set(null);
+    return this.thread.open(key);
   }
 
-  /** Holds no Conversation, e.g. for a DM that doesn't exist yet. */
-  close(): void {
-    this.reset(null);
+  closeThread(): void {
+    this.parentState.set(null);
+    this.thread.close();
   }
 
-  /** Adds the next older page; does nothing at the beginning of the Conversation or while a page loads. */
-  async loadOlder(): Promise<void> {
-    const conversationId = this.openId();
-    const cursor = this.cursor();
-    if (conversationId === null || cursor === null || this.loadingOlderState()) {
-      return;
-    }
-    const generation = this.generation;
-    this.loadingOlderState.set(true);
-    try {
-      const page = await firstValueFrom(this.api.listMessages(conversationId, { cursor }));
-      this.applyPage(generation, page);
-    } finally {
-      if (generation === this.generation) {
-        this.loadingOlderState.set(false);
-      }
-    }
-  }
-
-  /**
-   * Fetches the open Conversation's newest page again and merges it by id. If it doesn't reach the newest
-   * Message held without a gap, more was missed than a page holds: the window starts over at that page.
-   */
+  /** Catches up on both windows; see [MessageWindow.refreshNewest]. */
   async refreshNewest(): Promise<void> {
-    const conversationId = this.openId();
-    if (conversationId === null) {
-      return;
-    }
-    // Before the request: Messages pushed while it runs are newer than the ones missed.
-    const reached = this.reached;
-    const generation = this.generation;
-    const page = await firstValueFrom(this.api.listMessages(conversationId));
-    if (generation !== this.generation) {
-      return;
-    }
-    const oldestFetched = page.messages.at(-1);
-    const gap =
-      page.nextCursor !== null &&
-      reached !== null &&
-      oldestFetched !== undefined &&
-      byCreation(oldestFetched, reached) > 0;
-    if (gap) {
-      // Also drops an older page still on its way, which would belong before the old window.
-      this.reset(conversationId);
-    }
-    if (gap || reached === null) {
-      this.cursor.set(page.nextCursor);
-    }
-    this.merge(page.messages, { contiguous: true });
+    await Promise.all([this.conversation.refreshNewest(), this.thread.refreshNewest()]);
   }
 
   /** Sends [text] to [conversationId]; the Message joins the window if that Conversation is still open. */
   async send(conversationId: number, text: string): Promise<void> {
     // Not contiguous: while disconnected, others' Messages before it may be missing.
-    this.merge([await firstValueFrom(this.api.sendMessage(conversationId, { text }))]);
+    this.conversation.merge([await firstValueFrom(this.api.sendMessage(conversationId, { text }))]);
   }
 
   /**
@@ -111,8 +75,19 @@ export class MessageStore {
     const sent = await firstValueFrom(
       this.directMessagesApi.sendDirectMessage(partnerId, { text }),
     );
-    this.merge([sent]);
+    this.conversation.merge([sent]);
     return sent;
+  }
+
+  /**
+   * Replies [text] in the Thread of [key]; the Reply joins the window if that Thread is still open. Its
+   * parent's reply count follows with the `message.created` echo.
+   */
+  async sendReply(key: ThreadKey, text: string): Promise<void> {
+    const sent = await firstValueFrom(
+      this.threadsApi.sendReply(key.conversationId, key.parentId, { text }),
+    );
+    this.thread.merge([sent]);
   }
 
   /** Replaces the text of the User's own [message] with [text]. */
@@ -127,52 +102,60 @@ export class MessageStore {
     this.replace(await firstValueFrom(this.api.deleteMessage(message.conversationId, message.id)));
   }
 
-  /** Adds a Message pushed live; with the connection up, nothing before it was missed. */
-  upsert(message: MessageDto): void {
-    this.merge([message], { contiguous: true });
+  /**
+   * Adds a Message or Reply pushed live; with the connection up, nothing before it was missed. A Reply comes
+   * with its parent's [thread] as it is now.
+   */
+  upsert(message: MessageDto, thread: ThreadSummaryDto | null = null): void {
+    this.conversation.merge([message], { contiguous: true });
+    this.thread.merge([message], { contiguous: true });
+    if (thread !== null) {
+      this.applyThread(thread);
+    }
   }
 
-  /** Takes an edited or deleted [message] if the window holds it; one it doesn't hold isn't missed. */
+  /** Takes an edited or deleted [message] wherever it is held; one that isn't held isn't missed. */
   replace(message: MessageDto): void {
-    if (this.byId().has(message.id)) {
-      this.byId.update((map) => new Map(map).set(message.id, message));
+    this.conversation.update(message.id, () => message);
+    this.thread.update(message.id, () => message);
+    if (this.parentState()?.id === message.id) {
+      this.parentState.set(message);
     }
   }
 
-  /** Empties the window for [conversationId] and returns the generation pages for it must carry. */
-  private reset(conversationId: number | null): number {
-    this.openId.set(conversationId);
-    this.byId.set(new Map());
-    this.reached = null;
-    this.cursor.set(null);
-    this.loadingOlderState.set(false);
-    return ++this.generation;
-  }
-
-  /** Adds [page] unless the User opened another Conversation since it was asked for. */
-  private applyPage(generation: number, page: MessagePageDto): void {
-    if (generation === this.generation) {
-      this.merge(page.messages, { contiguous: true });
-      this.cursor.set(page.nextCursor);
+  /**
+   * Shows a Thread's new reply count and last reply on its parent. Replies are never removed, so a count
+   * lower than the one shown is an event that arrived late, and is ignored.
+   */
+  private applyThread(thread: ThreadSummaryDto): void {
+    const apply = (parent: MessageDto): MessageDto =>
+      parent.replyCount > thread.replyCount
+        ? parent
+        : { ...parent, replyCount: thread.replyCount, lastReplyAt: thread.lastReplyAt };
+    this.conversation.update(thread.parentMessageId, apply);
+    const parent = this.parentState();
+    if (parent?.id === thread.parentMessageId) {
+      this.parentState.set(apply(parent));
     }
   }
 
-  /** Adds the open Conversation's [messages]; [contiguous] ones are known to leave no gap below them. */
-  private merge(messages: MessageDto[], { contiguous = false } = {}): void {
-    const open = messages.filter((message) => message.conversationId === this.openId());
-    if (contiguous) {
-      for (const message of open) {
-        if (this.reached === null || byCreation(message, this.reached) > 0) {
-          this.reached = message;
-        }
-      }
+  /** A page of [key]'s Replies; its parent is taken as it is now while that Thread is still open. */
+  private async fetchThread(key: ThreadKey, cursor?: string) {
+    // A Thread that's gone or out of reach sends the User away, as its route can't be shown.
+    const context = new HttpContext().set(ROUTED_READ, true);
+    const page = await firstValueFrom(
+      this.threadsApi.listReplies(
+        key.conversationId,
+        key.parentId,
+        cursor ? { cursor } : undefined,
+        {
+          context,
+        },
+      ),
+    );
+    if (this.thread.key() === key) {
+      this.parentState.set(page.parent);
     }
-    if (open.length > 0) {
-      this.byId.update((map) => {
-        const next = new Map(map);
-        open.forEach((message) => next.set(message.id, message));
-        return next;
-      });
-    }
+    return { messages: page.replies, nextCursor: page.nextCursor };
   }
 }

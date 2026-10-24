@@ -2,6 +2,7 @@ package com.dabubble.backend.realtime
 
 import com.dabubble.backend.conversation.ConversationDto
 import com.dabubble.backend.message.MessageDto
+import com.dabubble.backend.message.ThreadSummaryDto
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping
@@ -39,9 +40,10 @@ sealed interface RealtimeEvent {
     val type: String
 }
 
-/** A new Message in a Conversation. */
+/** A new Message in a Conversation; for a Reply, [thread] is its parent's Thread with the Reply counted. */
 data class MessageCreatedEvent(
     val message: MessageDto,
+    val thread: ThreadSummaryDto?,
 ) : RealtimeEvent {
     @get:Schema(allowableValues = [TYPE])
     override val type get() = TYPE

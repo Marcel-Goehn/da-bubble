@@ -68,7 +68,12 @@ import { MessageList } from './message-list';
         </h1>
       </header>
       @if (channel(); as channel) {
-        <app-message-list class="min-h-0 flex-1" />
+        <app-message-list
+          class="min-h-0 flex-1"
+          [window]="messages.conversation"
+          [label]="'messages.label' | transloco"
+          opensThreads
+        />
         <app-composer
           class="px-16 pb-16 lg:px-45 lg:pb-40"
           [label]="'composer.placeholder' | transloco: { channel: channel | channelName }"
@@ -79,7 +84,12 @@ import { MessageList } from './message-list';
         />
       } @else if (partner(); as partner) {
         @if (directMessage()) {
-          <app-message-list class="min-h-0 flex-1">
+          <app-message-list
+            class="min-h-0 flex-1"
+            [window]="messages.conversation"
+            [label]="'messages.label' | transloco"
+            opensThreads
+          >
             <app-dm-intro [partner]="partner" [self]="isSelf()" />
           </app-message-list>
         } @else {
@@ -103,7 +113,7 @@ import { MessageList } from './message-list';
 export class ConversationPane {
   private readonly conversations = inject(ConversationStore);
   private readonly users = inject(UserStore);
-  private readonly messages = inject(MessageStore);
+  protected readonly messages = inject(MessageStore);
   private readonly errors = inject(ErrorService);
   private readonly transloco = inject(TranslocoService);
   private readonly params = toSignal(inject(ActivatedRoute).paramMap, { requireSync: true });
@@ -139,11 +149,11 @@ export class ConversationPane {
     effect(() => {
       const id = conversationId();
       if (id !== undefined) {
-        untracked(() => this.messages.open(id)).catch(() =>
+        untracked(() => this.messages.conversation.open(id)).catch(() =>
           this.errors.show(this.transloco.translate('errors.generic')),
         );
       } else if (this.partnerId() !== null) {
-        untracked(() => this.messages.close());
+        untracked(() => this.messages.conversation.close());
       }
     });
     // A partner who joined after the Workspace was loaded is fetched; an unknown one sends the User to `/`.

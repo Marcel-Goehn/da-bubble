@@ -15,6 +15,9 @@ export interface MessageDto {
   editedAt: string | null;
   id: number;
   /** @nullable */
+  lastReplyAt: string | null;
+  /** @nullable */
   parentMessageId: number | null;
+  replyCount: number;
   text: string;
 }

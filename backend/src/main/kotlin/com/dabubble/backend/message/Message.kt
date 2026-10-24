@@ -64,6 +64,13 @@ class Message private constructor(
         return true
     }
 
+    /** Fails for a Reply: Threads are one level deep, so a Reply has no Thread of its own. */
+    fun requireThreadable() {
+        if (parentMessageId != null) {
+            throw ProblemException(ProblemCode.REPLY_HAS_NO_THREAD, "A Reply can't have a Thread of its own")
+        }
+    }
+
     private fun requireAuthor(userId: UUID) {
         if (userId != authorId) {
             throw ProblemException(ProblemCode.NOT_MESSAGE_AUTHOR, "Only its author may change a Message")
@@ -78,10 +85,29 @@ class Message private constructor(
             text: String,
             createdAt: Instant,
         ): Message {
+            requireText(text)
+            return Message(conversationId, authorId, null, text, createdAt)
+        }
+
+        /**
+         * A new Reply in the Thread of [parent], in the same Conversation. The parent may be a Deleted Message,
+         * whose Thread stays open, but not a Reply. TODO(#66): may be blank once it has Attachments.
+         */
+        fun reply(
+            parent: Message,
+            authorId: UUID,
+            text: String,
+            createdAt: Instant,
+        ): Message {
+            parent.requireThreadable()
+            requireText(text)
+            return Message(parent.conversationId, authorId, checkNotNull(parent.id), text, createdAt)
+        }
+
+        private fun requireText(text: String) {
             if (text.isBlank()) {
                 throw ProblemException(ProblemCode.MESSAGE_EMPTY, "A Message needs text or an Attachment")
             }
-            return Message(conversationId, authorId, null, text, createdAt)
         }
     }
 }

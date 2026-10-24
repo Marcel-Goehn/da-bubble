@@ -2,11 +2,8 @@ package com.dabubble.backend.message
 
 import com.dabubble.backend.conversation.ConversationRepository
 import com.dabubble.backend.conversation.requireVisibleTo
-import com.dabubble.backend.problem.ProblemCode
-import com.dabubble.backend.problem.ProblemException
 import com.dabubble.backend.user.User
 import io.swagger.v3.oas.annotations.tags.Tag
-import org.springframework.data.domain.Limit
 import org.springframework.http.HttpStatus
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.DeleteMapping
@@ -36,20 +33,15 @@ class MessageController(
         @RequestParam(required = false) cursor: String?,
     ): MessagePageDto {
         conversations.requireVisibleTo(conversationId, user.id)
-        // One more than a page tells whether there is an older one.
-        val limit = Limit.of(PAGE_SIZE + 1)
-        val found =
-            if (cursor == null) {
-                messages.findNewest(conversationId, limit)
-            } else {
-                val position =
-                    MessageCursor.decode(cursor) ?: throw ProblemException(ProblemCode.BAD_REQUEST, "Unknown cursor")
-                messages.findOlder(conversationId, position.createdAt, position.id, limit)
-            }
-        val page = found.take(PAGE_SIZE)
-        val oldest = page.lastOrNull()?.takeIf { found.size > PAGE_SIZE }
-        val nextCursor = oldest?.let { MessageCursor(it.createdAt, checkNotNull(it.id)).encode() }
-        return MessagePageDto(page.map(MessageDto::from), nextCursor)
+        val page =
+            keysetPage(
+                cursor,
+                newest = { messages.findNewest(conversationId, it) },
+                older = { position, limit ->
+                    messages.findOlder(conversationId, position.createdAt, position.id, limit)
+                },
+            )
+        return MessagePageDto(messages.toDtos(page.messages), page.nextCursor)
     }
 
     @PostMapping
@@ -82,8 +74,4 @@ class MessageController(
         @PathVariable conversationId: Long,
         @PathVariable messageId: Long,
     ): MessageDto = writer.delete(conversations.requireVisibleTo(conversationId, user.id), messageId, user.id)
-
-    private companion object {
-        const val PAGE_SIZE = 50
-    }
 }

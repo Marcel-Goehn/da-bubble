@@ -71,12 +71,19 @@
           "message" : {
             "$ref" : "#/components/schemas/MessageDto"
           },
+          "thread" : {
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/ThreadSummaryDto"
+            }, {
+              "type" : "null"
+            } ]
+          },
           "type" : {
             "enum" : [ "message.created" ],
             "type" : "string"
           }
         },
-        "required" : [ "message", "type" ],
+        "required" : [ "message", "thread", "type" ],
         "type" : "object"
       },
       "MessageDto" : {
@@ -105,15 +112,23 @@
             "format" : "int64",
             "type" : "integer"
           },
+          "lastReplyAt" : {
+            "format" : "date-time",
+            "type" : [ "string", "null" ]
+          },
           "parentMessageId" : {
             "format" : "int64",
             "type" : [ "integer", "null" ]
+          },
+          "replyCount" : {
+            "format" : "int32",
+            "type" : "integer"
           },
           "text" : {
             "type" : "string"
           }
         },
-        "required" : [ "authorId", "conversationId", "createdAt", "deletedAt", "editedAt", "id", "parentMessageId", "text" ],
+        "required" : [ "authorId", "conversationId", "createdAt", "deletedAt", "editedAt", "id", "lastReplyAt", "parentMessageId", "replyCount", "text" ],
         "type" : "object"
       },
       "MessagePageDto" : {
@@ -166,7 +181,7 @@
         "type" : "object"
       },
       "ProblemCode" : {
-        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "INTERNAL_ERROR" ],
+        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "REPLY_HAS_NO_THREAD", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "INTERNAL_ERROR" ],
         "type" : "string"
       },
       "ProblemDto" : {
@@ -236,6 +251,42 @@
           }
         },
         "required" : [ "avatar" ],
+        "type" : "object"
+      },
+      "ThreadPageDto" : {
+        "properties" : {
+          "nextCursor" : {
+            "type" : [ "string", "null" ]
+          },
+          "parent" : {
+            "$ref" : "#/components/schemas/MessageDto"
+          },
+          "replies" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MessageDto"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "nextCursor", "parent", "replies" ],
+        "type" : "object"
+      },
+      "ThreadSummaryDto" : {
+        "properties" : {
+          "lastReplyAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "parentMessageId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "replyCount" : {
+            "format" : "int32",
+            "type" : "integer"
+          }
+        },
+        "required" : [ "lastReplyAt", "parentMessageId", "replyCount" ],
         "type" : "object"
       },
       "UserDto" : {
@@ -435,6 +486,91 @@
           }
         },
         "tags" : [ "messages" ]
+      }
+    },
+    "/api/conversations/{conversationId}/messages/{messageId}/replies" : {
+      "get" : {
+        "operationId" : "listReplies",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "conversationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "messageId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "cursor",
+          "required" : false,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ThreadPageDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "threads" ]
+      },
+      "post" : {
+        "operationId" : "sendReply",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "conversationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "messageId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageDto"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "threads" ]
       }
     },
     "/api/conversations/{id}" : {
