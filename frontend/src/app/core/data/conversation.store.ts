@@ -28,13 +28,22 @@ export class ConversationStore {
       ),
   );
 
-  /** The self-DM first. TODO(#56): order the others by latest activity; until then the newest first. */
+  /** The self-DM first, then the others by latest activity. */
   readonly directMessages = computed(() => {
     const me = this.users.me()?.id;
     return [...this.byId().values()]
       .filter((conversation) => conversation.kind === 'DIRECT_MESSAGE')
-      .sort((a, b) => Number(b.partnerId === me) - Number(a.partnerId === me) || b.id - a.id);
+      .sort(
+        (a, b) =>
+          Number(b.partnerId === me) - Number(a.partnerId === me) ||
+          Date.parse(b.lastActivityAt) - Date.parse(a.lastActivityAt),
+      );
   });
+
+  /** The DM with the User [partnerId], if it exists (it does once it has a Message). */
+  directMessageWith(partnerId: string): ConversationDto | undefined {
+    return this.directMessages().find((dm) => dm.partnerId === partnerId);
+  }
 
   readonly defaultChannel = computed(() => this.channels().find((channel) => channel.isDefault));
 
@@ -65,13 +74,17 @@ export class ConversationStore {
    * The Conversation a route opens. One missing from the sidebar is asked for, so the error interceptor
    * sends the User to `/` when they can't see it.
    */
-  async open(id: number): Promise<ConversationDto> {
+  open(id: number): Promise<ConversationDto> {
+    return this.ensure(id, new HttpContext().set(ROUTED_READ, true));
+  }
+
+  /** The Conversation [id], asked for if the sidebar doesn't hold it, e.g. a DM the User just created. */
+  async ensure(id: number, context?: HttpContext): Promise<ConversationDto> {
     await this.load();
     const known = this.get(id);
     if (known) {
       return known;
     }
-    const context = new HttpContext().set(ROUTED_READ, true);
     const conversation = await firstValueFrom(this.api.getConversation(id, { context }));
     this.upsert(conversation);
     return conversation;

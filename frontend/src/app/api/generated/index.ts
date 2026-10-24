@@ -1,4 +1,5 @@
 export * from './conversations/conversations.service';
+export * from './direct-messages/direct-messages.service';
 export * from './me/me.service';
 export * from './messages/messages.service';
 export * from './presence/presence.service';

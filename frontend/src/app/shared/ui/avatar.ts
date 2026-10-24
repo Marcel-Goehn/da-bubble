@@ -5,13 +5,14 @@ import { Presence } from '../../core/data/presence.store';
 import { Icon } from './icon';
 
 /** The diameters the Figma uses for Avatars, in px. */
-export type AvatarSize = 40 | 50 | 60 | 70 | 168;
+export type AvatarSize = 40 | 50 | 60 | 70 | 100 | 168;
 
 const sizes: Record<AvatarSize, string> = {
   40: 'size-40',
   50: 'size-50',
   60: 'size-60',
   70: 'size-70',
+  100: 'size-100',
   168: 'size-168',
 };
 

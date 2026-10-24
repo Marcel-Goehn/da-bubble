@@ -4,7 +4,8 @@
  * DA Bubble API
  * OpenAPI spec version: v1
  */
+import type { ConversationUpsertedEvent } from './conversationUpsertedEvent';
 import type { MessageCreatedEvent } from './messageCreatedEvent';
 import type { PresenceChangedEvent } from './presenceChangedEvent';
 
-export type RealtimeEvent = MessageCreatedEvent | PresenceChangedEvent;
+export type RealtimeEvent = MessageCreatedEvent | ConversationUpsertedEvent | PresenceChangedEvent;

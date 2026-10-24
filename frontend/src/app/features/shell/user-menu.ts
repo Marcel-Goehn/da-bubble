@@ -8,6 +8,7 @@ import { PresenceStore } from '../../core/data/presence.store';
 import { UserStore } from '../../core/data/user.store';
 import { Avatar } from '../../shared/ui/avatar';
 import { Icon } from '../../shared/ui/icon';
+import { ProfileCards } from '../profile/profile-cards';
 
 type UserMenuItem = 'profile' | 'logout' | 'impressum' | 'datenschutz';
 
@@ -77,6 +78,7 @@ export class UserMenu {
   private readonly router = inject(Router);
   private readonly keycloak = inject(Keycloak);
   private readonly users = inject(UserStore);
+  private readonly profiles = inject(ProfileCards);
 
   // The shell's guard has loaded the User.
   protected readonly me = computed(() => this.users.me()!);
@@ -87,7 +89,7 @@ export class UserMenu {
   protected select(item: UserMenuItem | undefined): void {
     switch (item) {
       case 'profile':
-        // TODO(#56): open the own profile view.
+        this.profiles.open(this.me().id);
         break;
       case 'logout':
         void this.keycloak.logout({ redirectUri: `${window.location.origin}/` });

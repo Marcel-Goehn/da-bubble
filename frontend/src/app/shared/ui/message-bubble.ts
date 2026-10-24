@@ -1,4 +1,4 @@
-import { booleanAttribute, Component, input } from '@angular/core';
+import { booleanAttribute, Component, input, output } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { DateFormatOptions, TranslocoDatePipe } from '@jsverse/transloco-locale';
 import { Presence } from '../../core/data/presence.store';
@@ -25,7 +25,13 @@ import { Avatar } from './avatar';
     />
     <div class="flex min-w-0 flex-col gap-8" [class.items-end]="own()">
       <p class="flex items-baseline gap-20" [class.flex-row-reverse]="own()">
-        <span class="font-bold">{{ authorName() }}</span>
+        <button
+          type="button"
+          class="rounded-10 font-bold hover:text-interactive"
+          (click)="authorSelected.emit()"
+        >
+          {{ authorName() }}
+        </button>
         <time class="text-14 text-text-muted" [attr.datetime]="createdAt()">
           {{ 'message.time' | transloco: { time: createdAt() | translocoDate: timeFormat } }}
         </time>
@@ -53,6 +59,8 @@ export class MessageBubble {
   readonly createdAt = input.required<string>();
   /** Whether the logged-in User wrote it. */
   readonly own = input(false, { transform: booleanAttribute });
+  /** The author's name was clicked, e.g. to open their profile card. */
+  readonly authorSelected = output();
 
   protected readonly timeFormat: DateFormatOptions = { timeStyle: 'short' };
 }

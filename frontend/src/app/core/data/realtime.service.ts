@@ -94,6 +94,9 @@ export class RealtimeService {
       case 'message.created':
         this.messages.upsert(event.message);
         break;
+      case 'conversation.upserted':
+        this.conversations.upsert(event.conversation);
+        break;
       case 'presence.changed':
         this.presence.set(event.userId, event.online);
         break;

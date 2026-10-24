@@ -4,9 +4,6 @@ import com.dabubble.backend.conversation.ConversationRepository
 import com.dabubble.backend.conversation.requireVisibleTo
 import com.dabubble.backend.problem.ProblemCode
 import com.dabubble.backend.problem.ProblemException
-import com.dabubble.backend.realtime.MessageCreatedEvent
-import com.dabubble.backend.realtime.RealtimePublisher
-import com.dabubble.backend.time.now
 import com.dabubble.backend.user.User
 import io.swagger.v3.oas.annotations.tags.Tag
 import org.springframework.data.domain.Limit
@@ -20,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
-import java.time.Clock
 
 @RestController
 @RequestMapping("/api/conversations/{conversationId}/messages")
@@ -28,8 +24,7 @@ import java.time.Clock
 class MessageController(
     private val conversations: ConversationRepository,
     private val messages: MessageRepository,
-    private val realtime: RealtimePublisher,
-    private val clock: Clock,
+    private val sender: MessageSender,
 ) {
     /** A page of the Conversation's Messages, newest first; without a cursor the newest page. */
     @GetMapping
@@ -62,12 +57,7 @@ class MessageController(
         user: User,
         @PathVariable conversationId: Long,
         @RequestBody request: SendMessageRequest,
-    ): MessageDto {
-        val conversation = conversations.requireVisibleTo(conversationId, user.id)
-        val message = MessageDto.from(messages.save(Message.send(conversationId, user.id, request.text, clock.now())))
-        realtime.toUsers(conversation.recipients(), MessageCreatedEvent(message))
-        return message
-    }
+    ): MessageDto = sender.send(conversations.requireVisibleTo(conversationId, user.id), user.id, request.text)
 
     private companion object {
         const val PAGE_SIZE = 50

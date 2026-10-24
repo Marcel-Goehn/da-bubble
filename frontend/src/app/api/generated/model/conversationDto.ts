@@ -10,6 +10,7 @@ export interface ConversationDto {
   id: number;
   isDefault: boolean;
   kind: ConversationKind;
+  lastActivityAt: string;
   /** @nullable */
   name: string | null;
   /** @nullable */

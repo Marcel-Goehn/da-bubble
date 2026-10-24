@@ -1,5 +1,7 @@
 package com.dabubble.backend.realtime
 
+import com.dabubble.backend.conversation.ConversationDto
+import com.dabubble.backend.conversation.ConversationKind
 import com.dabubble.backend.message.MessageDto
 import com.dabubble.backend.support.IntegrationTest
 import com.dabubble.backend.support.TestTokens
@@ -54,6 +56,39 @@ class RealtimeApiTest : IntegrationTest() {
 
         assertEquals(MessageCreatedEvent(secret), alanTab.awaitEvent())
         assertEquals(MessageCreatedEvent(public), graceTab.awaitEvent())
+    }
+
+    @Test
+    fun `the first Message of a DM brings it into both Users' sidebars live`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        val adaTab = stomp.connect(provision(ada))
+        val alanTab = stomp.connect(provision(alan))
+
+        val sent =
+            post("/api/direct-messages/$alan/messages", TestTokens.user(ada), """{"text":"Hallo Alan"}""")
+                .expectStatus()
+                .isCreated
+                .expectBody(MessageDto::class.java)
+                .returnResult()
+                .responseBody!!
+
+        listOf(adaTab to alan, alanTab to ada).forEach { (tab, partner) ->
+            assertEquals(MessageCreatedEvent(sent), tab.awaitEvent())
+            assertEquals(
+                ConversationUpsertedEvent(
+                    ConversationDto(
+                        id = sent.conversationId,
+                        kind = ConversationKind.DIRECT_MESSAGE,
+                        name = null,
+                        isDefault = false,
+                        partnerId = partner,
+                        lastActivityAt = sent.createdAt,
+                    ),
+                ),
+                tab.awaitEvent(),
+            )
+        }
     }
 
     @Test

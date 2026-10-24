@@ -1,5 +1,6 @@
 package com.dabubble.backend.support
 
+import com.dabubble.backend.time.now
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,6 +14,7 @@ import org.springframework.http.MediaType
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.messaging.simp.user.SimpUserRegistry
 import org.springframework.test.web.servlet.client.RestTestClient
+import java.time.ZoneOffset
 import java.util.UUID
 
 /**
@@ -69,17 +71,20 @@ abstract class IntegrationTest {
         if (tables.isNotEmpty()) {
             jdbc.sql("TRUNCATE ${tables.joinToString()} RESTART IDENTITY CASCADE").update()
         }
-        // Same row as V1__init.sql seeds.
+        clock.reset()
+        // Same row as V1__init.sql seeds, at the test clock's time.
         jdbc
             .sql(
                 """
-                INSERT INTO conversations (kind, name, is_default, created_at)
-                VALUES ('CHANNEL', 'Allgemein', true, now())
+                INSERT INTO conversations (kind, name, is_default, created_at, last_activity_at)
+                VALUES ('CHANNEL', 'Allgemein', true, :now, :now)
                 """.trimIndent(),
-            ).update()
-        clock.reset()
+            ).param("now", testNow())
+            .update()
         scheduler.reset()
     }
+
+    private fun testNow() = clock.now().atOffset(ZoneOffset.UTC)
 
     protected fun countRows(
         fromWhere: String,
@@ -134,8 +139,12 @@ abstract class IntegrationTest {
         val id =
             jdbc
                 .sql(
-                    "INSERT INTO conversations (kind, name, created_at) VALUES ('CHANNEL', :name, now()) RETURNING id",
+                    """
+                    INSERT INTO conversations (kind, name, created_at, last_activity_at)
+                    VALUES ('CHANNEL', :name, :now, :now) RETURNING id
+                    """.trimIndent(),
                 ).param("name", name)
+                .param("now", testNow())
                 .query(Long::class.java)
                 .single()
         members.forEach {
@@ -157,10 +166,11 @@ abstract class IntegrationTest {
         return jdbc
             .sql(
                 """
-                INSERT INTO conversations (kind, user_low, user_high, created_at)
-                VALUES ('DIRECT_MESSAGE', :low, :high, now()) RETURNING id
+                INSERT INTO conversations (kind, user_low, user_high, created_at, last_activity_at)
+                VALUES ('DIRECT_MESSAGE', :low, :high, :now, :now) RETURNING id
                 """.trimIndent(),
             ).param("low", low)
+            .param("now", testNow())
             .param("high", high)
             .query(Long::class.java)
             .single()

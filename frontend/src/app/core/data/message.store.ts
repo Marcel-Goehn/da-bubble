@@ -1,5 +1,6 @@
 import { computed, inject, Service, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { DirectMessagesService } from '../../api/generated/direct-messages/direct-messages.service';
 import { MessagesService } from '../../api/generated/messages/messages.service';
 import { MessageDto, MessagePageDto } from '../../api/generated/model';
 
@@ -17,6 +18,7 @@ function byCreation(a: MessageDto, b: MessageDto): number {
 @Service()
 export class MessageStore {
   private readonly api = inject(MessagesService);
+  private readonly directMessagesApi = inject(DirectMessagesService);
   private readonly byId = signal(new Map<number, MessageDto>());
   private readonly openId = signal<number | null>(null);
   private readonly cursor = signal<string | null>(null);
@@ -37,6 +39,11 @@ export class MessageStore {
   async open(conversationId: number): Promise<void> {
     const generation = this.reset(conversationId);
     this.applyPage(generation, await firstValueFrom(this.api.listMessages(conversationId)));
+  }
+
+  /** Holds no Conversation, e.g. for a DM that doesn't exist yet. */
+  close(): void {
+    this.reset(null);
   }
 
   /** Adds the next older page; does nothing at the beginning of the Conversation or while a page loads. */
@@ -96,13 +103,25 @@ export class MessageStore {
     this.merge([await firstValueFrom(this.api.sendMessage(conversationId, { text }))]);
   }
 
+  /**
+   * Sends [text] to the DM with [partnerId], which the first Message creates. Returns the sent Message, whose
+   * Conversation is that DM.
+   */
+  async sendDirect(partnerId: string, text: string): Promise<MessageDto> {
+    const sent = await firstValueFrom(
+      this.directMessagesApi.sendDirectMessage(partnerId, { text }),
+    );
+    this.merge([sent]);
+    return sent;
+  }
+
   /** Adds a Message pushed live; with the connection up, nothing before it was missed. */
   upsert(message: MessageDto): void {
     this.merge([message], { contiguous: true });
   }
 
   /** Empties the window for [conversationId] and returns the generation pages for it must carry. */
-  private reset(conversationId: number): number {
+  private reset(conversationId: number | null): number {
     this.openId.set(conversationId);
     this.byId.set(new Map());
     this.reached = null;

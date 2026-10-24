@@ -1,10 +1,12 @@
 package com.dabubble.backend.conversation
 
 import com.dabubble.backend.support.IntegrationTest
+import com.dabubble.backend.support.MutableClock
 import com.dabubble.backend.support.TestTokens
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.test.json.JsonCompareMode
+import java.time.Duration
 import java.util.UUID
 
 class ConversationApiTest : IntegrationTest() {
@@ -19,8 +21,8 @@ class ConversationApiTest : IntegrationTest() {
             .json(
                 """
                 [
-                  {"id":1,"kind":"CHANNEL","name":"Allgemein","isDefault":true,"partnerId":null},
-                  {"id":2,"kind":"DIRECT_MESSAGE","name":null,"isDefault":false,"partnerId":"$sub"}
+                  {"id":1,"kind":"CHANNEL","name":"Allgemein","isDefault":true,"partnerId":null,"lastActivityAt":"2026-01-15T09:30:00.123456Z"},
+                  {"id":2,"kind":"DIRECT_MESSAGE","name":null,"isDefault":false,"partnerId":"$sub","lastActivityAt":"2026-01-15T09:30:00.123456Z"}
                 ]
                 """.trimIndent(),
                 JsonCompareMode.STRICT,
@@ -55,7 +57,12 @@ class ConversationApiTest : IntegrationTest() {
             .isOk
             .expectBody()
             .json(
-                """{"id":$dm,"kind":"DIRECT_MESSAGE","name":null,"isDefault":false,"partnerId":"$alan"}""",
+                """
+                {
+                  "id":$dm,"kind":"DIRECT_MESSAGE","name":null,"isDefault":false,"partnerId":"$alan",
+                  "lastActivityAt":"2026-01-15T09:30:00.123456Z"
+                }
+                """.trimIndent(),
                 JsonCompareMode.STRICT,
             )
     }
@@ -77,6 +84,25 @@ class ConversationApiTest : IntegrationTest() {
                 .jsonPath("$.code")
                 .isEqualTo("NOT_FOUND")
         }
+    }
+
+    @Test
+    fun `a new Message bumps its Conversation's last activity`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        listOf(ada, alan).forEach { get("/api/me", TestTokens.user(it)).expectStatus().isOk }
+        val dm = directMessage(ada, alan)
+        val later = MutableClock.START + Duration.ofMinutes(5)
+        clock.set(later)
+
+        post("/api/conversations/$dm/messages", TestTokens.user(alan), """{"text":"Hallo"}""").expectStatus().isCreated
+
+        get("/api/conversations/$dm", TestTokens.user(ada))
+            .expectStatus()
+            .isOk
+            .expectBody()
+            .jsonPath("$.lastActivityAt")
+            .isEqualTo("2026-01-15T09:35:00.123456Z")
     }
 
     private fun listedIds(token: String): Set<Long> =

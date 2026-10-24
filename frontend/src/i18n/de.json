@@ -15,13 +15,20 @@
   },
   "composer": {
     "placeholder": "Nachricht an #{channel}",
-    "send": "Nachricht senden"
+    "send": "Nachricht senden",
+    "placeholderDm": "Nachricht an {name}"
   },
   "conversation": {
     "directMessage": "Direktnachricht"
   },
   "dialog": {
     "close": "Schließen"
+  },
+  "dmIntro": {
+    "partnerBefore": "Diese Unterhaltung findet nur zwischen",
+    "partnerAfter": "und dir statt.",
+    "selfTitle": "Dieser Raum ist nur für dich da.",
+    "selfText": "Mache dir Notizen, liste deine To-dos auf oder bewahre Links und Dateien griffbereit auf. Du kannst hier auch gerne Dinge mit dir selbst besprechen."
   },
   "errors": {
     "conversationUnavailable": "Diesen Channel oder diese Direktnachricht gibt es nicht, oder du hast keinen Zugriff darauf.",
@@ -61,6 +68,11 @@
   "presence": {
     "online": "Aktiv",
     "offline": "Abwesend"
+  },
+  "profile": {
+    "title": "Profil",
+    "email": "E-Mail-Adresse",
+    "message": "Nachricht"
   },
   "sidebar": {
     "label": "Workspace-Menü",

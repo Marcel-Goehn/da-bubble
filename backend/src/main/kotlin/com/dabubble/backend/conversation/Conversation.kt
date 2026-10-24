@@ -1,6 +1,7 @@
 package com.dabubble.backend.conversation
 
 import jakarta.persistence.CascadeType
+import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -27,6 +28,14 @@ class Conversation private constructor(
     val userHigh: UUID?,
     val createdAt: Instant,
 ) {
+    /**
+     * When the latest Message was sent; orders the DM list. Written only by [ConversationRepository.bumpActivity],
+     * so concurrent sends can't move it back.
+     */
+    @Column(updatable = false)
+    var lastActivityAt: Instant = createdAt
+        protected set
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
@@ -43,6 +52,11 @@ class Conversation private constructor(
         if (memberships.none { it.userId == userId }) {
             memberships += Membership(userId, joinedAt)
         }
+    }
+
+    /** Records activity at [at] in memory, for the DTO; [ConversationRepository.bumpActivity] stores it. */
+    fun bumpActivity(at: Instant) {
+        lastActivityAt = maxOf(lastActivityAt, at)
     }
 
     /** Who a new Message here concerns: a Channel's current Members, or the one or two Users of a DM. */
@@ -66,9 +80,16 @@ class Conversation private constructor(
             b: UUID,
             createdAt: Instant,
         ): Conversation {
-            // Postgres orders uuids byte-wise, which matches their canonical strings; UUID.compareTo is signed.
-            val (low, high) = if (a.toString() <= b.toString()) a to b else b to a
+            val (low, high) = directMessagePair(a, b)
             return Conversation(ConversationKind.DIRECT_MESSAGE, null, false, low, high, createdAt)
         }
     }
 }
+
+/** The two Users of a DM as stored: `(user_low, user_high)`. */
+fun directMessagePair(
+    a: UUID,
+    b: UUID,
+): Pair<UUID, UUID> =
+    // Postgres orders uuids byte-wise, which matches their canonical strings; UUID.compareTo is signed.
+    if (a.toString() <= b.toString()) a to b else b to a

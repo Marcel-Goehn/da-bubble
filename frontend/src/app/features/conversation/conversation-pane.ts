@@ -13,16 +13,27 @@ import { Avatar } from '../../shared/ui/avatar';
 import { ChannelNamePipe } from '../../shared/ui/channel-name.pipe';
 import { Composer } from '../../shared/ui/composer';
 import { Icon } from '../../shared/ui/icon';
+import { ProfileCards } from '../profile/profile-cards';
+import { DmIntro } from './dm-intro';
 import { MessageList } from './message-list';
 
 /**
  * The open Conversation: a Channel (`/channel/:id`, which its guard has loaded) or the DM with a User
- * (`/dm/:userId`), with its Messages and the composer. The Thread pane is routed beside it.
- * TODO(#56): the Messages of a DM.
+ * (`/dm/:userId`), with its Messages and the composer. The Thread pane is routed beside it. A DM with no
+ * Message yet doesn't exist: its view is empty, and the first Message sent from it creates it.
  */
 @Component({
   selector: 'app-conversation-pane',
-  imports: [Avatar, ChannelNamePipe, Composer, Icon, MessageList, RouterOutlet, TranslocoPipe],
+  imports: [
+    Avatar,
+    ChannelNamePipe,
+    Composer,
+    DmIntro,
+    Icon,
+    MessageList,
+    RouterOutlet,
+    TranslocoPipe,
+  ],
   host: { class: 'contents' },
   template: `
     <main
@@ -34,17 +45,23 @@ import { MessageList } from './message-list';
             <app-icon name="tag" />
             {{ channel | channelName }}
           } @else if (partner(); as partner) {
-            <app-avatar
-              [src]="avatarUrl(partner.avatar)"
-              [name]="partner.name"
-              [presence]="presence.of(partner.id)"
-              decorative
-            />
-            @if (partner.id === me()?.id) {
-              {{ 'sidebar.selfDm' | transloco: { name: partner.name } }}
-            } @else {
-              {{ partner.name }}
-            }
+            <button
+              type="button"
+              class="flex items-center gap-10 rounded-full py-4 pr-15 pl-4 hover:bg-hover hover:text-menu-active"
+              (click)="profiles.open(partner.id)"
+            >
+              <app-avatar
+                [src]="avatarUrl(partner.avatar)"
+                [name]="partner.name"
+                [presence]="presence.of(partner.id)"
+                decorative
+              />
+              @if (isSelf()) {
+                {{ 'sidebar.selfDm' | transloco: { name: partner.name } }}
+              } @else {
+                {{ partner.name }}
+              }
+            </button>
           } @else {
             {{ 'conversation.directMessage' | transloco }}
           }
@@ -55,10 +72,26 @@ import { MessageList } from './message-list';
         <app-composer
           class="px-16 pb-16 lg:px-45 lg:pb-40"
           [label]="'composer.placeholder' | transloco: { channel: channel | channelName }"
-          [text]="drafts.get(draftKey(channel.id))"
-          (textChange)="drafts.set(draftKey(channel.id), $event)"
-          [busy]="sendingTo() === channel.id"
-          (send)="send(channel.id, $event)"
+          [text]="drafts.get(conversationDraft(channel.id))"
+          (textChange)="drafts.set(conversationDraft(channel.id), $event)"
+          [busy]="sending() === conversationDraft(channel.id)"
+          (send)="sendToChannel(channel.id, $event)"
+        />
+      } @else if (partner(); as partner) {
+        @if (directMessage()) {
+          <app-message-list class="min-h-0 flex-1">
+            <app-dm-intro [partner]="partner" [self]="isSelf()" />
+          </app-message-list>
+        } @else {
+          <app-dm-intro class="mt-auto" [partner]="partner" [self]="isSelf()" />
+        }
+        <app-composer
+          class="px-16 pb-16 lg:px-45 lg:pb-40"
+          [label]="'composer.placeholderDm' | transloco: { name: partner.name }"
+          [text]="drafts.get(dmDraft(partner.id))"
+          (textChange)="drafts.set(dmDraft(partner.id), $event)"
+          [busy]="sending() === dmDraft(partner.id)"
+          (send)="sendToPartner(partner.id, $event)"
         />
       } @else {
         <div class="flex-1"></div>
@@ -77,47 +110,87 @@ export class ConversationPane {
 
   protected readonly drafts = inject(DraftService);
   protected readonly presence = inject(PresenceStore);
+  protected readonly profiles = inject(ProfileCards);
   protected readonly avatarUrl = avatarUrl;
   protected readonly me = this.users.me;
   protected readonly channel = computed(() => {
     const id = this.params().get('id');
     return id === null ? undefined : this.conversations.get(Number(id));
   });
+  private readonly partnerId = computed(() => this.params().get('userId'));
   protected readonly partner = computed(() => {
-    const userId = this.params().get('userId');
+    const userId = this.partnerId();
     return userId === null ? undefined : this.users.user(userId);
   });
+  /** Whether the DM is the User's self-DM. */
+  protected readonly isSelf = computed(() => this.partnerId() === this.me()?.id);
+  /** The DM with the partner, once it has a Message. */
+  protected readonly directMessage = computed(() => {
+    const userId = this.partnerId();
+    return userId === null ? undefined : this.conversations.directMessageWith(userId);
+  });
 
-  /** The Conversation a send is in flight for, if any. */
-  protected readonly sendingTo = signal<number | null>(null);
+  /** The composer a send is in flight for, if any. */
+  protected readonly sending = signal<DraftKey | null>(null);
 
   constructor() {
-    // On the id, not the Channel, so a renamed or re-fetched Channel doesn't reload its Messages.
-    const channelId = computed(() => this.channel()?.id);
+    // On the id, not the Conversation, so a renamed or bumped one doesn't reload its Messages.
+    const conversationId = computed(() => (this.channel() ?? this.directMessage())?.id);
     effect(() => {
-      const id = channelId();
+      const id = conversationId();
       if (id !== undefined) {
         untracked(() => this.messages.open(id)).catch(() =>
           this.errors.show(this.transloco.translate('errors.generic')),
         );
+      } else if (this.partnerId() !== null) {
+        untracked(() => this.messages.close());
+      }
+    });
+    // A partner who joined after the Workspace was loaded is fetched; an unknown one sends the User to `/`.
+    effect(() => {
+      const userId = this.partnerId();
+      if (userId !== null) {
+        // A failed load has shown its toast already, and a missing User sent the User to `/`.
+        untracked(() => this.users.open(userId)).catch(() => undefined);
       }
     });
   }
 
-  protected draftKey(conversationId: number): DraftKey {
+  protected conversationDraft(conversationId: number): DraftKey {
     return `conversation:${conversationId}`;
   }
 
-  /** Sends the composer's text; only a sent Message clears the draft, so a failed one can be retried. */
-  protected async send(conversationId: number, text: string): Promise<void> {
-    this.sendingTo.set(conversationId);
+  protected dmDraft(partnerId: string): DraftKey {
+    return `dm:${partnerId}`;
+  }
+
+  protected sendToChannel(conversationId: number, text: string): Promise<void> {
+    return this.send(this.conversationDraft(conversationId), () =>
+      this.messages.send(conversationId, text),
+    );
+  }
+
+  /** Sends to the DM by partner, so the first Message creates it; the sidebar then lists it. */
+  protected sendToPartner(partnerId: string, text: string): Promise<void> {
+    return this.send(this.dmDraft(partnerId), async () => {
+      const sent = await this.messages.sendDirect(partnerId, text);
+      // Without waiting for `conversation.upserted`, which a dropped connection would lose.
+      this.conversations
+        .ensure(sent.conversationId)
+        .catch(() => this.errors.show(this.transloco.translate('errors.generic')));
+    });
+  }
+
+  /** Runs [sendMessage]; only a sent Message clears the draft, so a failed one can be retried. */
+  private async send(draft: DraftKey, sendMessage: () => Promise<void>): Promise<void> {
+    this.sending.set(draft);
     try {
-      await this.messages.send(conversationId, text);
-      this.drafts.set(this.draftKey(conversationId), '');
+      await sendMessage();
+      this.drafts.set(draft, '');
     } catch {
       this.errors.show(this.transloco.translate('errors.sendFailed'));
     } finally {
-      this.sendingTo.set(null);
+      this.sending.set(null);
     }
   }
 }

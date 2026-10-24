@@ -2,6 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './core/auth/auth.guard';
 import { avatarStepGuard, meGuard } from './core/data/me.guard';
 import { channelGuard } from './features/conversation/channel.guard';
+import { dmGuard } from './features/conversation/dm.guard';
 
 // The Thread pane opens beside its Conversation on desktop and replaces it on mobile.
 const threadRoute = {
@@ -54,6 +55,7 @@ export const routes: Routes = [
           },
           {
             path: 'dm/:userId',
+            canActivate: [dmGuard],
             data: { pane: 'main' },
             loadComponent: loadConversationPane,
             children: [threadRoute],

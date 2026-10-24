@@ -3,7 +3,9 @@ package com.dabubble.backend.conversation
 import com.dabubble.backend.problem.ProblemCode
 import com.dabubble.backend.problem.ProblemException
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
+import java.time.Instant
 import java.util.UUID
 
 interface ConversationRepository : JpaRepository<Conversation, Long> {
@@ -20,6 +22,20 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
         """,
     )
     fun findVisibleTo(userId: UUID): List<Conversation>
+
+    @Query("SELECT c FROM Conversation c WHERE c.userLow = :userLow AND c.userHigh = :userHigh")
+    fun findDirectMessage(
+        userLow: UUID,
+        userHigh: UUID,
+    ): Conversation?
+
+    /** Moves the stored last activity of [id] to [at], unless a concurrent send already moved it further. */
+    @Modifying
+    @Query("UPDATE Conversation c SET c.lastActivityAt = GREATEST(c.lastActivityAt, :at) WHERE c.id = :id")
+    fun bumpActivity(
+        id: Long,
+        at: Instant,
+    )
 
     @Query(
         """

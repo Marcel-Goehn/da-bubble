@@ -15,13 +15,20 @@
   },
   "composer": {
     "placeholder": "Message #{channel}",
-    "send": "Send message"
+    "send": "Send message",
+    "placeholderDm": "Message {name}"
   },
   "conversation": {
     "directMessage": "Direct message"
   },
   "dialog": {
     "close": "Close"
+  },
+  "dmIntro": {
+    "partnerBefore": "This conversation is just between",
+    "partnerAfter": "and you.",
+    "selfTitle": "This space is just for you.",
+    "selfText": "Make notes, list your to-dos or keep links and files at hand. You can also talk things through with yourself here."
   },
   "errors": {
     "conversationUnavailable": "This channel or direct message doesn't exist, or you don't have access to it.",
@@ -61,6 +68,11 @@
   "presence": {
     "online": "Online",
     "offline": "Offline"
+  },
+  "profile": {
+    "title": "Profile",
+    "email": "Email address",
+    "message": "Message"
   },
   "sidebar": {
     "label": "Workspace menu",

@@ -108,7 +108,20 @@ export function listUsersResource(options?: OrvalHttpResourceOptions<UserDto[], 
   return httpResource<UserDto[]>(() => applyOrvalRequestExtension(`/api/users`, options), options);
 }
 
+/**
+ * @remarks httpResource is available in Angular 19.2 and later.
+ */
+export function getUserResource(id: Signal<string>,
+  options: OrvalHttpResourceOptions<UserDto, unknown> & { defaultValue: NoInfer<UserDto> }): HttpResourceRef<UserDto>;
+export function getUserResource(id: Signal<string>,
+  options?: OrvalHttpResourceOptions<UserDto, unknown>): HttpResourceRef<UserDto | undefined>;
+export function getUserResource(id: Signal<string>,
+  options?: OrvalHttpResourceOptions<UserDto, unknown>): HttpResourceRef<UserDto | undefined> {
+  return httpResource<UserDto>(() => applyOrvalRequestExtension(`/api/users/${id()}`, options), options);
+}
+
 export type ListUsersResourceResult = NonNullable<UserDto[]>
+export type GetUserResourceResult = NonNullable<UserDto>
 
 /**
  * Utility type for httpResource results with status tracking.

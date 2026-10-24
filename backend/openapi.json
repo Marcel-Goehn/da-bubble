@@ -13,6 +13,10 @@
           "kind" : {
             "$ref" : "#/components/schemas/ConversationKind"
           },
+          "lastActivityAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
           "name" : {
             "type" : [ "string", "null" ]
           },
@@ -21,12 +25,25 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "id", "isDefault", "kind", "name", "partnerId" ],
+        "required" : [ "id", "isDefault", "kind", "lastActivityAt", "name", "partnerId" ],
         "type" : "object"
       },
       "ConversationKind" : {
         "enum" : [ "CHANNEL", "DIRECT_MESSAGE" ],
         "type" : "string"
+      },
+      "ConversationUpsertedEvent" : {
+        "properties" : {
+          "conversation" : {
+            "$ref" : "#/components/schemas/ConversationDto"
+          },
+          "type" : {
+            "enum" : [ "conversation.upserted" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "conversation", "type" ],
+        "type" : "object"
       },
       "FieldErrorDto" : {
         "properties" : {
@@ -164,6 +181,7 @@
       "RealtimeEvent" : {
         "discriminator" : {
           "mapping" : {
+            "conversation.upserted" : "#/components/schemas/ConversationUpsertedEvent",
             "message.created" : "#/components/schemas/MessageCreatedEvent",
             "presence.changed" : "#/components/schemas/PresenceChangedEvent"
           },
@@ -171,6 +189,8 @@
         },
         "oneOf" : [ {
           "$ref" : "#/components/schemas/MessageCreatedEvent"
+        }, {
+          "$ref" : "#/components/schemas/ConversationUpsertedEvent"
         }, {
           "$ref" : "#/components/schemas/PresenceChangedEvent"
         } ]
@@ -341,6 +361,43 @@
         "tags" : [ "conversations" ]
       }
     },
+    "/api/direct-messages/{partnerId}/messages" : {
+      "post" : {
+        "operationId" : "sendDirectMessage",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "partnerId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SendMessageRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageDto"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "directMessages" ]
+      }
+    },
     "/api/me" : {
       "get" : {
         "operationId" : "getMe",
@@ -421,6 +478,33 @@
                     "$ref" : "#/components/schemas/UserDto"
                   },
                   "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "users" ]
+      }
+    },
+    "/api/users/{id}" : {
+      "get" : {
+        "operationId" : "getUser",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserDto"
                 }
               }
             },

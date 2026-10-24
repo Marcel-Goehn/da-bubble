@@ -1,5 +1,6 @@
 package com.dabubble.backend.realtime
 
+import com.dabubble.backend.conversation.ConversationDto
 import com.dabubble.backend.message.MessageDto
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
@@ -15,13 +16,15 @@ import java.util.UUID
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, include = JsonTypeInfo.As.EXISTING_PROPERTY, property = "type")
 @JsonSubTypes(
     JsonSubTypes.Type(MessageCreatedEvent::class, name = MessageCreatedEvent.TYPE),
+    JsonSubTypes.Type(ConversationUpsertedEvent::class, name = ConversationUpsertedEvent.TYPE),
     JsonSubTypes.Type(PresenceChangedEvent::class, name = PresenceChangedEvent.TYPE),
 )
 @Schema(
-    oneOf = [MessageCreatedEvent::class, PresenceChangedEvent::class],
+    oneOf = [MessageCreatedEvent::class, ConversationUpsertedEvent::class, PresenceChangedEvent::class],
     discriminatorProperty = "type",
     discriminatorMapping = [
         DiscriminatorMapping(MessageCreatedEvent.TYPE, schema = MessageCreatedEvent::class),
+        DiscriminatorMapping(ConversationUpsertedEvent.TYPE, schema = ConversationUpsertedEvent::class),
         DiscriminatorMapping(PresenceChangedEvent.TYPE, schema = PresenceChangedEvent::class),
     ],
 )
@@ -38,6 +41,21 @@ data class MessageCreatedEvent(
 
     companion object {
         const val TYPE = "message.created"
+    }
+}
+
+/**
+ * A Conversation appeared in the recipient's sidebar or changed there, e.g. its last activity was bumped. The
+ * [conversation] is as the recipient sees it: a DM's partner is the other User.
+ */
+data class ConversationUpsertedEvent(
+    val conversation: ConversationDto,
+) : RealtimeEvent {
+    @get:Schema(allowableValues = [TYPE])
+    override val type get() = TYPE
+
+    companion object {
+        const val TYPE = "conversation.upserted"
     }
 }
 

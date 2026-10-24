@@ -1,6 +1,15 @@
 import { screen, within } from '@testing-library/angular';
 import { expectNoA11yViolations } from '../../../testing/a11y';
-import { ada, channel, defaultChannel, directMessage, renderApp } from '../../../testing/app';
+import {
+  ada,
+  alan,
+  channel,
+  defaultChannel,
+  directMessage,
+  grace,
+  renderApp,
+  settle,
+} from '../../../testing/app';
 
 const conversations = [
   channel(3, 'Zeta'),
@@ -37,6 +46,35 @@ describe('Sidebar', () => {
 
     expect(linkNames('Direktnachrichten')).toEqual(['Ada Lovelace (Du)']);
     await expectNoA11yViolations();
+  });
+
+  it('orders the other DMs by latest activity, below the self-DM', async () => {
+    await renderApp({
+      conversations: [
+        directMessage(6, alan.id, '2026-01-15T09:00:00Z'),
+        directMessage(2, ada.id, '2026-01-01T09:00:00Z'),
+        directMessage(5, grace.id, '2026-01-15T10:00:00Z'),
+      ],
+      users: [ada, alan, grace],
+    });
+
+    expect(linkNames('Direktnachrichten')).toEqual([
+      'Ada Lovelace (Du)',
+      'Grace Hopper',
+      'Alan Turing',
+    ]);
+  });
+
+  it('adds a new DM from another User live', async () => {
+    const { realtime, fixture } = await renderApp({
+      conversations: [directMessage(2, ada.id)],
+      users: [ada, alan],
+    });
+
+    realtime.emit({ type: 'conversation.upserted', conversation: directMessage(8, alan.id) });
+    await settle(fixture);
+
+    expect(linkNames('Direktnachrichten')).toEqual(['Ada Lovelace (Du)', 'Alan Turing']);
   });
 
   it('links each row to its Conversation', async () => {

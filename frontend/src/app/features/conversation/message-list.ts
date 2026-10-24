@@ -15,6 +15,7 @@ import { MessageDto, MessageStore } from '../../core/data/message.store';
 import { PresenceStore } from '../../core/data/presence.store';
 import { UserStore } from '../../core/data/user.store';
 import { MessageBubble } from '../../shared/ui/message-bubble';
+import { ProfileCards } from '../profile/profile-cards';
 
 /** How close to the bottom, in px, still counts as at the bottom. */
 const bottomSlackPx = 40;
@@ -35,7 +36,8 @@ interface Rendered {
 /**
  * The open Conversation's Messages, oldest at the top. It opens at the bottom, loads the older page when the
  * User scrolls up to the top, keeps what they're reading in place while that page is added above, and
- * follows new Messages only while they're at the bottom.
+ * follows new Messages only while they're at the bottom. Projected content goes above the oldest Message
+ * once the beginning is reached.
  */
 @Component({
   selector: 'app-message-list',
@@ -50,7 +52,12 @@ interface Rendered {
       #scroller
     >
       <div class="h-1 shrink-0" data-testid="older-messages" #olderSentinel></div>
-      <ol class="mt-auto py-20">
+      <div class="mt-auto"></div>
+      <!-- What the Conversation starts with, once the User has scrolled back to its beginning. -->
+      @if (!store.hasOlder()) {
+        <ng-content />
+      }
+      <ol class="py-20">
         @for (message of store.messages(); track message.id) {
           @let author = users.user(message.authorId);
           <li>
@@ -61,6 +68,7 @@ interface Rendered {
               [text]="message.text"
               [createdAt]="message.createdAt"
               [own]="message.authorId === users.me()?.id"
+              (authorSelected)="profiles.open(message.authorId)"
             />
           </li>
         }
@@ -72,6 +80,7 @@ export class MessageList {
   protected readonly store = inject(MessageStore);
   protected readonly users = inject(UserStore);
   protected readonly presence = inject(PresenceStore);
+  protected readonly profiles = inject(ProfileCards);
   protected readonly avatarUrl = avatarUrl;
 
   private readonly scroller = viewChild.required<ElementRef<HTMLElement>>('scroller');

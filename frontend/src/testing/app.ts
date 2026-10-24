@@ -28,20 +28,36 @@ export const alan: UserDto = {
   avatar: 'AVATAR_2',
 };
 
+/** When the test Conversations last had activity, unless a test says otherwise. */
+const lastActivityAt = new Date(2026, 0, 15, 9, 0).toISOString();
+
 export const defaultChannel: ConversationDto = {
   id: 1,
   kind: 'CHANNEL',
   name: 'Allgemein',
   isDefault: true,
   partnerId: null,
+  lastActivityAt,
 };
 
 export function channel(id: number, name: string): ConversationDto {
-  return { id, kind: 'CHANNEL', name, isDefault: false, partnerId: null };
+  return { id, kind: 'CHANNEL', name, isDefault: false, partnerId: null, lastActivityAt };
 }
 
-export function directMessage(id: number, partnerId: string): ConversationDto {
-  return { id, kind: 'DIRECT_MESSAGE', name: null, isDefault: false, partnerId };
+/** The DM with [partnerId]; [activeAt] is its last activity, an ISO instant. */
+export function directMessage(
+  id: number,
+  partnerId: string,
+  activeAt = lastActivityAt,
+): ConversationDto {
+  return {
+    id,
+    kind: 'DIRECT_MESSAGE',
+    name: null,
+    isDefault: false,
+    partnerId,
+    lastActivityAt: activeAt,
+  };
 }
 
 /** A top-level Message by [authorId] in [conversationId], sent at [createdAt] (an ISO instant). */
@@ -65,6 +81,13 @@ export function message(
     deletedAt: null,
   };
 }
+
+export const grace: UserDto = {
+  id: '7d1e0c2a-0000-4000-8000-000000000003',
+  name: 'Grace Hopper',
+  email: 'grace@example.com',
+  avatar: 'AVATAR_3',
+};
 
 export interface RenderAppOptions {
   url?: string;
