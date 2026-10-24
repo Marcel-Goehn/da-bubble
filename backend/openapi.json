@@ -1,6 +1,33 @@
 {
   "components" : {
     "schemas" : {
+      "ConversationDto" : {
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "isDefault" : {
+            "type" : "boolean"
+          },
+          "kind" : {
+            "$ref" : "#/components/schemas/ConversationKind"
+          },
+          "name" : {
+            "type" : [ "string", "null" ]
+          },
+          "partnerId" : {
+            "format" : "uuid",
+            "type" : [ "string", "null" ]
+          }
+        },
+        "required" : [ "id", "isDefault", "kind", "name", "partnerId" ],
+        "type" : "object"
+      },
+      "ConversationKind" : {
+        "enum" : [ "CHANNEL", "DIRECT_MESSAGE" ],
+        "type" : "string"
+      },
       "FieldErrorDto" : {
         "properties" : {
           "code" : {
@@ -92,6 +119,54 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/conversations" : {
+      "get" : {
+        "operationId" : "listConversations",
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "items" : {
+                    "$ref" : "#/components/schemas/ConversationDto"
+                  },
+                  "type" : "array"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "conversations" ]
+      }
+    },
+    "/api/conversations/{id}" : {
+      "get" : {
+        "operationId" : "getConversation",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "conversations" ]
+      }
+    },
     "/api/me" : {
       "get" : {
         "operationId" : "getMe",

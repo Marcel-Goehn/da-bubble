@@ -10,11 +10,69 @@
     "logout": "Abmelden",
     "title": "Wähle deinen Avatar"
   },
+  "channel": {
+    "default": "Allgemein"
+  },
+  "conversation": {
+    "directMessage": "Direktnachricht"
+  },
   "dialog": {
     "close": "Schließen"
+  },
+  "errors": {
+    "conversationUnavailable": "Diesen Channel oder diese Direktnachricht gibt es nicht, oder du hast keinen Zugriff darauf.",
+    "generic": "Etwas ist schiefgelaufen. Bitte lade die Seite neu."
+  },
+  "legal": {
+    "back": "Zurück zu DABubble",
+    "label": "Rechtliches",
+    "impressum": {
+      "title": "Impressum",
+      "operator": "[Namen der Betreiber]\n[Anschrift des Betreibers von DABubble]\n[Postleitzahl und Ort]",
+      "contactTitle": "Kontakt",
+      "contact": "E-Mail: [E-Mail-Adresse]"
+    },
+    "datenschutz": {
+      "title": "Datenschutz",
+      "controllerTitle": "Verantwortlich",
+      "controllerText": "Verantwortlich für die Verarbeitung deiner Daten ist der im Impressum genannte Betreiber.",
+      "dataTitle": "Welche Daten wir speichern",
+      "dataText": "Deinen Namen, deine E-Mail-Adresse und deinen Avatar, deine Channel-Mitgliedschaften sowie die Nachrichten, Reaktionen und Dateien, die du sendest. Andere Nutzer im Workspace sehen deinen Namen, deinen Avatar, deine E-Mail-Adresse und ob du gerade aktiv bist.",
+      "loginTitle": "Anmeldung",
+      "loginText": "Die Anmeldung läuft über unseren eigenen Anmeldedienst. Meldest du dich mit Google an, erhalten wir von Google deinen Namen und deine E-Mail-Adresse; dein Google-Bild verwenden wir nicht. DABubble setzt keine Tracking- oder Werbe-Cookies.",
+      "storageTitle": "Speicherdauer",
+      "storageText": "Wir speichern deine Daten, solange dein Konto besteht. Gelöschte Nachrichten und ihre Dateien entfernen wir sofort; hochgeladene, aber nie gesendete Dateien nach etwa einem Tag.",
+      "rightsTitle": "Deine Rechte",
+      "rightsText": "Du hast das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der Verarbeitung deiner Daten sowie auf Datenübertragbarkeit und Beschwerde bei einer Aufsichtsbehörde. Wende dich dafür an die im Impressum genannte Adresse."
+    }
   },
   "presence": {
     "online": "Aktiv",
     "offline": "Abwesend"
+  },
+  "sidebar": {
+    "label": "Workspace-Menü",
+    "channels": "Channels",
+    "directMessages": "Direktnachrichten",
+    "selfDm": "{name} (Du)"
+  },
+  "thread": {
+    "title": "Thread",
+    "close": "Thread schließen"
+  },
+  "toast": {
+    "dismiss": "Hinweis schließen"
+  },
+  "userMenu": {
+    "label": "Benutzermenü",
+    "profile": "Profil",
+    "logout": "Log out"
+  },
+  "workspace": {
+    "back": "Zurück",
+    "closeMenu": "Workspace-Menü schließen",
+    "emptyState": "Wähle einen Channel oder eine Direktnachricht",
+    "name": "Devspace",
+    "openMenu": "Workspace-Menü öffnen"
   }
 }

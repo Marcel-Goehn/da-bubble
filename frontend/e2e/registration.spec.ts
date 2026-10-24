@@ -55,8 +55,9 @@ test('a visitor signs up, verifies their email and lands in the Workspace', asyn
   await page.getByRole('button', { name: 'Weiter' }).click();
   await expect(page.getByRole('status')).toHaveText('Konto erfolgreich erstellt!');
 
-  // TODO(#52): assert the Default Channel ("Allgemein") once the Workspace shows Conversations.
-  await expect(page).toHaveURL('/');
-  await expect(page.getByRole('main')).toContainText(name);
+  // A new User lands in the Default Channel, already a Member, with their self-DM in the sidebar.
+  await expect(page).toHaveURL(/\/channel\/\d+$/);
+  await expect(page.getByRole('main').getByRole('heading', { name: 'Allgemein' })).toBeVisible();
+  await expect(page.getByRole('link', { name: `${name} (Du)` })).toBeVisible();
   await expectNoA11yViolations(page);
 });

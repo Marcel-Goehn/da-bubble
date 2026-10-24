@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import Keycloak from 'keycloak-js';
 import { avatarUrl, predefinedAvatars } from '../../core/data/avatars';
+import { ConversationStore } from '../../core/data/conversation.store';
 import { PredefinedAvatar, UserStore } from '../../core/data/user.store';
 import { Avatar } from '../../shared/ui/avatar';
 import { Button } from '../../shared/ui/button';
@@ -105,6 +106,7 @@ export class AvatarStep {
   private readonly users = inject(UserStore);
   private readonly router = inject(Router);
   private readonly keycloak = inject(Keycloak);
+  private readonly conversations = inject(ConversationStore);
 
   // The route's guard has loaded the User.
   protected readonly me = computed(() => this.users.me()!);
@@ -125,8 +127,14 @@ export class AvatarStep {
       throw error;
     }
     this.created.set(true);
-    // TODO(#52): land in the Default Channel's route once it exists; until then the Workspace is "/".
-    setTimeout(() => void this.router.navigateByUrl('/'), createdOverlayMs);
+    // The sidebar loads while the overlay shows; it holds the Default Channel to land in.
+    const loaded = this.conversations.load().catch(() => undefined);
+    setTimeout(() => {
+      void loaded.then(() => {
+        const landing = this.conversations.defaultChannel();
+        void this.router.navigate(landing ? ['/channel', landing.id] : ['/']);
+      });
+    }, createdOverlayMs);
   }
 
   protected logout(): void {

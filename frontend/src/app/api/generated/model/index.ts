@@ -5,6 +5,8 @@
  * OpenAPI spec version: v1
  */
 
+export * from './conversationDto';
+export * from './conversationKind';
 export * from './fieldErrorDto';
 export * from './predefinedAvatar';
 export * from './problemCode';

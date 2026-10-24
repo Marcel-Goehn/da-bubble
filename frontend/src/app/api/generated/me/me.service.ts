@@ -145,5 +145,3 @@ export class MeService {
   }
 };
 
-export type GetMeClientResult = NonNullable<UserDto>
-export type SetAvatarClientResult = NonNullable<UserDto>

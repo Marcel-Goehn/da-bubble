@@ -45,6 +45,14 @@ class Conversation private constructor(
         }
     }
 
+    /** The other User of a DM, or the User themselves for their self-DM; `null` for a Channel. */
+    fun partnerOf(userId: UUID): UUID? =
+        when {
+            kind == ConversationKind.CHANNEL -> null
+            userLow == userId -> userHigh
+            else -> userLow
+        }
+
     companion object {
         fun directMessage(
             a: UUID,

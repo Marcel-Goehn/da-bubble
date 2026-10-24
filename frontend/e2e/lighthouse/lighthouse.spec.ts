@@ -75,8 +75,8 @@ test('main view', async ({ request }) => {
   await logIn(page, user);
   await page.getByAltText('Avatar 1').click();
   await page.getByRole('button', { name: 'Weiter' }).click();
-  await expect(page).toHaveURL('/');
-  await expect(page.getByRole('main')).toContainText(user.name);
-  // TODO(#52): measure with a Conversation open, and an open Thread once those exist (#74).
+  // The Avatar step lands in the Default Channel, so a Conversation is open.
+  await expect(page.getByRole('main').getByRole('heading', { name: 'Allgemein' })).toBeVisible();
+  // TODO(#74): also measure an open Thread once Threads exist.
   await audit(page.url());
 });

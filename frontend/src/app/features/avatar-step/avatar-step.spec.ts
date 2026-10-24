@@ -1,44 +1,21 @@
-import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { RouterOutlet } from '@angular/router';
-import { render, screen, within } from '@testing-library/angular';
+import { Router } from '@angular/router';
+import { screen, within } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { expectNoA11yViolations } from '../../../testing/a11y';
-import { FakeKeycloak, provideFakeKeycloak } from '../../../testing/fake-keycloak';
-import { provideI18nTesting } from '../../../testing/i18n';
-import { routes } from '../../app.routes';
-import { provideApi } from '../../core/api/api.providers';
+import {
+  ada as adaWithAvatar,
+  defaultChannel,
+  directMessage,
+  renderApp,
+} from '../../../testing/app';
 import { UserDto } from '../../core/data/user.store';
 
-const ada: UserDto = {
-  id: '7d1e0c2a-0000-4000-8000-000000000001',
-  name: 'Ada Lovelace',
-  email: 'ada@example.com',
-  avatar: null,
-};
-
-async function renderApp(me: UserDto, url = '/') {
-  const keycloak = new FakeKeycloak();
-  const result = await render('<router-outlet />', {
-    imports: [RouterOutlet],
-    routes,
-    providers: [
-      provideApi(),
-      provideHttpClientTesting(),
-      provideFakeKeycloak(keycloak),
-      provideI18nTesting(),
-    ],
-  });
-  const http = TestBed.inject(HttpTestingController);
-  const navigation = result.navigate(url);
-  (await vi.waitFor(() => http.expectOne('/api/me'))).flush(me);
-  await navigation;
-  return { ...result, http, keycloak };
-}
+const ada: UserDto = { ...adaWithAvatar, avatar: null };
 
 describe('Avatar step', () => {
   it('holds a User without an Avatar on "Wähle deinen Avatar", their name read-only', async () => {
-    const { http } = await renderApp(ada);
+    const { http } = await renderApp({ me: ada });
 
     expect(await screen.findByRole('heading', { name: 'Wähle deinen Avatar' })).toBeTruthy();
     expect(screen.getByText('Ada Lovelace')).toBeTruthy();
@@ -49,7 +26,7 @@ describe('Avatar step', () => {
   });
 
   it('enables Weiter once an Avatar is picked and previews it', async () => {
-    await renderApp(ada);
+    await renderApp({ me: ada });
     const choices = within(await screen.findByRole('radiogroup', { name: 'Aus der Liste wählen' }));
     expect(choices.getAllByRole('radio')).toHaveLength(6);
 
@@ -64,7 +41,7 @@ describe('Avatar step', () => {
   });
 
   it('lets the Avatar be picked by keyboard alone', async () => {
-    await renderApp(ada);
+    await renderApp({ me: ada });
     await screen.findByRole('radiogroup');
 
     await userEvent.tab();
@@ -79,8 +56,8 @@ describe('Avatar step', () => {
     await expectNoA11yViolations();
   });
 
-  it('saves the picked Avatar, shows "Konto erfolgreich erstellt!" and then lands in the Workspace', async () => {
-    const { http } = await renderApp(ada);
+  it('saves the picked Avatar, shows "Konto erfolgreich erstellt!" and then lands in the Default Channel', async () => {
+    const { http } = await renderApp({ me: ada });
     await userEvent.click(await screen.findByRole('radio', { name: 'Avatar 3' }));
 
     await userEvent.click(screen.getByRole('button', { name: 'Weiter' }));
@@ -93,25 +70,29 @@ describe('Avatar step', () => {
       await within(screen.getByRole('status')).findByText('Konto erfolgreich erstellt!'),
     ).toBeTruthy();
     await expectNoA11yViolations();
+    http.expectOne('/api/conversations').flush([defaultChannel, directMessage(2, ada.id)]);
     await vi.waitFor(
       () => expect(screen.queryByRole('heading', { name: 'Wähle deinen Avatar' })).toBeNull(),
       { timeout: 3000 },
     );
-    expect(within(screen.getByRole('main')).getByText('Ada Lovelace')).toBeTruthy();
+    expect(
+      await within(await screen.findByRole('main')).findByRole('heading', { name: 'Allgemein' }),
+    ).toBeTruthy();
+    expect(TestBed.inject(Router).url).toBe('/channel/1');
     http.verify();
   });
 
   it('keeps a User who already has an Avatar off the Avatar step', async () => {
-    const { http } = await renderApp({ ...ada, avatar: 'AVATAR_1' }, '/avatar');
+    const { http } = await renderApp({ me: { ...ada, avatar: 'AVATAR_1' }, url: '/avatar' });
 
     expect(screen.queryByRole('heading', { name: 'Wähle deinen Avatar' })).toBeNull();
-    expect(within(screen.getByRole('main')).getByText('Ada Lovelace')).toBeTruthy();
+    expect(TestBed.inject(Router).url).toBe('/');
     await expectNoA11yViolations();
     http.verify();
   });
 
   it('lets the User log out without picking an Avatar', async () => {
-    const { keycloak, http } = await renderApp(ada);
+    const { keycloak, http } = await renderApp({ me: ada });
 
     await userEvent.click(await screen.findByRole('button', { name: 'Abmelden' }));
 

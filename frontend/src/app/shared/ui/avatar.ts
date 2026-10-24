@@ -1,5 +1,5 @@
 import { NgOptimizedImage } from '@angular/common';
-import { Component, computed, input } from '@angular/core';
+import { booleanAttribute, Component, computed, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Icon } from './icon';
 
@@ -30,13 +30,14 @@ const sizes: Record<AvatarSize, string> = {
         [ngSrc]="src"
         [width]="size()"
         [height]="size()"
-        [alt]="name()"
+        [alt]="decorative() ? '' : name()"
       />
     } @else {
       <span
-        role="img"
         class="flex size-full items-center justify-center rounded-full bg-avatar-placeholder text-text-muted"
-        [attr.aria-label]="name()"
+        [attr.role]="decorative() ? null : 'img'"
+        [attr.aria-hidden]="decorative() ? 'true' : null"
+        [attr.aria-label]="decorative() ? null : name()"
       >
         <app-icon name="personFilled" fillContainer />
       </span>
@@ -60,6 +61,8 @@ export class Avatar {
   readonly name = input.required<string>();
   readonly size = input<AvatarSize>(50);
   readonly presence = input<Presence>();
+  /** Hidden from assistive technology where the name is already next to it, e.g. in a sidebar row. */
+  readonly decorative = input(false, { transform: booleanAttribute });
 
   protected readonly classes = computed(
     () => `relative inline-block shrink-0 ${sizes[this.size()]}`,

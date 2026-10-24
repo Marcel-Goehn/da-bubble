@@ -12,10 +12,16 @@ test('a visitor logs in as the Guest with one click and lands in the Workspace',
   await page.getByRole('button', { name: 'Gäste-Login' }).click();
 
   // The Guest has a fixed Avatar, so there is no Avatar step.
-  // TODO(#52): assert the Default Channel ("Allgemein") once the Workspace shows Channels.
-  await expect(page.getByRole('main').getByText('Guest')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Allgemein' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Guest' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Wähle deinen Avatar' })).toHaveCount(0);
   await expectNoA11yViolations(page);
+
+  await page.getByRole('button', { name: 'Guest' }).click();
+  await expect(page.getByRole('menu', { name: 'Benutzermenü' })).toBeVisible();
+  await expectNoA11yViolations(page);
+  await page.getByRole('menuitem', { name: 'Log out' }).click();
+  await expect(page.getByRole('heading', { name: 'Anmeldung' })).toBeVisible();
 });
 
 test("the Guest can't be changed through Keycloak", async ({ page }) => {

@@ -43,7 +43,8 @@ Components use only these. Tailwind prefixes the utility, so the text tokens rea
 | `text-muted` | gray | timestamps, placeholders, status, hints |
 | `text-subtle` | slate | privacy checkbox label |
 | `text-inverse` | white | on accent buttons and the own bubble |
-| `interactive` / `interactive-hover` | purple-3 / purple-1 | text links, active and hovered menu text |
+| `interactive` / `interactive-hover` | purple-3 / purple-1 | text links, hovered section headings |
+| `menu-active` | purple-1 (Figma: purple-3, see Contrast) | hovered and active menu rows' text on the `hover` background |
 | `link-soft` | purple-1 (Figma: purple-2, see Contrast) | "Passwort vergessen?", "Account erstellen", channel subtitle |
 | `link-external` | blue | mailto link |
 | `accent` / `accent-hover` | purple-1 / purple-2 | primary button |
@@ -170,9 +171,8 @@ The decision so far is to build with the Figma values and adjust tokens after th
 | white on `#797EF3` | 3.45 | 4.5 | own speech bubble text, primary button hover |
 | `#1381FF` on white | 3.74 | 4.5 | email link |
 | `#ED1E79` on white / `#ECEEFE` | 4.15 / 3.60 | 4.5 | field errors |
-| `#535AF1` on `#ECEEFE` | 4.45 | 4.5 | active menu text on its hover bg |
 
-Fixed: `#797EF3` (3.45 on white, 2.99 on `#ECEEFE`) failed for the soft links and the channel subtitle. `link-soft` now points at purple-1 (5.85 on white, 5.08 on `#ECEEFE`), after axe failed the Keycloak pages' soft links (#49).
+Fixed: `#797EF3` (3.45 on white, 2.99 on `#ECEEFE`) failed for the soft links and the channel subtitle. `link-soft` now points at purple-1 (5.85 on white, 5.08 on `#ECEEFE`), after axe failed the Keycloak pages' soft links (#49). `#535AF1` on `#ECEEFE` (4.45) failed for the active sidebar row, so hovered and active menu rows use `menu-active` = purple-1 (5.08) (#52).
 
 These pass: black, `#686868` (5.57 on white, 4.84 on `#ECEEFE`), `#444DF2` both ways (5.85), `#535AF1` on white (5.12), `#42526E` (7.88).
 

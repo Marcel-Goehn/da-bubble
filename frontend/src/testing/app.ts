@@ -1,0 +1,85 @@
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { TestBed } from '@angular/core/testing';
+import { render } from '@testing-library/angular';
+import { App } from '../app/app';
+import { routes } from '../app/app.routes';
+import { provideApi } from '../app/core/api/api.providers';
+import { ConversationDto } from '../app/core/data/conversation.store';
+import { UserDto } from '../app/core/data/user.store';
+import { Language } from '../app/core/i18n/i18n.providers';
+import { FakeKeycloak, provideFakeKeycloak } from './fake-keycloak';
+import { provideI18nTesting } from './i18n';
+
+export const ada: UserDto = {
+  id: '7d1e0c2a-0000-4000-8000-000000000001',
+  name: 'Ada Lovelace',
+  email: 'ada@example.com',
+  avatar: 'AVATAR_1',
+};
+
+export const defaultChannel: ConversationDto = {
+  id: 1,
+  kind: 'CHANNEL',
+  name: 'Allgemein',
+  isDefault: true,
+  partnerId: null,
+};
+
+export function channel(id: number, name: string): ConversationDto {
+  return { id, kind: 'CHANNEL', name, isDefault: false, partnerId: null };
+}
+
+export function directMessage(id: number, partnerId: string): ConversationDto {
+  return { id, kind: 'DIRECT_MESSAGE', name: null, isDefault: false, partnerId };
+}
+
+export interface RenderAppOptions {
+  url?: string;
+  me?: UserDto;
+  /** The sidebar, answered once the shell asks for it (only Users with an Avatar get there); `null` fails it. */
+  conversations?: ConversationDto[] | null;
+  keycloak?: FakeKeycloak;
+  lang?: Language;
+}
+
+/**
+ * Renders the whole app (toasts included) with its real routes at [url], answering `/api/me` and the sidebar request.
+ * Returns before the navigation settles, so a test can answer further requests first.
+ */
+export async function startApp({
+  url = '/',
+  me = ada,
+  conversations = [defaultChannel, directMessage(2, me.id)],
+  keycloak = new FakeKeycloak(),
+  lang = 'de',
+}: RenderAppOptions = {}) {
+  const result = await render(App, {
+    routes,
+    providers: [
+      provideApi(),
+      provideHttpClientTesting(),
+      provideFakeKeycloak(keycloak),
+      provideI18nTesting(lang),
+    ],
+  });
+  const http = TestBed.inject(HttpTestingController);
+  const navigation = result.navigate(url);
+  (await vi.waitFor(() => http.expectOne('/api/me'))).flush(me);
+  if (me.avatar !== null) {
+    const request = await vi.waitFor(() => http.expectOne('/api/conversations'));
+    if (conversations === null) {
+      request.flush(null, { status: 500, statusText: 'Internal Server Error' });
+    } else {
+      request.flush(conversations);
+    }
+  }
+  return { ...result, http, keycloak, navigation };
+}
+
+/** [startApp], then waits for the navigation and rendering to settle. */
+export async function renderApp(options: RenderAppOptions = {}) {
+  const app = await startApp(options);
+  await app.navigation;
+  await app.fixture.whenStable();
+  return app;
+}

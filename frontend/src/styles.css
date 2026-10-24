@@ -13,3 +13,9 @@
     @apply outline-2 outline-offset-2 outline-border-focus;
   }
 }
+
+/* Text running bottom to top, like the "Workspace-Menü schließen" tab. Tailwind has no writing-mode utility. */
+@utility writing-vertical {
+  writing-mode: vertical-rl;
+  rotate: 180deg;
+}

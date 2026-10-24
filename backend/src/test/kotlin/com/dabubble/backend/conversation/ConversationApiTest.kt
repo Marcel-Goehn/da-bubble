@@ -1,0 +1,143 @@
+package com.dabubble.backend.conversation
+
+import com.dabubble.backend.support.IntegrationTest
+import com.dabubble.backend.support.TestTokens
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.springframework.test.json.JsonCompareMode
+import java.util.UUID
+
+class ConversationApiTest : IntegrationTest() {
+    @Test
+    fun `a new User's sidebar holds the Default Channel and their self-DM`() {
+        val sub = UUID.randomUUID()
+
+        get("/api/conversations", TestTokens.user(sub))
+            .expectStatus()
+            .isOk
+            .expectBody()
+            .json(
+                """
+                [
+                  {"id":1,"kind":"CHANNEL","name":"Allgemein","isDefault":true,"partnerId":null},
+                  {"id":2,"kind":"DIRECT_MESSAGE","name":null,"isDefault":false,"partnerId":"$sub"}
+                ]
+                """.trimIndent(),
+                JsonCompareMode.STRICT,
+            )
+    }
+
+    @Test
+    fun `the sidebar lists only the Channels the User is a Member of and their own DMs`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        val grace = UUID.randomUUID()
+        listOf(ada, alan, grace).forEach { get("/api/me", TestTokens.user(it)).expectStatus().isOk }
+        val adasChannel = channel("Entwicklerteam", members = listOf(ada, alan))
+        channel("Marketing", members = listOf(alan))
+        val adaAndAlan = directMessage(ada, alan)
+        directMessage(alan, grace)
+
+        val listed = listedIds(TestTokens.user(ada))
+
+        assertEquals(setOf(defaultChannelId(), selfDmId(ada), adasChannel, adaAndAlan), listed)
+    }
+
+    @Test
+    fun `a DM opens with the other User as partner`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        listOf(ada, alan).forEach { get("/api/me", TestTokens.user(it)).expectStatus().isOk }
+        val dm = directMessage(ada, alan)
+
+        get("/api/conversations/$dm", TestTokens.user(ada))
+            .expectStatus()
+            .isOk
+            .expectBody()
+            .json(
+                """{"id":$dm,"kind":"DIRECT_MESSAGE","name":null,"isDefault":false,"partnerId":"$alan"}""",
+                JsonCompareMode.STRICT,
+            )
+    }
+
+    @Test
+    fun `a Conversation the User can't see is not found`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        val grace = UUID.randomUUID()
+        listOf(ada, alan, grace).forEach { get("/api/me", TestTokens.user(it)).expectStatus().isOk }
+        val hidden =
+            listOf(channel("Marketing", members = listOf(alan)), directMessage(alan, grace), selfDmId(alan), 999L)
+
+        hidden.forEach { id ->
+            get("/api/conversations/$id", TestTokens.user(ada))
+                .expectStatus()
+                .isNotFound
+                .expectBody()
+                .jsonPath("$.code")
+                .isEqualTo("NOT_FOUND")
+        }
+    }
+
+    private fun listedIds(token: String): Set<Long> =
+        get("/api/conversations", token)
+            .expectStatus()
+            .isOk
+            .expectBody(Array<ConversationDto>::class.java)
+            .returnResult()
+            .responseBody!!
+            .map { it.id }
+            .toSet()
+
+    private fun channel(
+        name: String,
+        members: List<UUID>,
+    ): Long {
+        val id =
+            jdbc
+                .sql(
+                    "INSERT INTO conversations (kind, name, created_at) VALUES ('CHANNEL', :name, now()) RETURNING id",
+                ).param("name", name)
+                .query(Long::class.java)
+                .single()
+        members.forEach {
+            jdbc
+                .sql("INSERT INTO memberships (conversation_id, user_id, joined_at) VALUES (:id, :user, now())")
+                .param("id", id)
+                .param("user", it)
+                .update()
+        }
+        return id
+    }
+
+    // Sorted the way Conversation.directMessage stores the pair.
+    private fun directMessage(
+        a: UUID,
+        b: UUID,
+    ): Long {
+        val (low, high) = listOf(a, b).sortedBy { it.toString() }
+        return jdbc
+            .sql(
+                """
+                INSERT INTO conversations (kind, user_low, user_high, created_at)
+                VALUES ('DIRECT_MESSAGE', :low, :high, now()) RETURNING id
+                """.trimIndent(),
+            ).param("low", low)
+            .param("high", high)
+            .query(Long::class.java)
+            .single()
+    }
+
+    private fun defaultChannelId(): Long =
+        jdbc
+            .sql("SELECT id FROM conversations WHERE is_default")
+            .query(Long::class.java)
+            .single()
+
+    private fun selfDmId(user: UUID): Long =
+        jdbc
+            .sql("SELECT id FROM conversations WHERE user_low = :user AND user_high = :user")
+            .param("user", user)
+            .query(Long::class.java)
+            .single()
+}

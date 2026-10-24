@@ -52,8 +52,11 @@
   --color-text-muted: var(--palette-gray); /* times, placeholders, status, hints */
   --color-text-subtle: var(--palette-slate); /* privacy checkbox label */
   --color-text-inverse: var(--palette-white); /* on accent buttons and the own bubble */
-  --color-interactive: var(--palette-purple-3); /* text links, active/hover menu text */
+  --color-interactive: var(--palette-purple-3); /* text links, hovered section headings */
   --color-interactive-hover: var(--palette-purple-1);
+  --color-menu-active: var(
+    --palette-purple-1
+  ); /* hovered / active menu row text on the hover bg; Figma: purple-3, fails contrast */
   --color-link-soft: var(
     --palette-purple-1
   ); /* "Passwort vergessen?", channel subtitle; Figma: purple-2, fails contrast */

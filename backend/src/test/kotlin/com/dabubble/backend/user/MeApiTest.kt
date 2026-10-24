@@ -32,7 +32,7 @@ class MeApiTest : IntegrationTest() {
             )
     }
 
-    // No Conversation endpoint exists yet, so these read the tables; switch to the sidebar API once it lands.
+    // Join and creation times aren't in the API, so these read the tables (ConversationApiTest covers the sidebar).
     @Test
     fun `a new User joins the Default Channel and gets their self-DM, timestamped by the clock`() {
         val sub = UUID.randomUUID()

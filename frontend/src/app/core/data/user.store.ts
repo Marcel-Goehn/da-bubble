@@ -15,6 +15,12 @@ export class UserStore {
   /** The logged-in User; set once `loadMe` has run, which the shell's guard ensures. */
   readonly me = this.meState.asReadonly();
 
+  /** The User with [id]. TODO(#56): every User once the Users endpoint exists; until then only "me". */
+  user(id: string): UserDto | undefined {
+    const me = this.me();
+    return me?.id === id ? me : undefined;
+  }
+
   /** Fetches the logged-in User. The backend creates them on this first request. */
   async loadMe(): Promise<UserDto> {
     const me = await firstValueFrom(this.meService.getMe());

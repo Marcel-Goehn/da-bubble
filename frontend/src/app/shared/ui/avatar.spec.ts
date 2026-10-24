@@ -46,4 +46,18 @@ describe('Avatar', () => {
     expect(screen.getAllByRole('img')).toHaveLength(1);
     await expectNoA11yViolations();
   });
+
+  it('is hidden from assistive technology when decorative, with or without a picture', async () => {
+    const { container } = await render(
+      `<a href="/dm/1"><app-avatar src="/avatars/1.png" name="Ada Lovelace" decorative /> Ada</a>
+       <a href="/dm/2"><app-avatar [src]="null" name="Alan Turing" decorative /> Alan</a>`,
+      { imports: [Avatar], providers: [provideI18nTesting()] },
+    );
+
+    expect(screen.queryAllByRole('img')).toEqual([]);
+    expect(screen.getByRole('link', { name: 'Ada' })).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'Alan' })).toBeTruthy();
+    expect(container.querySelector('img')?.getAttribute('alt')).toBe('');
+    await expectNoA11yViolations();
+  });
 });

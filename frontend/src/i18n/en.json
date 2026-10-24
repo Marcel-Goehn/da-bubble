@@ -10,11 +10,69 @@
     "logout": "Log out",
     "title": "Choose your avatar"
   },
+  "channel": {
+    "default": "General"
+  },
+  "conversation": {
+    "directMessage": "Direct message"
+  },
   "dialog": {
     "close": "Close"
+  },
+  "errors": {
+    "conversationUnavailable": "This channel or direct message doesn't exist, or you don't have access to it.",
+    "generic": "Something went wrong. Please reload the page."
+  },
+  "legal": {
+    "back": "Back to DABubble",
+    "label": "Legal",
+    "impressum": {
+      "title": "Legal notice",
+      "operator": "[Names of the operators]\n[Address of the DABubble operator]\n[Postcode and city]",
+      "contactTitle": "Contact",
+      "contact": "Email: [email address]"
+    },
+    "datenschutz": {
+      "title": "Privacy policy",
+      "controllerTitle": "Controller",
+      "controllerText": "The operator named in the legal notice is responsible for processing your data.",
+      "dataTitle": "What we store",
+      "dataText": "Your name, email address and avatar, your channel memberships, and the messages, reactions and files you send. Other users in the workspace see your name, avatar, email address and whether you are currently online.",
+      "loginTitle": "Login",
+      "loginText": "Login runs through our own login service. If you log in with Google, Google sends us your name and email address; we do not use your Google picture. DABubble sets no tracking or advertising cookies.",
+      "storageTitle": "How long we keep it",
+      "storageText": "We keep your data for as long as your account exists. Deleted messages and their files are removed at once; uploaded files that were never sent after about a day.",
+      "rightsTitle": "Your rights",
+      "rightsText": "You have the right to access, correct and delete your data, to restrict its processing, to data portability, and to complain to a supervisory authority. Contact the address in the legal notice to do so."
+    }
   },
   "presence": {
     "online": "Online",
     "offline": "Offline"
+  },
+  "sidebar": {
+    "label": "Workspace menu",
+    "channels": "Channels",
+    "directMessages": "Direct messages",
+    "selfDm": "{name} (you)"
+  },
+  "thread": {
+    "title": "Thread",
+    "close": "Close thread"
+  },
+  "toast": {
+    "dismiss": "Dismiss"
+  },
+  "userMenu": {
+    "label": "User menu",
+    "profile": "Profile",
+    "logout": "Log out"
+  },
+  "workspace": {
+    "back": "Back",
+    "closeMenu": "Close workspace menu",
+    "emptyState": "Choose a channel or a direct message",
+    "name": "Devspace",
+    "openMenu": "Open workspace menu"
   }
 }
