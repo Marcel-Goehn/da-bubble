@@ -241,6 +241,12 @@
       "tooLarge": "Größer als 25 MB",
       "tooMany": "Höchstens 5 Dateien pro Nachricht",
       "failed": "Hochladen fehlgeschlagen"
+    },
+    "lightbox": {
+      "previous": "Vorheriges Bild",
+      "next": "Nächstes Bild",
+      "position": "{index} / {count}",
+      "byline": "{name} · {date} Uhr"
     }
   }
 }

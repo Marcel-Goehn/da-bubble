@@ -12,6 +12,8 @@ import addReaction from '@material-symbols/svg-400/outlined/add_reaction.svg';
 import arrowBack from '@material-symbols/svg-400/outlined/arrow_back.svg';
 import arrowDropDown from '@material-symbols/svg-400/outlined/arrow_drop_down.svg';
 import block from '@material-symbols/svg-400/outlined/block.svg';
+import chevronLeft from '@material-symbols/svg-400/outlined/chevron_left.svg';
+import chevronRight from '@material-symbols/svg-400/outlined/chevron_right.svg';
 import chatBubble from '@material-symbols/svg-400/outlined/chat_bubble.svg';
 import close from '@material-symbols/svg-400/outlined/close.svg';
 import comment from '@material-symbols/svg-400/outlined/comment.svg';
@@ -54,6 +56,8 @@ export const icons = {
   arrowDropDown,
   block,
   chatBubble,
+  chevronLeft,
+  chevronRight,
   close,
   comment,
   edit,

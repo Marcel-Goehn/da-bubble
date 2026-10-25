@@ -9,7 +9,7 @@ const png = Buffer.from(
 );
 const pdf = Buffer.from('%PDF-1.4\n%%EOF\n');
 
-test('a User attaches an image and a PDF, sends them without text, and opens and downloads the PDF', async ({
+test('a User attaches an image and a PDF, sends them without text, views the image in the lightbox, and opens and downloads the PDF', async ({
   page,
   user,
 }) => {
@@ -46,6 +46,22 @@ test('a User attaches an image and a PDF, sends them without text, and opens and
     .toBeGreaterThan(0);
   await expect(composer.getByText(pdfName)).toHaveCount(0);
   await expectNoA11yViolations(page);
+
+  // The lightbox, by keyboard: Enter opens it, Tab stays inside it, Escape closes it back onto the thumbnail.
+  const thumbnail = sent.getByRole('button', { name: `Bild ${photoName} öffnen` });
+  await thumbnail.focus();
+  await page.keyboard.press('Enter');
+  const lightbox = page.getByRole('dialog', { name: photoName });
+  await expect(lightbox.getByRole('img', { name: photoName })).toBeVisible();
+  await expect(lightbox).toContainText(user.name);
+  await expectNoA11yViolations(page);
+  for (let i = 0; i < 4; i++) {
+    await page.keyboard.press('Tab');
+    await expect(lightbox.locator(':focus')).toHaveCount(1);
+  }
+  await page.keyboard.press('Escape');
+  await expect(lightbox).toHaveCount(0);
+  await expect(thumbnail).toBeFocused();
 
   const popup = page.waitForEvent('popup');
   await sent.getByRole('button', { name: new RegExp(`^${pdfName} .+ öffnen$`) }).click();

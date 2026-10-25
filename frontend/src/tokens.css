@@ -81,6 +81,9 @@
   --color-bubble-own: var(--palette-purple-2);
   --color-bubble-other: var(--palette-lavender-light);
 
+  /* Lightbox: the dark overlay behind a full-size image, at /90 */
+  --color-scrim: var(--palette-black);
+
   /* Status */
   --color-online: var(--palette-green);
   --color-offline: var(--palette-gray);

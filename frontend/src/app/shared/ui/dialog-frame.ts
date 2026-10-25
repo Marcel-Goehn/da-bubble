@@ -37,11 +37,19 @@ export class DialogFrame {
   protected readonly headingId = `app-dialog-heading-${nextId++}`;
 
   constructor() {
-    // The CDK container has role="dialog"; naming it by the heading is how Angular Material does it too.
-    const container = this.dialogRef.containerInstance;
-    if (container instanceof CdkDialogContainer) {
-      container._addAriaLabelledBy(this.headingId);
-      inject(DestroyRef).onDestroy(() => container._removeAriaLabelledBy(this.headingId));
-    }
+    nameDialogBy(this.dialogRef, this.headingId);
+  }
+}
+
+/**
+ * Names the dialog of [dialogRef] by the element [headingId] while the calling component lives. The CDK
+ * container has role="dialog"; naming it by the heading is how Angular Material does it too. Call it in an
+ * injection context.
+ */
+export function nameDialogBy(dialogRef: DialogRef, headingId: string): void {
+  const container = dialogRef.containerInstance;
+  if (container instanceof CdkDialogContainer) {
+    container._addAriaLabelledBy(headingId);
+    inject(DestroyRef).onDestroy(() => container._removeAriaLabelledBy(headingId));
   }
 }

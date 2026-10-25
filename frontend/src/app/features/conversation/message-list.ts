@@ -10,17 +10,25 @@ import {
   inject,
   input,
   signal,
+  computed,
   viewChild,
 } from '@angular/core';
 import { Dialog } from '@angular/cdk/dialog';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { firstValueFrom } from 'rxjs';
 import { avatarUrl } from '../../core/data/avatars';
-import { MessageDto, MessageStore, MessageWindowView } from '../../core/data/message.store';
+import {
+  AttachmentDto,
+  MessageDto,
+  MessageStore,
+  MessageWindowView,
+} from '../../core/data/message.store';
+import { thumbnailedTypes } from '../../core/data/thumbnails';
 import { PresenceStore } from '../../core/data/presence.store';
 import { ReadStore } from '../../core/data/read.store';
 import { UserStore } from '../../core/data/user.store';
 import { ErrorService } from '../../core/errors/error.service';
+import { AttachmentLightbox, AttachmentLightboxData } from '../../shared/ui/attachment-lightbox';
 import { AttachmentOpening } from '../../shared/ui/attachment-list';
 import { MessageBubble } from '../../shared/ui/message-bubble';
 import { ReactionView } from '../../shared/ui/reaction-chips';
@@ -92,8 +100,9 @@ interface Rendered {
 
     <ng-template #bubble let-message>
       @let author = users.user(message.authorId);
+      @let authorName = author?.name ?? ('message.unknownAuthor' | transloco);
       <app-message-bubble
-        [authorName]="author?.name ?? ('message.unknownAuthor' | transloco)"
+        [authorName]="authorName"
         [avatarSrc]="avatarUrl(author?.avatar ?? null)"
         [presence]="presence.of(message.authorId)"
         [text]="message.text"
@@ -118,6 +127,7 @@ interface Rendered {
         (deleteRequested)="confirmDelete(message, $event)"
         (reactionToggled)="toggleReaction(message, $event)"
         (attachmentOpened)="openAttachment(message, $event)"
+        (imageOpened)="openImage(message, $event, authorName)"
         (attachmentFailed)="refreshAttachments(message)"
       />
     </ng-template>
@@ -302,6 +312,37 @@ export class MessageList {
       tab?.close();
       this.errors.show(this.transloco.translate('errors.openAttachmentFailed'));
     }
+  }
+
+  /**
+   * Shows [image] of [message], by [authorName], in the lightbox, which steps through the Message's
+   * images. It keeps up with the Message: fresh URLs once it's fetched again, and closing once it's deleted.
+   */
+  protected openImage(message: MessageDto, image: AttachmentDto, authorName: string): void {
+    const current = computed(
+      () =>
+        [this.lead(), ...this.window().messages()].find((it) => it?.id === message.id) ?? message,
+    );
+    const images = computed(() =>
+      current().deletedAt === null
+        ? current().attachments.filter((it) => thumbnailedTypes.includes(it.contentType))
+        : [],
+    );
+    this.dialog.open<void, AttachmentLightboxData>(AttachmentLightbox, {
+      data: {
+        images,
+        start: image,
+        authorName,
+        sentAt: message.createdAt,
+        download: (attachment) =>
+          void this.openAttachment(current(), { attachment, download: true }),
+        failed: () => this.refreshAttachments(current()),
+      },
+      width: '100vw',
+      height: '100dvh',
+      maxWidth: '100vw',
+      maxHeight: '100dvh',
+    });
   }
 
   /**

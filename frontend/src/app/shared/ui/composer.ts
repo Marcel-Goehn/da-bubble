@@ -7,6 +7,7 @@ import {
   input,
   model,
   output,
+  signal,
   viewChild,
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -45,12 +46,38 @@ export interface ComposedMessage {
 
 let nextKey = 0;
 
+/** Two digits, as in a time: 9 is `09`. */
+function twoDigits(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+/**
+ * [image], pasted at [now]: a screenshot or other copied picture, which the clipboard holds as a PNG named
+ * something like `image.png`, renamed `Bild-<yyyy-mm-dd-hhmmss>.png` in local time. The name is the file's,
+ * kept as it is for everyone, not copy in the User's language. A copied image file of another type keeps
+ * its own name.
+ */
+function pastedImage(image: File, now: Date): File {
+  if (image.type !== 'image/png') {
+    return image;
+  }
+  const date = [now.getFullYear(), twoDigits(now.getMonth() + 1), twoDigits(now.getDate())];
+  const time = [now.getHours(), now.getMinutes(), now.getSeconds()].map(twoDigits).join('');
+  return new File([image], `Bild-${date.join('-')}-${time}.png`, { type: image.type });
+}
+
+/** Whether [event] drags files, rather than e.g. text, which is the text box's. */
+function dragsFiles(event: DragEvent): boolean {
+  return event.dataTransfer?.types.includes('Files') ?? false;
+}
+
 /**
  * The text box Messages are written in (component sheets 61. and 63.). Enter sends, Shift+Enter starts a
  * new line. `@` and `#` mention a User or Channel from a picker, and the emoji button inserts an emoji from
  * the picker where the caret is. The text is a model, with Mentions as tokens, so the owner can keep it as a
  * draft; it's only cleared by the owner. 📎 attaches up to 5 files of up to 25 MB, which upload at once and
- * show inside the composer with their progress, a ✕ to remove them, and why one was refused. The attached
+ * show inside the composer with their progress, a ✕ to remove them, and why one was refused. Files dropped
+ * on it (dashed while they're dragged over) and images pasted into it are attached the same way. The attached
  * files are a model too, which the owner clears once they're sent.
  */
 @Component({
@@ -58,8 +85,18 @@ let nextKey = 0;
   imports: [EmojiPickerButton, Icon, MentionField, TranslocoPipe],
   template: `
     <form
-      class="flex flex-col gap-20 rounded-20 border border-border bg-surface p-20 hover:border-border-hover has-[textarea:focus-visible]:border-border-focus"
+      class="flex flex-col gap-20 rounded-20 border bg-surface p-20"
+      [class]="
+        dragging()
+          ? 'border-dashed border-border-focus bg-hover'
+          : 'border-border hover:border-border-hover has-[textarea:focus-visible]:border-border-focus'
+      "
       (submit)="submit($event)"
+      (dragenter)="dragEnter($event)"
+      (dragover)="dragOver($event)"
+      (dragleave)="dragLeave($event)"
+      (drop)="drop($event)"
+      (paste)="paste($event)"
     >
       <app-mention-field
         [label]="label()"
@@ -196,6 +233,11 @@ export class Composer {
     return !this.busy() && ready && (this.text().trim() !== '' || attachments.length > 0);
   });
 
+  /** Whether files are being dragged over it, to be dropped and attached. */
+  protected readonly dragging = signal(false);
+  /** How many of its elements, itself included, the dragged files are in. */
+  private dragDepth = 0;
+
   private readonly uploads = inject(AttachmentUploads);
 
   private readonly field = viewChild.required(MentionField);
@@ -214,14 +256,82 @@ export class Composer {
     });
   }
 
-  /**
-   * Attaches the files picked in [picker] and starts uploading them. A file over 25 MB, or one more than the
-   * 5 a Message may have, is shown with its error instead.
-   */
+  /** Attaches the files picked in [picker]. */
   protected pick(picker: HTMLInputElement): void {
     const files = Array.from(picker.files ?? []);
     // So picking the same file again still counts as a change.
     picker.value = '';
+    this.attach(files);
+  }
+
+  /** Counts one up for each of its elements the files are dragged into; see [dragLeave]. */
+  protected dragEnter(event: DragEvent): void {
+    if (dragsFiles(event)) {
+      this.dragDepth++;
+      this.dragOver(event);
+    }
+  }
+
+  /** Lets files dragged over it be dropped, and shows that they can; anything else is the text box's. */
+  protected dragOver(event: DragEvent): void {
+    if (!dragsFiles(event)) {
+      return;
+    }
+    // Even while busy: a file dropped where the app doesn't take it opens in place of the app.
+    event.preventDefault();
+    this.dragging.set(!this.busy());
+    event.dataTransfer!.dropEffect = this.busy() ? 'none' : 'copy';
+  }
+
+  /**
+   * Counts one down when the files leave one of its elements. A child is entered before its parent is
+   * left, so only leaving the composer itself counts down to 0; `relatedTarget` would tell too, but some
+   * browsers leave it `null` here.
+   */
+  protected dragLeave(event: DragEvent): void {
+    if (dragsFiles(event)) {
+      this.dragDepth = Math.max(0, this.dragDepth - 1);
+      this.dragging.set(this.dragDepth > 0);
+    }
+  }
+
+  /** Attaches the files dropped on it, unless a send is in flight. */
+  protected drop(event: DragEvent): void {
+    this.dragDepth = 0;
+    this.dragging.set(false);
+    if (!dragsFiles(event)) {
+      return;
+    }
+    // Otherwise the browser opens the file in place of the app.
+    event.preventDefault();
+    if (!this.busy()) {
+      this.attach(Array.from(event.dataTransfer!.files));
+    }
+  }
+
+  /**
+   * Attaches the images pasted into it. Text pastes as it would anyway, even with an image beside it, as
+   * Word and Excel put one there; so do files that aren't images.
+   */
+  protected paste(event: ClipboardEvent): void {
+    const clipboard = event.clipboardData;
+    const images = Array.from(clipboard?.files ?? []).filter((file) =>
+      file.type.startsWith('image/'),
+    );
+    const text = clipboard?.types.some((type) => type === 'text/plain' || type === 'text/html');
+    if (this.busy() || text || images.length === 0) {
+      return;
+    }
+    event.preventDefault();
+    const now = new Date();
+    this.attach(images.map((image) => pastedImage(image, now)));
+  }
+
+  /**
+   * Attaches [files] and starts uploading them. A file over 25 MB, or one more than the 5 a Message may have,
+   * is shown with its error instead.
+   */
+  private attach(files: readonly File[]): void {
     let accepted = this.attachments().filter((it) => it.error === null).length;
     const picked = files.map((file) => {
       let error: UploadError | null = null;

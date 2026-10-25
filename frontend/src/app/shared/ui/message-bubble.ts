@@ -132,6 +132,7 @@ const itemClasses =
           [class.justify-end]="own()"
           [attachments]="attachments()"
           (opened)="attachmentOpened.emit($event)"
+          (imageOpened)="imageOpened.emit($event)"
           (failed)="attachmentFailed.emit()"
         />
       }
@@ -286,6 +287,8 @@ export class MessageBubble {
   readonly editCancelled = output();
   /** An Attachment is to be opened in a new tab or downloaded. */
   readonly attachmentOpened = output<AttachmentOpening>();
+  /** An image of its Attachments is to be shown in the lightbox. */
+  readonly imageOpened = output<AttachmentDto>();
   /** An image of its Attachments didn't load, e.g. because its URL has expired. */
   readonly attachmentFailed = output();
   /** The User's Reaction with this emoji is to be added, or removed if they've reacted with it. */

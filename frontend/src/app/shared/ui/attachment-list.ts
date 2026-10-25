@@ -44,7 +44,7 @@ function fileIcon(contentType: string): IconName {
           type="button"
           class="overflow-hidden rounded-20 border border-border hover:border-border-hover"
           [attr.aria-label]="'attachments.openImage' | transloco: { name: attachment.name }"
-          (click)="opened.emit({ attachment, download: false })"
+          (click)="imageOpened.emit(attachment)"
         >
           <img
             class="h-90 w-110 object-cover lg:h-120 lg:w-160"
@@ -89,6 +89,8 @@ export class AttachmentList {
   readonly attachments = input.required<readonly AttachmentDto[]>();
   /** An Attachment is to be opened in a new tab or downloaded. */
   readonly opened = output<AttachmentOpening>();
+  /** An image is to be shown in the lightbox. */
+  readonly imageOpened = output<AttachmentDto>();
   /** An image didn't load, e.g. because its URL has expired. */
   readonly failed = output();
 

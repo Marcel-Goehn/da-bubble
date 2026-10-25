@@ -192,6 +192,111 @@ describe('Attaching files', () => {
     expect(sendButton().disabled).toBe(false);
   });
 
+  it('attaches files dropped onto the composer, highlighting it while they are dragged over', async () => {
+    const { http, fixture } = await openChannel();
+    const files = [file('Plan.pdf', 'application/pdf'), file('Notizen.txt', 'text/plain')];
+    const dataTransfer = { types: ['Files'], files, dropEffect: 'none' };
+
+    fireEvent.dragEnter(composer(), { dataTransfer });
+    fireEvent.dragOver(composer(), { dataTransfer });
+    await settle(fixture);
+    expect(composer().classList).toContain('border-dashed');
+    // Moving onto one of its elements enters that before leaving the composer, so it's still over it.
+    fireEvent.dragEnter(sendButton(), { dataTransfer });
+    fireEvent.dragLeave(composer(), { dataTransfer });
+    await settle(fixture);
+    expect(composer().classList).toContain('border-dashed');
+
+    const dropped = fireEvent.drop(sendButton(), { dataTransfer });
+    await settle(fixture);
+    expect(dropped).toBe(false);
+    expect(composer().classList).not.toContain('border-dashed');
+    expect(
+      http
+        .match('/api/attachments/uploads')
+        .map((request: TestRequest) => (request.request.body as RequestUploadRequest).name),
+    ).toEqual(['Plan.pdf', 'Notizen.txt']);
+    expect(within(composer()).getByText('Notizen.txt')).toBeTruthy();
+
+    // Dragging something that isn't files, such as text, is left to the text box.
+    const text = fireEvent.dragOver(composer(), {
+      dataTransfer: { types: ['text/plain'], files: [] },
+    });
+    await settle(fixture);
+    expect(text).toBe(true);
+    expect(composer().classList).not.toContain('border-dashed');
+    fireEvent.dragEnter(composer(), { dataTransfer });
+    fireEvent.dragLeave(composer(), { dataTransfer });
+    await settle(fixture);
+    expect(composer().classList).not.toContain('border-dashed');
+  });
+
+  it("doesn't attach files dropped while a send is in flight, nor let the browser open them", async () => {
+    const user = userEvent.setup();
+    const { http, fixture } = await openChannel();
+    await user.type(screen.getByRole('combobox', { name: 'Nachricht an #Allgemein' }), 'Hallo');
+    await user.click(sendButton());
+    const dataTransfer = { types: ['Files'], files: [file('Plan.pdf', 'application/pdf')] };
+
+    fireEvent.dragEnter(composer(), { dataTransfer });
+    await settle(fixture);
+    expect(composer().classList).not.toContain('border-dashed');
+    expect(fireEvent.drop(composer(), { dataTransfer })).toBe(false);
+    await settle(fixture);
+
+    http.expectNone('/api/attachments/uploads');
+    http.expectOne('/api/conversations/1/messages').flush(message(1, 'Hallo'));
+  });
+
+  it('attaches images pasted into the text box, named after when they were pasted', async () => {
+    const { http, fixture } = await openChannel();
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 9, 25, 9, 5, 7));
+    const textBox = screen.getByRole('combobox', { name: 'Nachricht an #Allgemein' });
+
+    const pasted = fireEvent.paste(textBox, {
+      // Real bytes, as the renamed copy has the bytes' size, not a faked one.
+      clipboardData: {
+        types: ['Files'],
+        files: [new File(['png'], 'image.png', { type: 'image/png' })],
+      },
+    });
+    vi.useRealTimers();
+    await settle(fixture);
+
+    expect(pasted).toBe(false);
+    expect(http.expectOne('/api/attachments/uploads').request.body).toEqual({
+      name: 'Bild-2026-10-25-090507.png',
+      size: 3,
+      contentType: 'image/png',
+    });
+    expect(within(composer()).getByText('Bild-2026-10-25-090507.png')).toBeTruthy();
+
+    // Text, even with an image beside it as Word puts there, and files that aren't images, paste as they would.
+    const text = fireEvent.paste(textBox, {
+      clipboardData: {
+        types: ['text/plain', 'text/html', 'Files'],
+        files: [new File(['png'], 'image.png', { type: 'image/png' })],
+      },
+    });
+    const pdf = fireEvent.paste(textBox, {
+      clipboardData: { types: ['Files'], files: [file('Plan.pdf', 'application/pdf')] },
+    });
+    await settle(fixture);
+    expect(text).toBe(true);
+    expect(pdf).toBe(true);
+    http.expectNone('/api/attachments/uploads');
+
+    // A copied image file that isn't a PNG keeps its own name.
+    fireEvent.paste(textBox, {
+      clipboardData: { types: ['Files'], files: [file('Foto.jpg', 'image/jpeg')] },
+    });
+    await settle(fixture);
+    expect(
+      (http.expectOne('/api/attachments/uploads').request.body as RequestUploadRequest).name,
+    ).toBe('Foto.jpg');
+  });
+
   it("shows the server's refusal of a file in red", async () => {
     const user = userEvent.setup();
     const { http, fixture } = await openChannel();
@@ -325,5 +430,148 @@ describe('Attachments in Messages', () => {
     fireEvent.error(screen.getByRole('img', { name: 'Foto.jpg' }));
     await settle(fixture);
     expect(http.match('/api/conversations/1/messages/1')).toHaveLength(0);
+  });
+});
+
+describe('The lightbox', () => {
+  const photo = {
+    ...attachment(1, 'Foto.jpg', 'image/jpeg'),
+    thumbnailUrl: 'http://storage/thumb?sig=1',
+  };
+  const logo = attachment(2, 'Logo.png', 'image/png');
+  const pdf = attachment(3, 'Plan.pdf', 'application/pdf');
+
+  function openChannelWithImages() {
+    return openChannel([
+      { ...message(1, 'Schau', { authorId: alan.id }), attachments: [photo, pdf, logo] },
+    ]);
+  }
+
+  function lightbox(): HTMLElement {
+    return screen.getByRole('dialog');
+  }
+
+  it('opens an image fitted on a dark overlay, with its name, sender, time and download', async () => {
+    const user = userEvent.setup();
+    await openChannelWithImages();
+
+    await user.click(screen.getByRole('button', { name: 'Bild Foto.jpg öffnen' }));
+
+    expect(screen.getByRole('dialog', { name: 'Foto.jpg' })).toBe(lightbox());
+    expect(within(lightbox()).getByRole('img', { name: 'Foto.jpg' }).getAttribute('src')).toBe(
+      photo.url,
+    );
+    expect(shownText(lightbox())).toContain('Alan Turing');
+    expect(shownText(lightbox())).toContain('15.01.2026, 14:25');
+    expect(within(lightbox()).getByRole('button', { name: 'Foto.jpg herunterladen' })).toBeTruthy();
+    expect(within(lightbox()).getByText('1 / 2')).toBeTruthy();
+    await expectNoA11yViolations();
+  });
+
+  it("steps through the Message's images with ← →, the arrow buttons and a swipe", async () => {
+    const user = userEvent.setup();
+    await openChannelWithImages();
+    await user.click(screen.getByRole('button', { name: 'Bild Foto.jpg öffnen' }));
+
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('dialog', { name: 'Logo.png' })).toBeTruthy();
+    expect(within(lightbox()).getByText('2 / 2')).toBeTruthy();
+    // The last image is as far as it goes.
+    await user.keyboard('{ArrowRight}');
+    expect(screen.getByRole('dialog', { name: 'Logo.png' })).toBeTruthy();
+    await user.keyboard('{ArrowLeft}');
+    expect(screen.getByRole('dialog', { name: 'Foto.jpg' })).toBeTruthy();
+
+    await user.click(within(lightbox()).getByRole('button', { name: 'Nächstes Bild' }));
+    expect(screen.getByRole('dialog', { name: 'Logo.png' })).toBeTruthy();
+    await user.click(within(lightbox()).getByRole('button', { name: 'Vorheriges Bild' }));
+    expect(screen.getByRole('dialog', { name: 'Foto.jpg' })).toBeTruthy();
+
+    // Swiping left brings in the next image, and doesn't count as a click outside it.
+    const stage = within(lightbox()).getByRole('img').parentElement!;
+    fireEvent.pointerDown(stage, { clientX: 300, clientY: 200 });
+    fireEvent.pointerUp(stage, { clientX: 120, clientY: 210 });
+    fireEvent.click(stage);
+    expect(screen.getByRole('dialog', { name: 'Logo.png' })).toBeTruthy();
+    fireEvent.pointerDown(stage, { clientX: 120, clientY: 200 });
+    fireEvent.pointerUp(stage, { clientX: 300, clientY: 200 });
+    expect(screen.getByRole('dialog', { name: 'Foto.jpg' })).toBeTruthy();
+  });
+
+  it('closes with ✕, Escape or a click outside the image, giving focus back to the thumbnail', async () => {
+    const user = userEvent.setup();
+    const { fixture } = await openChannelWithImages();
+    const thumbnail = screen.getByRole('button', { name: 'Bild Foto.jpg öffnen' });
+
+    await user.click(thumbnail);
+    await settle(fixture);
+    // jsdom lays nothing out, so the CDK's focus trap finds nothing to Tab to; the E2E journey checks it.
+    expect(lightbox().contains(document.activeElement)).toBe(true);
+    await user.click(within(lightbox()).getByRole('button', { name: 'Schließen' }));
+    await settle(fixture);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(thumbnail);
+
+    await user.keyboard('{Enter}');
+    await settle(fixture);
+    // user-event leaves keyCode at 0, but the CDK reads keyCode (browsers set 27).
+    fireEvent.keyDown(lightbox(), { key: 'Escape', keyCode: 27 });
+    await settle(fixture);
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(thumbnail);
+
+    await user.click(thumbnail);
+    // A click on the image itself keeps it open.
+    await user.click(within(lightbox()).getByRole('img'));
+    expect(screen.queryByRole('dialog')).not.toBeNull();
+    await user.click(within(lightbox()).getByRole('img').parentElement!);
+    await settle(fixture);
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    // The top bar's empty space is outside the image too.
+    await user.click(thumbnail);
+    await user.click(lightbox().querySelector('header')!);
+    await settle(fixture);
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('downloads the shown image with a fresh URL', async () => {
+    const user = userEvent.setup();
+    const click = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+    const { http, fixture } = await openChannelWithImages();
+    await user.click(screen.getByRole('button', { name: 'Bild Foto.jpg öffnen' }));
+    await user.keyboard('{ArrowRight}');
+
+    await user.click(within(lightbox()).getByRole('button', { name: 'Logo.png herunterladen' }));
+    http
+      .expectOne('/api/conversations/1/messages/1/attachments/2/url?download=true')
+      .flush({ url: 'http://storage/download?sig=2' });
+    await settle(fixture);
+
+    expect((click.mock.contexts.at(-1) as HTMLAnchorElement).href).toBe(
+      'http://storage/download?sig=2',
+    );
+  });
+
+  it('shows fresh URLs once an image fails to load, and closes once the Message is deleted', async () => {
+    const user = userEvent.setup();
+    const { http, fixture, realtime } = await openChannelWithImages();
+    await user.click(screen.getByRole('button', { name: 'Bild Foto.jpg öffnen' }));
+
+    fireEvent.error(within(lightbox()).getByRole('img'));
+    await settle(fixture);
+    http.expectOne('/api/conversations/1/messages/1').flush({
+      ...message(1, 'Schau', { authorId: alan.id }),
+      attachments: [{ ...photo, url: 'http://storage/fresh' }, pdf, logo],
+    });
+    await settle(fixture);
+    expect(within(lightbox()).getByRole('img').getAttribute('src')).toBe('http://storage/fresh');
+
+    realtime.emit({
+      type: 'message.updated',
+      message: { ...message(1, '', { authorId: alan.id }), deletedAt: message(1, '').createdAt },
+    });
+    await settle(fixture);
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 });

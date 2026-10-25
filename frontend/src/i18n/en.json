@@ -241,6 +241,12 @@
       "tooLarge": "Larger than 25 MB",
       "tooMany": "At most 5 files per message",
       "failed": "Upload failed"
+    },
+    "lightbox": {
+      "previous": "Previous image",
+      "next": "Next image",
+      "position": "{index} / {count}",
+      "byline": "{name} · {date}"
     }
   }
 }
