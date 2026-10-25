@@ -94,6 +94,8 @@
   /* Typography: Nunito only. Sizes as used on the screens, px ÷ 16. */
   --font-sans: 'Nunito Variable', 'Nunito', ui-sans-serif, system-ui, sans-serif;
 
+  --text-12: 0.75rem; /* unread count bubbles */
+  --text-12--line-height: 1;
   --text-14: 0.875rem; /* timestamps, "Letzte Antwort", field errors */
   --text-14--line-height: 1.364;
   --text-16: 1rem; /* reaction counts, privacy checkbox, "hat reagiert" */

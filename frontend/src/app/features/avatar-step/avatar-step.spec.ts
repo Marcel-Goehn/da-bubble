@@ -7,6 +7,7 @@ import {
   ada as adaWithAvatar,
   defaultChannel,
   directMessage,
+  noUnread,
   renderApp,
 } from '../../../testing/app';
 import { UserDto } from '../../core/data/user.store';
@@ -80,6 +81,7 @@ describe('Avatar step', () => {
     ).toBeTruthy();
     expect(TestBed.inject(Router).url).toBe('/channel/1');
     http.expectOne('/api/users').flush([{ ...ada, avatar: 'AVATAR_3' }]);
+    http.expectOne('/api/conversations/unread').flush(noUnread);
     http.expectOne('/api/conversations/1/messages').flush({ messages: [], nextCursor: null });
     http.verify();
   });

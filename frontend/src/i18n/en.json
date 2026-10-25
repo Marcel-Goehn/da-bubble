@@ -188,12 +188,14 @@
     "directMessages": "Direct messages",
     "selfDm": "{name} (you)",
     "createChannel": "Create a channel",
-    "addChannel": "Add channel"
+    "addChannel": "Add channel",
+    "unread": "{count, plural, =1 {1 unread message} other {# unread messages}}"
   },
   "thread": {
     "title": "Thread",
     "close": "Close thread",
     "replyCount": "{count, plural, =1 {1 reply} other {# replies}}",
+    "unreadReplies": "{count} new",
     "lastReply": "Last reply {time}",
     "reply": "Reply in thread",
     "messages": "Messages in thread"

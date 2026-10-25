@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { expectNoA11yViolations } from '../../../testing/a11y';
 import { ada, alan, defaultChannel, message, renderApp, reply, settle } from '../../../testing/app';
 import { MessageDto } from '../../core/data/message.store';
+import { UnreadDto } from '../../core/data/read.store';
 import { shownText } from '../../../testing/shown-text';
 
 const users = [ada, alan];
@@ -18,8 +19,8 @@ function question(replyCount = 2): MessageDto {
 }
 
 /** Opens the Default Channel at [url] with [messages] (newest first) as its newest page. */
-async function openChannel(messages: MessageDto[], url = '/channel/1') {
-  const app = await renderApp({ url, conversations: [defaultChannel], users });
+async function openChannel(messages: MessageDto[], url = '/channel/1', unread?: UnreadDto) {
+  const app = await renderApp({ url, conversations: [defaultChannel], users, unread });
   app.http.expectOne('/api/conversations/1/messages').flush({ messages, nextCursor: null });
   await settle(app.fixture);
   return app;
@@ -44,6 +45,26 @@ describe('Threads', () => {
 
     const link = within(conversation()).getByRole('link', { name: /2 Antworten/ });
     expect(link.textContent.replace(/\s+/g, ' ').trim()).toBe('2 Antworten Letzte Antwort 14:56');
+    await expectNoA11yViolations();
+  });
+
+  it('marks unread Replies with "N neu" next to "N Antworten", live too', async () => {
+    const { realtime, fixture } = await openChannel([question()], '/channel/1', {
+      conversations: [],
+      threads: [{ conversationId: 1, parentMessageId: 1, count: 1 }],
+    });
+
+    realtime.emit({
+      type: 'message.created',
+      message: reply(4, 1, 'Noch eine', { authorId: alan.id }),
+      thread: { parentMessageId: 1, replyCount: 3, lastReplyAt },
+    });
+    await settle(fixture);
+
+    const link = within(conversation()).getByRole('link', { name: /3 Antworten/ });
+    expect(link.textContent.replace(/\s+/g, ' ').trim()).toBe(
+      '3 Antworten 2 neu Letzte Antwort 14:56',
+    );
     await expectNoA11yViolations();
   });
 

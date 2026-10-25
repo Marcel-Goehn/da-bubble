@@ -1,4 +1,5 @@
 import { screen, within } from '@testing-library/angular';
+import userEvent from '@testing-library/user-event';
 import { expectNoA11yViolations } from '../../../testing/a11y';
 import {
   ada,
@@ -7,6 +8,7 @@ import {
   defaultChannel,
   directMessage,
   grace,
+  message,
   renderApp,
   settle,
 } from '../../../testing/app';
@@ -87,5 +89,58 @@ describe('Sidebar', () => {
       `/dm/${ada.id}`,
     );
     await expectNoA11yViolations();
+  });
+
+  describe('unread counts', () => {
+    const unread = {
+      conversations: [
+        { conversationId: 4, count: 3 },
+        { conversationId: 5, count: 120 },
+        { conversationId: 6, count: 1 },
+      ],
+      threads: [],
+    };
+    const withDm = [...conversations, directMessage(6, alan.id)];
+
+    it('shows a count bubble on each row with Unread Messages, 99+ above 99, and says so in its name', async () => {
+      await renderApp({ conversations: withDm, users: [ada, alan], unread });
+      const channels = within(screen.getByRole('list', { name: 'Channels' }));
+      const dms = within(screen.getByRole('list', { name: 'Direktnachrichten' }));
+
+      const team = channels.getByRole('link', { name: 'entwicklerteam, 3 ungelesene Nachrichten' });
+      expect(within(team).getByText('3')).toBeTruthy();
+      const office = channels.getByRole('link', { name: 'Büro, 120 ungelesene Nachrichten' });
+      expect(within(office).getByText('99+')).toBeTruthy();
+      expect(channels.getByRole('link', { name: 'Zeta' })).toBeTruthy();
+      expect(dms.getByRole('link', { name: /Alan Turing, 1 ungelesene Nachricht$/ })).toBeTruthy();
+      await expectNoA11yViolations();
+    });
+
+    it('counts up live when another User sends to a Conversation that is not open', async () => {
+      const { realtime, fixture } = await renderApp({ conversations });
+
+      realtime.emit({
+        type: 'message.created',
+        message: message(1, 'Hallo', { conversationId: 3, authorId: alan.id }),
+        thread: null,
+      });
+      await settle(fixture);
+
+      expect(screen.getByRole('link', { name: 'Zeta, 1 ungelesene Nachricht' })).toBeTruthy();
+    });
+
+    it('shows the total on a collapsed section', async () => {
+      const user = userEvent.setup();
+      await renderApp({ conversations: withDm, users: [ada, alan], unread, lang: 'en' });
+
+      await user.click(screen.getByRole('button', { name: 'Channels' }));
+      await user.click(screen.getByRole('button', { name: 'Direct messages' }));
+
+      const channels = screen.getByRole('button', { name: 'Channels, 123 unread messages' });
+      expect(within(channels).getByText('99+')).toBeTruthy();
+      const dms = screen.getByRole('button', { name: 'Direct messages, 1 unread message' });
+      expect(within(dms).getByText('1')).toBeTruthy();
+      await expectNoA11yViolations();
+    });
   });
 });

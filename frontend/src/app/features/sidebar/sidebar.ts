@@ -4,10 +4,12 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { avatarUrl } from '../../core/data/avatars';
 import { ConversationStore } from '../../core/data/conversation.store';
 import { PresenceStore } from '../../core/data/presence.store';
+import { ReadStore } from '../../core/data/read.store';
 import { UserStore } from '../../core/data/user.store';
 import { Avatar } from '../../shared/ui/avatar';
 import { ChannelNamePipe } from '../../shared/ui/channel-name.pipe';
 import { Icon } from '../../shared/ui/icon';
+import { UnreadBadge } from '../../shared/ui/unread-badge';
 import { ChannelDialogs } from '../channel/channel-dialogs';
 
 const rowClasses =
@@ -17,7 +19,15 @@ const activeRowClasses = 'bg-hover font-bold text-menu-active';
 /** The Workspace menu: the User's Channels and DMs, each section collapsible. */
 @Component({
   selector: 'app-sidebar',
-  imports: [Avatar, ChannelNamePipe, Icon, RouterLink, RouterLinkActive, TranslocoPipe],
+  imports: [
+    Avatar,
+    ChannelNamePipe,
+    Icon,
+    RouterLink,
+    RouterLinkActive,
+    TranslocoPipe,
+    UnreadBadge,
+  ],
   host: { class: 'flex flex-col gap-25' },
   template: `
     <div class="flex items-center gap-15 max-lg:contents">
@@ -45,7 +55,13 @@ const activeRowClasses = 'bg-hover font-bold text-menu-active';
           >
             <app-icon name="arrowDropDown" [class.-rotate-90]="!channelsOpen()" />
             <app-icon name="workspaces" />
-            {{ 'sidebar.channels' | transloco }}
+            <span>{{ 'sidebar.channels' | transloco }}</span>
+            @if (!channelsOpen() && channelsUnread() > 0) {
+              <span class="sr-only"
+                >, {{ 'sidebar.unread' | transloco: { count: channelsUnread() } }}</span
+              >
+              <app-unread-badge [count]="channelsUnread()" />
+            }
           </button>
         </h2>
         <button
@@ -71,8 +87,19 @@ const activeRowClasses = 'bg-hover font-bold text-menu-active';
               [routerLinkActive]="activeRowClasses"
               ariaCurrentWhenActive="page"
             >
-              <app-icon name="tag" />
-              <span class="truncate">{{ channel | channelName }}</span>
+              @let unread = reads.unreadIn(channel.id);
+              <span class="relative">
+                <app-icon name="tag" />
+                @if (unread > 0) {
+                  <app-unread-badge class="absolute -top-6 -right-8" [count]="unread" />
+                }
+              </span>
+              <span class="truncate" [class.font-bold]="unread > 0">{{
+                channel | channelName
+              }}</span>
+              @if (unread > 0) {
+                <span class="sr-only">, {{ 'sidebar.unread' | transloco: { count: unread } }}</span>
+              }
             </a>
           </li>
         }
@@ -101,7 +128,13 @@ const activeRowClasses = 'bg-hover font-bold text-menu-active';
         >
           <app-icon name="arrowDropDown" [class.-rotate-90]="!directMessagesOpen()" />
           <app-icon name="accountCircle" />
-          {{ 'sidebar.directMessages' | transloco }}
+          <span>{{ 'sidebar.directMessages' | transloco }}</span>
+          @if (!directMessagesOpen() && directMessagesUnread() > 0) {
+            <span class="sr-only"
+              >, {{ 'sidebar.unread' | transloco: { count: directMessagesUnread() } }}</span
+            >
+            <app-unread-badge [count]="directMessagesUnread()" />
+          }
         </button>
       </h2>
       <ul
@@ -118,19 +151,28 @@ const activeRowClasses = 'bg-hover font-bold text-menu-active';
               [routerLinkActive]="activeRowClasses"
               ariaCurrentWhenActive="page"
             >
-              <app-avatar
-                [src]="avatarUrl(row.partner.avatar)"
-                [name]="row.partner.name"
-                [presence]="presence.of(row.partner.id)"
-                decorative
-              />
-              <span class="truncate">
+              @let unread = reads.unreadIn(row.id);
+              <span class="relative shrink-0">
+                <app-avatar
+                  [src]="avatarUrl(row.partner.avatar)"
+                  [name]="row.partner.name"
+                  [presence]="presence.of(row.partner.id)"
+                  decorative
+                />
+                @if (unread > 0) {
+                  <app-unread-badge class="absolute top-0 right-0" [count]="unread" />
+                }
+              </span>
+              <span class="truncate" [class.font-bold]="unread > 0">
                 @if (row.isSelf) {
                   {{ 'sidebar.selfDm' | transloco: { name: row.partner.name } }}
                 } @else {
                   {{ row.partner.name }}
                 }
               </span>
+              @if (unread > 0) {
+                <span class="sr-only">, {{ 'sidebar.unread' | transloco: { count: unread } }}</span>
+              }
             </a>
           </li>
         }
@@ -143,6 +185,7 @@ export class Sidebar {
   private readonly users = inject(UserStore);
 
   protected readonly presence = inject(PresenceStore);
+  protected readonly reads = inject(ReadStore);
   protected readonly channelDialogs = inject(ChannelDialogs);
   protected readonly rowClasses = rowClasses;
   protected readonly activeRowClasses = activeRowClasses;
@@ -150,6 +193,9 @@ export class Sidebar {
   protected readonly channelsOpen = signal(true);
   protected readonly directMessagesOpen = signal(true);
   protected readonly channels = this.conversations.channels;
+  protected readonly channelsUnread = computed(() =>
+    this.channels().reduce((sum, channel) => sum + this.reads.unreadIn(channel.id), 0),
+  );
 
   // A DM whose partner isn't loaded yet is left out rather than shown without a name.
   protected readonly directMessages = computed(() => {
@@ -159,4 +205,7 @@ export class Sidebar {
       return partner ? [{ id: dm.id, partner, isSelf: partner.id === me }] : [];
     });
   });
+  protected readonly directMessagesUnread = computed(() =>
+    this.directMessages().reduce((sum, row) => sum + this.reads.unreadIn(row.id), 0),
+  );
 }

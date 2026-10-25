@@ -31,7 +31,8 @@ const itemClasses =
  * The User's own Messages offer a ⋮ popover (sheets 52. and 76.) to edit them in place or delete them.
  * A Deleted Message keeps its place, author and time, with a dashed ghost in place of the bubble.
  * A Message that opens a Thread offers "Antworten" on hover (sheet 52.) and, once it has Replies, the
- * "N Antworten" link with the time of the last one (sheet 50.), which a Deleted Message keeps.
+ * "N Antworten" link with the time of the last one (sheet 50.), which a Deleted Message keeps, and "N neu"
+ * for its Unread Replies.
  */
 @Component({
   selector: 'app-message-bubble',
@@ -136,7 +137,15 @@ const itemClasses =
             [class.flex-row-reverse]="own()"
             [routerLink]="threadLink"
           >
-            <span>{{ 'thread.replyCount' | transloco: { count: replyCount() } }}</span>
+            <span [class.font-bold]="unreadReplies() > 0">{{
+              'thread.replyCount' | transloco: { count: replyCount() }
+            }}</span>
+            @if (unreadReplies() > 0) {
+              &ngsp;<span class="flex items-center gap-6 text-14 font-bold text-danger"
+                ><span class="size-8 rounded-full bg-danger"></span
+                >{{ 'thread.unreadReplies' | transloco: { count: unreadReplies() } }}</span
+              >
+            }
             @if (lastReplyAt(); as lastReplyAt) {
               <!-- A space in the link's name between the two. -->
               &ngsp;<span class="text-14 text-text-muted">{{
@@ -237,6 +246,8 @@ export class MessageBubble {
   readonly editing = input(false, { transform: booleanAttribute });
   /** How many Replies its Thread has. */
   readonly replyCount = input(0);
+  /** How many Replies in its Thread are Unread, shown as "N neu". */
+  readonly unreadReplies = input(0);
   /** When the last Reply in its Thread was sent, as an ISO instant; `null` without one. */
   readonly lastReplyAt = input<string | null>(null);
   /** Where its Thread opens, as router link commands; `null` for one that has none here, such as a Reply. */

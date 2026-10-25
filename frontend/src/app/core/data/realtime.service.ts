@@ -8,6 +8,7 @@ import { ErrorService } from '../errors/error.service';
 import { ConversationStore } from './conversation.store';
 import { MessageStore } from './message.store';
 import { PresenceStore } from './presence.store';
+import { ReadStore } from './read.store';
 
 export type { RealtimeEvent };
 
@@ -33,6 +34,7 @@ export class RealtimeService {
   private readonly conversations = inject(ConversationStore);
   private readonly messages = inject(MessageStore);
   private readonly presence = inject(PresenceStore);
+  private readonly reads = inject(ReadStore);
   private readonly errors = inject(ErrorService);
   private readonly transloco = inject(TranslocoService);
   private started = false;
@@ -78,12 +80,13 @@ export class RealtimeService {
   }
 
   /**
-   * Refetches what may have changed while disconnected (there is no replay): the sidebar, Presence and the
-   * open Conversation's newest page, merged by id. A failure waits for the next reconnect.
+   * Refetches what may have changed while disconnected (there is no replay): the sidebar and its unread
+   * counts, Presence and the open Conversation's newest page, merged by id. A failure waits for the next reconnect.
    */
   private async catchUp(): Promise<void> {
     await Promise.all([
       this.conversations.refresh(),
+      this.reads.refresh(),
       this.presence.refresh(),
       this.messages.refreshNewest(),
     ]).catch(() => this.errors.show(this.transloco.translate('errors.generic')));
@@ -93,6 +96,7 @@ export class RealtimeService {
     switch (event.type) {
       case 'message.created':
         this.messages.upsert(event.message, event.thread);
+        this.reads.noteCreated(event.message);
         break;
       case 'message.updated':
         this.messages.replace(event.message);
@@ -102,6 +106,9 @@ export class RealtimeService {
         break;
       case 'conversation.removed':
         this.conversations.remove(event.conversationId);
+        break;
+      case 'read.updated':
+        this.reads.noteRead(event);
         break;
       case 'presence.changed':
         this.presence.set(event.userId, event.online);

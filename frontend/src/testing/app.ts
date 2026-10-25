@@ -6,6 +6,7 @@ import { routes } from '../app/app.routes';
 import { provideApi } from '../app/core/api/api.providers';
 import { ConversationDto, MemberDto } from '../app/core/data/conversation.store';
 import { MessageDto } from '../app/core/data/message.store';
+import { UnreadDto } from '../app/core/data/read.store';
 import { RealtimeService } from '../app/core/data/realtime.service';
 import { UserDto } from '../app/core/data/user.store';
 import { Language } from '../app/core/i18n/i18n.providers';
@@ -141,6 +142,8 @@ export function reply(
   return { ...message(id, text, options), parentMessageId: parentId };
 }
 
+export const noUnread: UnreadDto = { conversations: [], threads: [] };
+
 export interface RenderAppOptions {
   url?: string;
   me?: UserDto;
@@ -148,6 +151,8 @@ export interface RenderAppOptions {
   conversations?: ConversationDto[] | null;
   /** Every User of the Workspace; defaults to [me] alone. */
   users?: UserDto[];
+  /** What the User hasn't read, answered once the shell asks for it; defaults to nothing. */
+  unread?: UnreadDto;
   keycloak?: FakeKeycloak;
   lang?: Language;
 }
@@ -161,6 +166,7 @@ export async function startApp({
   me = ada,
   conversations = [defaultChannel, directMessage(2, me.id)],
   users = [me],
+  unread = noUnread,
   keycloak = new FakeKeycloak(),
   lang = 'de',
 }: RenderAppOptions = {}) {
@@ -189,7 +195,7 @@ export async function startApp({
       request.flush(conversations);
     }
   }
-  return { ...result, http, keycloak, navigation, realtime, users };
+  return { ...result, http, keycloak, navigation, realtime, users, unread };
 }
 
 /** Lets the stores' awaited responses land, then rendering finish. */
@@ -204,6 +210,7 @@ export async function renderApp(options: RenderAppOptions = {}) {
   await app.navigation;
   // The shell asks for the Users once the route's guards have let it render.
   app.http.match('/api/users').forEach((request) => request.flush(app.users));
+  app.http.match('/api/conversations/unread').forEach((request) => request.flush(app.unread));
   await app.fixture.whenStable();
   return app;
 }

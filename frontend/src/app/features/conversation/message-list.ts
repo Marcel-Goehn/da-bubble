@@ -18,6 +18,7 @@ import { firstValueFrom } from 'rxjs';
 import { avatarUrl } from '../../core/data/avatars';
 import { MessageDto, MessageStore, MessageWindowView } from '../../core/data/message.store';
 import { PresenceStore } from '../../core/data/presence.store';
+import { ReadStore } from '../../core/data/read.store';
 import { UserStore } from '../../core/data/user.store';
 import { ErrorService } from '../../core/errors/error.service';
 import { MessageBubble } from '../../shared/ui/message-bubble';
@@ -100,6 +101,7 @@ interface Rendered {
         [saving]="savingId() === message.id"
         [replyCount]="message.replyCount"
         [lastReplyAt]="message.lastReplyAt"
+        [unreadReplies]="opensThreads() ? reads.unreadRepliesIn(message.id) : 0"
         [threadLink]="opensThreads() ? ['thread', message.id] : null"
         [reactions]="reactionViews(message)"
         [compactReactions]="compactReactions()"
@@ -129,6 +131,7 @@ export class MessageList {
   protected readonly store = inject(MessageStore);
   protected readonly users = inject(UserStore);
   protected readonly presence = inject(PresenceStore);
+  protected readonly reads = inject(ReadStore);
   protected readonly profiles = inject(ProfileCards);
   protected readonly avatarUrl = avatarUrl;
   /** The User's own Message being edited in place, if any; one at a time. */

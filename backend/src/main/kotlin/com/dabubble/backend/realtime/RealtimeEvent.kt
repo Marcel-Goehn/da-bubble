@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping
 import io.swagger.v3.oas.annotations.media.Schema
+import java.time.Instant
 import java.util.UUID
 
 /**
@@ -20,6 +21,7 @@ import java.util.UUID
     JsonSubTypes.Type(MessageUpdatedEvent::class, name = MessageUpdatedEvent.TYPE),
     JsonSubTypes.Type(ConversationUpsertedEvent::class, name = ConversationUpsertedEvent.TYPE),
     JsonSubTypes.Type(ConversationRemovedEvent::class, name = ConversationRemovedEvent.TYPE),
+    JsonSubTypes.Type(ReadUpdatedEvent::class, name = ReadUpdatedEvent.TYPE),
     JsonSubTypes.Type(PresenceChangedEvent::class, name = PresenceChangedEvent.TYPE),
 )
 @Schema(
@@ -28,6 +30,7 @@ import java.util.UUID
         MessageUpdatedEvent::class,
         ConversationUpsertedEvent::class,
         ConversationRemovedEvent::class,
+        ReadUpdatedEvent::class,
         PresenceChangedEvent::class,
     ],
     discriminatorProperty = "type",
@@ -36,6 +39,7 @@ import java.util.UUID
         DiscriminatorMapping(MessageUpdatedEvent.TYPE, schema = MessageUpdatedEvent::class),
         DiscriminatorMapping(ConversationUpsertedEvent.TYPE, schema = ConversationUpsertedEvent::class),
         DiscriminatorMapping(ConversationRemovedEvent.TYPE, schema = ConversationRemovedEvent::class),
+        DiscriminatorMapping(ReadUpdatedEvent.TYPE, schema = ReadUpdatedEvent::class),
         DiscriminatorMapping(PresenceChangedEvent.TYPE, schema = PresenceChangedEvent::class),
     ],
 )
@@ -92,6 +96,23 @@ data class ConversationRemovedEvent(
 
     companion object {
         const val TYPE = "conversation.removed"
+    }
+}
+
+/**
+ * The recipient read the Conversation [conversationId] up to [readAt], or with a [parentMessageId] the Thread
+ * of that Message; sent to that User's tabs only.
+ */
+data class ReadUpdatedEvent(
+    val conversationId: Long,
+    val parentMessageId: Long?,
+    val readAt: Instant,
+) : RealtimeEvent {
+    @get:Schema(allowableValues = [TYPE])
+    override val type get() = TYPE
+
+    companion object {
+        const val TYPE = "read.updated"
     }
 }
 
