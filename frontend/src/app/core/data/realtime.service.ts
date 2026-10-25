@@ -100,6 +100,9 @@ export class RealtimeService {
       case 'conversation.upserted':
         this.conversations.upsert(event.conversation);
         break;
+      case 'conversation.removed':
+        this.conversations.remove(event.conversationId);
+        break;
       case 'presence.changed':
         this.presence.set(event.userId, event.online);
         break;

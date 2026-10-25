@@ -2,6 +2,7 @@ package com.dabubble.backend.conversation
 
 import com.dabubble.backend.problem.ProblemCode
 import com.dabubble.backend.problem.ProblemException
+import com.dabubble.backend.realtime.ConversationRemovedEvent
 import com.dabubble.backend.realtime.ConversationUpsertedEvent
 import com.dabubble.backend.realtime.RealtimePublisher
 import com.dabubble.backend.time.now
@@ -11,6 +12,7 @@ import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
+import java.time.Instant
 import java.util.UUID
 
 /** Who joins a new Channel besides its Creator. */
@@ -53,7 +55,98 @@ class ChannelService(
                 is NewMembers.Picked -> members.userIds.also { requireUsers(it) }
             }
         memberIds.forEach { channel.addMember(it, now) }
-        val created =
+        return saveAndPublish(channel)
+    }
+
+    /**
+     * Renames the Channel [channelId] and changes its description, as the Admin [actorId]; a `null` leaves
+     * either as it is. A name another Channel has is taken, as for a new one.
+     */
+    @Transactional
+    fun edit(
+        channelId: Long,
+        actorId: UUID,
+        name: String?,
+        description: String?,
+    ): Conversation {
+        val channel = conversations.requireVisibleTo(channelId, actorId)
+        channel.edit(actorId, name, description)
+        return saveAndPublish(channel)
+    }
+
+    /** Adds the Users [userIds] to the Channel [channelId], as the Admin [actorId]. An unknown User is not found. */
+    @Transactional
+    fun addMembers(
+        channelId: Long,
+        actorId: UUID,
+        userIds: Set<UUID>,
+    ): Conversation {
+        val channel = conversations.requireVisibleTo(channelId, actorId)
+        requireUsers(userIds)
+        channel.addMembers(actorId, userIds, clock.now())
+        return saveAndPublish(channel)
+    }
+
+    /**
+     * Removes the Member [userId] from the Channel [channelId], as the Admin [actorId]. They lose it at once; the
+     * others see them gone. Returns their Membership as it was, for an undo.
+     */
+    @Transactional
+    fun removeMember(
+        channelId: Long,
+        actorId: UUID,
+        userId: UUID,
+    ): Membership {
+        val channel = conversations.requireVisibleTo(channelId, actorId)
+        val removed = channel.removeMember(actorId, userId)
+        saveAndPublish(channel)
+        realtime.toUsers(setOf(userId), ConversationRemovedEvent(channelId))
+        return removed
+    }
+
+    /** The Member [userId] leaves the Channel [channelId]; it's gone for them, and the others see them gone. */
+    @Transactional
+    fun leave(
+        channelId: Long,
+        userId: UUID,
+    ) {
+        val channel = conversations.requireVisibleTo(channelId, userId)
+        channel.leave(userId)
+        saveAndPublish(channel)
+        realtime.toUsers(setOf(userId), ConversationRemovedEvent(channelId))
+    }
+
+    /** Undoes the removal of [userId] from the Channel [channelId], as the Admin [actorId]. */
+    @Transactional
+    fun restoreMember(
+        channelId: Long,
+        actorId: UUID,
+        userId: UUID,
+        isAdmin: Boolean,
+        joinedAt: Instant,
+    ): Conversation {
+        val channel = conversations.requireVisibleTo(channelId, actorId)
+        requireUsers(setOf(userId))
+        channel.restoreMember(actorId, userId, isAdmin, joinedAt, clock.now())
+        return saveAndPublish(channel)
+    }
+
+    /** Grants or revokes Admin for the Member [userId] of the Channel [channelId], as the Admin [actorId]. */
+    @Transactional
+    fun setAdmin(
+        channelId: Long,
+        actorId: UUID,
+        userId: UUID,
+        isAdmin: Boolean,
+    ): Conversation {
+        val channel = conversations.requireVisibleTo(channelId, actorId)
+        channel.setAdmin(actorId, userId, isAdmin)
+        return saveAndPublish(channel)
+    }
+
+    /** Stores [channel], with a taken name refused, and pushes it to its Members once committed. */
+    private fun saveAndPublish(channel: Conversation): Conversation {
+        val saved =
             try {
                 conversations.saveAndFlush(channel)
             } catch (ex: DataIntegrityViolationException) {
@@ -62,9 +155,17 @@ class ChannelService(
                 }
                 throw ex
             }
-        // A Channel looks the same to each of its Members.
-        realtime.toUsers(created.memberIds(), ConversationUpsertedEvent(ConversationDto.from(created, creatorId)))
-        return created
+        publish(saved, saved.memberIds())
+        return saved
+    }
+
+    /** Pushes [channel] to the [recipients] once committed; a Channel looks the same to each of them. */
+    private fun publish(
+        channel: Conversation,
+        recipients: Set<UUID>,
+    ) {
+        val anyone = recipients.firstOrNull() ?: return
+        realtime.toUsers(recipients, ConversationUpsertedEvent(ConversationDto.from(channel, anyone)))
     }
 
     private fun requireUsers(ids: Set<UUID>) {

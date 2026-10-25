@@ -5,15 +5,20 @@
  * OpenAPI spec version: v1
  */
 
+export * from './addMembersRequest';
 export * from './conversationDto';
 export * from './conversationKind';
+export * from './conversationRemovedEvent';
+export * from './conversationRemovedEventType';
 export * from './conversationUpsertedEvent';
 export * from './conversationUpsertedEventType';
 export * from './createChannelRequest';
+export * from './editChannelRequest';
 export * from './editMessageRequest';
 export * from './fieldErrorDto';
 export * from './listMessagesParams';
 export * from './listRepliesParams';
+export * from './memberDto';
 export * from './messageCreatedEvent';
 export * from './messageCreatedEventType';
 export * from './messageDto';
@@ -27,7 +32,9 @@ export * from './problemCode';
 export * from './problemDto';
 export * from './reactionDto';
 export * from './realtimeEvent';
+export * from './restoreMemberRequest';
 export * from './sendMessageRequest';
+export * from './setAdminRequest';
 export * from './setAvatarRequest';
 export * from './threadPageDto';
 export * from './threadSummaryDto';

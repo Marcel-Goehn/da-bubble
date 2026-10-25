@@ -21,8 +21,8 @@ class ConversationApiTest : IntegrationTest() {
             .json(
                 """
                 [
-                  {"id":1,"kind":"CHANNEL","name":"Allgemein","description":null,"creatorId":null,"isDefault":true,"partnerId":null,"lastActivityAt":"2026-01-15T09:30:00.123456Z"},
-                  {"id":2,"kind":"DIRECT_MESSAGE","name":null,"description":null,"creatorId":null,"isDefault":false,"partnerId":"$sub","lastActivityAt":"2026-01-15T09:30:00.123456Z"}
+                  {"id":1,"kind":"CHANNEL","name":"Allgemein","description":null,"creatorId":null,"isDefault":true,"partnerId":null,"lastActivityAt":"2026-01-15T09:30:00.123456Z","members":[{"userId":"$sub","isAdmin":false,"joinedAt":"2026-01-15T09:30:00.123456Z"}]},
+                  {"id":2,"kind":"DIRECT_MESSAGE","name":null,"description":null,"creatorId":null,"isDefault":false,"partnerId":"$sub","lastActivityAt":"2026-01-15T09:30:00.123456Z","members":[]}
                 ]
                 """.trimIndent(),
                 JsonCompareMode.STRICT,
@@ -60,7 +60,7 @@ class ConversationApiTest : IntegrationTest() {
                 """
                 {
                   "id":$dm,"kind":"DIRECT_MESSAGE","name":null,"description":null,"creatorId":null,"isDefault":false,"partnerId":"$alan",
-                  "lastActivityAt":"2026-01-15T09:30:00.123456Z"
+                  "lastActivityAt":"2026-01-15T09:30:00.123456Z","members":[]
                 }
                 """.trimIndent(),
                 JsonCompareMode.STRICT,

@@ -1,6 +1,19 @@
 {
   "components" : {
     "schemas" : {
+      "AddMembersRequest" : {
+        "properties" : {
+          "userIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "userIds" ],
+        "type" : "object"
+      },
       "ConversationDto" : {
         "properties" : {
           "creatorId" : {
@@ -24,6 +37,12 @@
             "format" : "date-time",
             "type" : "string"
           },
+          "members" : {
+            "items" : {
+              "$ref" : "#/components/schemas/MemberDto"
+            },
+            "type" : "array"
+          },
           "name" : {
             "type" : [ "string", "null" ]
           },
@@ -32,12 +51,26 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "creatorId", "description", "id", "isDefault", "kind", "lastActivityAt", "name", "partnerId" ],
+        "required" : [ "creatorId", "description", "id", "isDefault", "kind", "lastActivityAt", "members", "name", "partnerId" ],
         "type" : "object"
       },
       "ConversationKind" : {
         "enum" : [ "CHANNEL", "DIRECT_MESSAGE" ],
         "type" : "string"
+      },
+      "ConversationRemovedEvent" : {
+        "properties" : {
+          "conversationId" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "type" : {
+            "enum" : [ "conversation.removed" ],
+            "type" : "string"
+          }
+        },
+        "required" : [ "conversationId", "type" ],
+        "type" : "object"
       },
       "ConversationUpsertedEvent" : {
         "properties" : {
@@ -74,6 +107,17 @@
         "required" : [ "addDefaultChannelMembers", "memberIds", "name" ],
         "type" : "object"
       },
+      "EditChannelRequest" : {
+        "properties" : {
+          "description" : {
+            "type" : [ "string", "null" ]
+          },
+          "name" : {
+            "type" : [ "string", "null" ]
+          }
+        },
+        "type" : "object"
+      },
       "EditMessageRequest" : {
         "properties" : {
           "text" : {
@@ -93,6 +137,23 @@
           }
         },
         "required" : [ "code", "field" ],
+        "type" : "object"
+      },
+      "MemberDto" : {
+        "properties" : {
+          "isAdmin" : {
+            "type" : "boolean"
+          },
+          "joinedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          },
+          "userId" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        },
+        "required" : [ "isAdmin", "joinedAt", "userId" ],
         "type" : "object"
       },
       "MessageCreatedEvent" : {
@@ -216,7 +277,7 @@
         "type" : "object"
       },
       "ProblemCode" : {
-        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "REPLY_HAS_NO_THREAD", "EMOJI_INVALID", "CHANNEL_NAME_EMPTY", "CHANNEL_NAME_TOO_LONG", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "CHANNEL_NAME_TAKEN", "INTERNAL_ERROR" ],
+        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "REPLY_HAS_NO_THREAD", "EMOJI_INVALID", "CHANNEL_NAME_EMPTY", "CHANNEL_NAME_TOO_LONG", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_CHANNEL_ADMIN", "CHANNEL_CREATOR_PROTECTED", "MANAGING_YOURSELF", "DEFAULT_CHANNEL_LOCKED", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "CHANNEL_NAME_TAKEN", "INTERNAL_ERROR" ],
         "type" : "string"
       },
       "ProblemDto" : {
@@ -269,6 +330,7 @@
       "RealtimeEvent" : {
         "discriminator" : {
           "mapping" : {
+            "conversation.removed" : "#/components/schemas/ConversationRemovedEvent",
             "conversation.upserted" : "#/components/schemas/ConversationUpsertedEvent",
             "message.created" : "#/components/schemas/MessageCreatedEvent",
             "message.updated" : "#/components/schemas/MessageUpdatedEvent",
@@ -283,8 +345,23 @@
         }, {
           "$ref" : "#/components/schemas/ConversationUpsertedEvent"
         }, {
+          "$ref" : "#/components/schemas/ConversationRemovedEvent"
+        }, {
           "$ref" : "#/components/schemas/PresenceChangedEvent"
         } ]
+      },
+      "RestoreMemberRequest" : {
+        "properties" : {
+          "isAdmin" : {
+            "type" : "boolean"
+          },
+          "joinedAt" : {
+            "format" : "date-time",
+            "type" : "string"
+          }
+        },
+        "required" : [ "isAdmin", "joinedAt" ],
+        "type" : "object"
       },
       "SendMessageRequest" : {
         "properties" : {
@@ -293,6 +370,15 @@
           }
         },
         "required" : [ "text" ],
+        "type" : "object"
+      },
+      "SetAdminRequest" : {
+        "properties" : {
+          "isAdmin" : {
+            "type" : "boolean"
+          }
+        },
+        "required" : [ "isAdmin" ],
         "type" : "object"
       },
       "SetAvatarRequest" : {
@@ -403,6 +489,223 @@
               }
             },
             "description" : "Created"
+          }
+        },
+        "tags" : [ "channels" ]
+      }
+    },
+    "/api/channels/{id}" : {
+      "patch" : {
+        "operationId" : "editChannel",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/EditChannelRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "channels" ]
+      }
+    },
+    "/api/channels/{id}/leave" : {
+      "post" : {
+        "operationId" : "leaveChannel",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "tags" : [ "channels" ]
+      }
+    },
+    "/api/channels/{id}/members" : {
+      "post" : {
+        "operationId" : "addMembers",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AddMembersRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "channels" ]
+      }
+    },
+    "/api/channels/{id}/members/{userId}" : {
+      "delete" : {
+        "operationId" : "removeMember",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MemberDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "channels" ]
+      },
+      "put" : {
+        "operationId" : "restoreMember",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RestoreMemberRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "channels" ]
+      }
+    },
+    "/api/channels/{id}/members/{userId}/admin" : {
+      "put" : {
+        "operationId" : "setAdmin",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "id",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "userId",
+          "required" : true,
+          "schema" : {
+            "format" : "uuid",
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/SetAdminRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description" : "OK"
           }
         },
         "tags" : [ "channels" ]

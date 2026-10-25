@@ -4,9 +4,10 @@
  * DA Bubble API
  * OpenAPI spec version: v1
  */
+import type { ConversationRemovedEvent } from './conversationRemovedEvent';
 import type { ConversationUpsertedEvent } from './conversationUpsertedEvent';
 import type { MessageCreatedEvent } from './messageCreatedEvent';
 import type { MessageUpdatedEvent } from './messageUpdatedEvent';
 import type { PresenceChangedEvent } from './presenceChangedEvent';
 
-export type RealtimeEvent = MessageCreatedEvent | MessageUpdatedEvent | ConversationUpsertedEvent | PresenceChangedEvent;
+export type RealtimeEvent = MessageCreatedEvent | MessageUpdatedEvent | ConversationUpsertedEvent | ConversationRemovedEvent | PresenceChangedEvent;

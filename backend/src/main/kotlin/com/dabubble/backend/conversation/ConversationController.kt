@@ -2,6 +2,7 @@ package com.dabubble.backend.conversation
 
 import com.dabubble.backend.user.User
 import io.swagger.v3.oas.annotations.tags.Tag
+import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestMapping
@@ -15,10 +16,12 @@ class ConversationController(
 ) {
     /** The sidebar: the Channels the User is a Member of and their DMs, the self-DM included. */
     @GetMapping
+    @Transactional(readOnly = true)
     fun listConversations(user: User): List<ConversationDto> =
         conversations.findVisibleTo(user.id).map { ConversationDto.from(it, user.id) }
 
     @GetMapping("/{id}")
+    @Transactional(readOnly = true)
     fun getConversation(
         user: User,
         @PathVariable id: Long,

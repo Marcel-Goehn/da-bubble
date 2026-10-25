@@ -2,6 +2,10 @@
   "app": {
     "name": "DABubble"
   },
+  "addMembers": {
+    "title": "Add people",
+    "add": "Add"
+  },
   "avatarStep": {
     "avatar": "Avatar {number}",
     "chooseFromList": "Choose from the list",
@@ -17,7 +21,35 @@
     "name": "Channel name",
     "description": "Description",
     "noDescription": "No description",
-    "createdBy": "Created by"
+    "createdBy": "Created by",
+    "edit": "Edit",
+    "save": "Save",
+    "editName": "Edit channel name",
+    "editDescription": "Edit description",
+    "saveName": "Save channel name",
+    "saveDescription": "Save description",
+    "descriptionPlaceholder": "Your text here",
+    "defaultChannel": "Default channel",
+    "defaultChannelInfo": "Everyone is a member. Nobody can change or leave it.",
+    "leave": "Leave channel"
+  },
+  "channelMembers": {
+    "title": "Members",
+    "open": "Members ({count})",
+    "admins": "Admins · {count}",
+    "members": "Members · {count}",
+    "everyone": "Everyone · {count}",
+    "you": "{name} (you)",
+    "creator": "Created the channel",
+    "manage": "Manage",
+    "done": "Done",
+    "admin": "Admin",
+    "adminSwitch": "{name} is an admin",
+    "remove": "Remove {name}",
+    "alwaysAdmin": "always stays admin",
+    "add": "Add members",
+    "onlyAdmins": "Only admins can add or remove members.",
+    "removed": "{name} removed"
   },
   "composer": {
     "placeholder": "Message #{channel}",
@@ -73,7 +105,10 @@
     "editFailed": "Your change couldn't be saved. Please try again.",
     "deleteFailed": "The message couldn't be deleted. Please try again.",
     "reactionFailed": "Your reaction couldn't be saved. Please try again.",
-    "createChannelFailed": "The channel couldn't be created. Please try again."
+    "createChannelFailed": "The channel couldn't be created. Please try again.",
+    "manageMembersFailed": "The change to the members couldn't be saved. Please try again.",
+    "editChannelFailed": "The channel couldn't be changed. Please try again.",
+    "leaveChannelFailed": "You couldn't leave the channel. Please try again."
   },
   "legal": {
     "back": "Back to DABubble",
@@ -162,5 +197,8 @@
     "emptyState": "Choose a channel or a direct message",
     "name": "Devspace",
     "openMenu": "Open workspace menu"
+  },
+  "undo": {
+    "action": "Undo"
   }
 }

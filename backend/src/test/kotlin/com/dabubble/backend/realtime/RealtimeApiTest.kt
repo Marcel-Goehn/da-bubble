@@ -88,6 +88,7 @@ class RealtimeApiTest : IntegrationTest() {
                         isDefault = false,
                         partnerId = partner,
                         lastActivityAt = sent.createdAt,
+                        members = emptyList(),
                     ),
                 ),
                 tab.awaitEvent(),
@@ -116,6 +117,61 @@ class RealtimeApiTest : IntegrationTest() {
 
         listOf(adaTab, alanTab).forEach { assertEquals(ConversationUpsertedEvent(created), it.awaitEvent()) }
         assertEquals(MessageCreatedEvent(public, null), graceTab.awaitEvent())
+    }
+
+    @Test
+    fun `added Members get the Channel live, and so do those already in it`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        val grace = UUID.randomUUID()
+        val adaToken = provision(ada)
+        val id = createChannel(adaToken, alan)
+        val tabs = listOf(stomp.connect(adaToken), stomp.connect(provision(alan)), stomp.connect(provision(grace)))
+
+        val changed =
+            post("/api/channels/$id/members", adaToken, """{"userIds":["$grace"]}""")
+                .expectStatus()
+                .isOk
+                .expectBody(ConversationDto::class.java)
+                .returnResult()
+                .responseBody!!
+
+        tabs.forEach { assertEquals(ConversationUpsertedEvent(changed), it.awaitEvent()) }
+    }
+
+    @Test
+    fun `a removed Member loses the Channel live, and the others see them gone`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        val grace = UUID.randomUUID()
+        val adaToken = provision(ada)
+        val id = createChannel(adaToken, alan, grace)
+        val adaTab = stomp.connect(adaToken)
+        val alanTab = stomp.connect(provision(alan))
+        val graceTab = stomp.connect(provision(grace))
+
+        delete("/api/channels/$id/members/$alan", adaToken).expectStatus().isOk
+
+        assertEquals(ConversationRemovedEvent(id), alanTab.awaitEvent())
+        val remaining = getChannel(adaToken, id)
+        assertEquals(listOf(ada, grace), remaining.members.map { it.userId })
+        listOf(adaTab, graceTab).forEach { assertEquals(ConversationUpsertedEvent(remaining), it.awaitEvent()) }
+    }
+
+    @Test
+    fun `a Member who leaves loses the Channel in every tab, and the others see them gone`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        val adaToken = provision(ada)
+        val alanToken = provision(alan)
+        val id = createChannel(adaToken, alan)
+        val adaTab = stomp.connect(adaToken)
+        val alanTabs = listOf(stomp.connect(alanToken), stomp.connect(alanToken))
+
+        post("/api/channels/$id/leave", alanToken, "{}").expectStatus().isNoContent
+
+        alanTabs.forEach { assertEquals(ConversationRemovedEvent(id), it.awaitEvent()) }
+        assertEquals(ConversationUpsertedEvent(getChannel(adaToken, id)), adaTab.awaitEvent())
     }
 
     @Test
@@ -314,6 +370,34 @@ class RealtimeApiTest : IntegrationTest() {
             .expectStatus()
             .isOk
             .expectBody(MessageDto::class.java)
+            .returnResult()
+            .responseBody!!
+
+    /** A Channel of the User with [token], joined by the [members]; its id. */
+    private fun createChannel(
+        token: String,
+        vararg members: UUID,
+    ): Long {
+        members.forEach { provision(it) }
+        val memberIds = members.joinToString { "\"$it\"" }
+        val request = """{"name":"Marketing","addDefaultChannelMembers":false,"memberIds":[$memberIds]}"""
+        return post("/api/channels", token, request)
+            .expectStatus()
+            .isCreated
+            .expectBody(ConversationDto::class.java)
+            .returnResult()
+            .responseBody!!
+            .id
+    }
+
+    private fun getChannel(
+        token: String,
+        id: Long,
+    ): ConversationDto =
+        get("/api/conversations/$id", token)
+            .expectStatus()
+            .isOk
+            .expectBody(ConversationDto::class.java)
             .returnResult()
             .responseBody!!
 

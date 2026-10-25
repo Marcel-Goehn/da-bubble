@@ -19,6 +19,7 @@ import java.util.UUID
     JsonSubTypes.Type(MessageCreatedEvent::class, name = MessageCreatedEvent.TYPE),
     JsonSubTypes.Type(MessageUpdatedEvent::class, name = MessageUpdatedEvent.TYPE),
     JsonSubTypes.Type(ConversationUpsertedEvent::class, name = ConversationUpsertedEvent.TYPE),
+    JsonSubTypes.Type(ConversationRemovedEvent::class, name = ConversationRemovedEvent.TYPE),
     JsonSubTypes.Type(PresenceChangedEvent::class, name = PresenceChangedEvent.TYPE),
 )
 @Schema(
@@ -26,6 +27,7 @@ import java.util.UUID
         MessageCreatedEvent::class,
         MessageUpdatedEvent::class,
         ConversationUpsertedEvent::class,
+        ConversationRemovedEvent::class,
         PresenceChangedEvent::class,
     ],
     discriminatorProperty = "type",
@@ -33,6 +35,7 @@ import java.util.UUID
         DiscriminatorMapping(MessageCreatedEvent.TYPE, schema = MessageCreatedEvent::class),
         DiscriminatorMapping(MessageUpdatedEvent.TYPE, schema = MessageUpdatedEvent::class),
         DiscriminatorMapping(ConversationUpsertedEvent.TYPE, schema = ConversationUpsertedEvent::class),
+        DiscriminatorMapping(ConversationRemovedEvent.TYPE, schema = ConversationRemovedEvent::class),
         DiscriminatorMapping(PresenceChangedEvent.TYPE, schema = PresenceChangedEvent::class),
     ],
 )
@@ -77,6 +80,18 @@ data class ConversationUpsertedEvent(
 
     companion object {
         const val TYPE = "conversation.upserted"
+    }
+}
+
+/** The recipient lost the Conversation [conversationId]: they left it or were removed. */
+data class ConversationRemovedEvent(
+    val conversationId: Long,
+) : RealtimeEvent {
+    @get:Schema(allowableValues = [TYPE])
+    override val type get() = TYPE
+
+    companion object {
+        const val TYPE = "conversation.removed"
     }
 }
 

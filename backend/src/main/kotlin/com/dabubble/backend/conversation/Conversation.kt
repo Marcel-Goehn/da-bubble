@@ -13,19 +13,25 @@ import jakarta.persistence.Id
 import jakarta.persistence.JoinColumn
 import jakarta.persistence.OneToMany
 import jakarta.persistence.Table
+import org.hibernate.annotations.BatchSize
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 enum class ConversationKind { CHANNEL, DIRECT_MESSAGE }
 
-/** The Conversation aggregate: a Channel with its Memberships, or a Direct Message between two Users (ADR 0002). */
+/**
+ * The Conversation aggregate: a Channel with its Memberships, or a Direct Message between two Users (ADR 0002).
+ * Every rule about a Channel and its Memberships lives here, hence its many functions.
+ */
+@Suppress("TooManyFunctions")
 @Entity
 @Table(name = "conversations")
 class Conversation private constructor(
     @Enumerated(EnumType.STRING)
     val kind: ConversationKind,
-    val name: String?,
-    val description: String?,
+    name: String?,
+    description: String?,
     /** The User who created a Channel; `null` for the Default Channel and DMs. */
     val creatorId: UUID?,
     val isDefault: Boolean,
@@ -33,6 +39,13 @@ class Conversation private constructor(
     val userHigh: UUID?,
     val createdAt: Instant,
 ) {
+    /** A Channel's name, internal for the Default Channel; none for a DM. */
+    var name: String? = name
+        protected set
+
+    var description: String? = description
+        protected set
+
     /**
      * When the latest Message was sent; orders the DM list. Written only by [ConversationRepository.bumpActivity],
      * so concurrent sends can't move it back.
@@ -45,6 +58,8 @@ class Conversation private constructor(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
 
+    // Batched, so listing the sidebar loads the Memberships of many Channels at once.
+    @BatchSize(size = 50)
     @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
     @JoinColumn(name = "conversation_id", nullable = false)
     private val memberships: MutableList<Membership> = mutableListOf()
@@ -59,10 +74,125 @@ class Conversation private constructor(
         }
     }
 
+    /**
+     * Renames the Channel and changes its description, as the Admin [actorId]; a `null` leaves either as it is.
+     * The new name is refused like a new Channel's, and a blank description is none.
+     */
+    fun edit(
+        actorId: UUID,
+        name: String?,
+        description: String?,
+    ) {
+        requireAdmin(actorId)
+        name?.let { this.name = channelName(it) }
+        description?.let { this.description = shownDescription(it) }
+    }
+
+    /** Adds the Users [userIds] as Members joined [at], as the Admin [actorId]; Members already are. */
+    fun addMembers(
+        actorId: UUID,
+        userIds: Collection<UUID>,
+        at: Instant,
+    ) {
+        requireAdmin(actorId)
+        userIds.forEach { addMember(it, at) }
+    }
+
+    /**
+     * Removes the Member [userId], as the Admin [actorId]: their Membership is gone, and with it their access.
+     * Returns it, so the removal can be undone with [restoreMember].
+     */
+    fun removeMember(
+        actorId: UUID,
+        userId: UUID,
+    ): Membership = requireManageable(actorId, userId).also { memberships -= it }
+
+    /**
+     * Undoes the removal of [userId], as the Admin [actorId]: they're a Member again with the Admin flag and
+     * the join time they had, which can't be later than [now]. Someone who is a Member already stays as they are.
+     */
+    fun restoreMember(
+        actorId: UUID,
+        userId: UUID,
+        isAdmin: Boolean,
+        joinedAt: Instant,
+        now: Instant,
+    ) {
+        requireAdmin(actorId)
+        requireOther(actorId, userId)
+        if (memberships.none { it.userId == userId }) {
+            memberships += Membership(userId, minOf(joinedAt.truncatedTo(ChronoUnit.MICROS), now), isAdmin)
+        }
+    }
+
+    /** The Member [userId] leaves; anyone may, except the Creator, and nobody leaves the Default Channel. */
+    fun leave(userId: UUID) {
+        val refused =
+            when {
+                isDefault -> ProblemCode.DEFAULT_CHANNEL_LOCKED
+                userId == creatorId -> ProblemCode.CHANNEL_CREATOR_PROTECTED
+                else -> null
+            }
+        if (refused != null) {
+            throw ProblemException(refused, "$userId may not leave $id")
+        }
+        memberships.removeIf { it.userId == userId }
+    }
+
+    /** Grants or revokes Admin for the Member [userId], as the Admin [actorId]. */
+    fun setAdmin(
+        actorId: UUID,
+        userId: UUID,
+        isAdmin: Boolean,
+    ) {
+        requireManageable(actorId, userId).isAdmin = isAdmin
+    }
+
+    /** Whether [userId] is an Admin here: the Creator always is, and the Default Channel has none. */
+    fun isAdmin(userId: UUID): Boolean = userId == creatorId || memberships.any { it.userId == userId && it.isAdmin }
+
+    private fun requireAdmin(userId: UUID) {
+        if (!isAdmin(userId)) {
+            throw ProblemException(ProblemCode.NOT_CHANNEL_ADMIN, "$userId is no Admin of $id")
+        }
+    }
+
+    /**
+     * The Membership of [userId], whom the Admin [actorId] may manage: anyone but the Creator and themselves.
+     */
+    private fun requireManageable(
+        actorId: UUID,
+        userId: UUID,
+    ): Membership {
+        requireAdmin(actorId)
+        requireOther(actorId, userId)
+        return memberships.find { it.userId == userId }
+            ?: throw ProblemException(ProblemCode.NOT_FOUND, "$userId is no Member of $id")
+    }
+
+    /** Refuses [actorId] managing themselves or the Creator. */
+    private fun requireOther(
+        actorId: UUID,
+        userId: UUID,
+    ) {
+        val refused =
+            when (userId) {
+                actorId -> ProblemCode.MANAGING_YOURSELF
+                creatorId -> ProblemCode.CHANNEL_CREATOR_PROTECTED
+                else -> null
+            }
+        if (refused != null) {
+            throw ProblemException(refused, "$actorId may not manage $userId in $id")
+        }
+    }
+
     /** Records activity at [at] in memory, for the DTO; [ConversationRepository.bumpActivity] stores it. */
     fun bumpActivity(at: Instant) {
         lastActivityAt = maxOf(lastActivityAt, at)
     }
+
+    /** A Channel's Memberships in the order they joined; none for a DM. */
+    fun members(): List<Membership> = memberships.sortedWith(compareBy({ it.joinedAt }, { it.id }))
 
     /** A Channel's current Members; none for a DM. */
     fun memberIds(): Set<UUID> = memberships.mapTo(mutableSetOf()) { it.userId }
@@ -98,7 +228,20 @@ class Conversation private constructor(
             description: String?,
             creatorId: UUID,
             createdAt: Instant,
-        ): Conversation {
+        ): Conversation =
+            Conversation(
+                kind = ConversationKind.CHANNEL,
+                name = channelName(name),
+                description = description?.let(::shownDescription),
+                creatorId = creatorId,
+                isDefault = false,
+                userLow = null,
+                userHigh = null,
+                createdAt = createdAt,
+            ).apply { addMember(creatorId, createdAt) }
+
+        /** [name] trimmed, unless it's blank, too long or reserved. Whether it's free is up to the database. */
+        private fun channelName(name: String): String {
             val trimmed = name.trim()
             val length = trimmed.codePointCount(0, trimmed.length)
             val refused =
@@ -111,18 +254,10 @@ class Conversation private constructor(
             if (refused != null) {
                 throw ProblemException(refused, "Channel name \"$trimmed\" refused")
             }
-            val shownDescription = description?.trim()?.ifEmpty { null }
-            return Conversation(
-                kind = ConversationKind.CHANNEL,
-                name = trimmed,
-                description = shownDescription,
-                creatorId = creatorId,
-                isDefault = false,
-                userLow = null,
-                userHigh = null,
-                createdAt = createdAt,
-            ).apply { addMember(creatorId, createdAt) }
+            return trimmed
         }
+
+        private fun shownDescription(description: String): String? = description.trim().ifEmpty { null }
 
         fun directMessage(
             a: UUID,

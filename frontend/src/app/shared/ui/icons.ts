@@ -8,6 +8,10 @@ import block from '@material-symbols/svg-400/outlined/block.svg';
 import chatBubble from '@material-symbols/svg-400/outlined/chat_bubble.svg';
 import close from '@material-symbols/svg-400/outlined/close.svg';
 import comment from '@material-symbols/svg-400/outlined/comment.svg';
+import edit from '@material-symbols/svg-400/outlined/edit.svg';
+import info from '@material-symbols/svg-400/outlined/info.svg';
+import personAdd from '@material-symbols/svg-400/outlined/person_add.svg';
+import personRemove from '@material-symbols/svg-400/outlined/person_remove.svg';
 import keyboardArrowDown from '@material-symbols/svg-400/outlined/keyboard_arrow_down.svg';
 import leftPanelClose from '@material-symbols/svg-400/outlined/left_panel_close.svg';
 import leftPanelOpen from '@material-symbols/svg-400/outlined/left_panel_open.svg';
@@ -18,6 +22,7 @@ import moreVert from '@material-symbols/svg-400/outlined/more_vert.svg';
 import person from '@material-symbols/svg-400/outlined/person.svg';
 import personFilled from '@material-symbols/svg-400/outlined/person-fill.svg';
 import sendFilled from '@material-symbols/svg-400/outlined/send-fill.svg';
+import starFilled from '@material-symbols/svg-400/outlined/star-fill.svg';
 import tag from '@material-symbols/svg-400/outlined/tag.svg';
 import workspaces from '@material-symbols/svg-400/outlined/workspaces.svg';
 
@@ -36,6 +41,10 @@ export const icons = {
   chatBubble,
   close,
   comment,
+  edit,
+  info,
+  personAdd,
+  personRemove,
   keyboardArrowDown,
   leftPanelClose,
   leftPanelOpen,
@@ -46,6 +55,7 @@ export const icons = {
   person,
   personFilled,
   sendFilled,
+  starFilled,
   tag,
   workspaces,
 } as const;

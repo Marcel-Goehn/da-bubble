@@ -5,6 +5,7 @@
  * OpenAPI spec version: v1
  */
 import type { ConversationKind } from './conversationKind';
+import type { MemberDto } from './memberDto';
 
 export interface ConversationDto {
   /** @nullable */
@@ -15,6 +16,7 @@ export interface ConversationDto {
   isDefault: boolean;
   kind: ConversationKind;
   lastActivityAt: string;
+  members: MemberDto[];
   /** @nullable */
   name: string | null;
   /** @nullable */

@@ -225,8 +225,10 @@ describe('A new Channel', () => {
     const details = within(dialog);
     expect(details.getByRole('heading', { name: 'Channel-Name' })).toBeTruthy();
     expect(details.getByText('Alles rund ums Büro')).toBeTruthy();
-    expect(details.getByRole('heading', { name: 'Erstellt von' })).toBeTruthy();
-    expect(details.getByRole('button', { name: 'Alan Turing' })).toBeTruthy();
+    const createdBy = details.getByRole('heading', { name: 'Erstellt von' });
+    expect(
+      within(createdBy.parentElement!).getByRole('button', { name: 'Alan Turing' }),
+    ).toBeTruthy();
     await expectNoA11yViolations();
   });
 });

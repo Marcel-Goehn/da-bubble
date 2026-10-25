@@ -24,7 +24,8 @@ class ChannelApiTest : IntegrationTest() {
                 {
                   "id":3,"kind":"CHANNEL","name":"Entwicklerteam","description":"Alles rund ums Entwickeln",
                   "creatorId":"$ada","isDefault":false,"partnerId":null,
-                  "lastActivityAt":"2026-01-15T09:30:00.123456Z"
+                  "lastActivityAt":"2026-01-15T09:30:00.123456Z",
+                  "members":[{"userId":"$ada","isAdmin":true,"joinedAt":"2026-01-15T09:30:00.123456Z"}]
                 }
                 """.trimIndent(),
                 JsonCompareMode.STRICT,

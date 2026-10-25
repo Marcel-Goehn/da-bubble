@@ -4,7 +4,7 @@ import { render } from '@testing-library/angular';
 import { App } from '../app/app';
 import { routes } from '../app/app.routes';
 import { provideApi } from '../app/core/api/api.providers';
-import { ConversationDto } from '../app/core/data/conversation.store';
+import { ConversationDto, MemberDto } from '../app/core/data/conversation.store';
 import { MessageDto } from '../app/core/data/message.store';
 import { RealtimeService } from '../app/core/data/realtime.service';
 import { UserDto } from '../app/core/data/user.store';
@@ -30,8 +30,23 @@ export const alan: UserDto = {
   avatar: 'AVATAR_2',
 };
 
+export const grace: UserDto = {
+  id: '7d1e0c2a-0000-4000-8000-000000000003',
+  name: 'Grace Hopper',
+  email: 'grace@example.com',
+  avatar: 'AVATAR_3',
+};
+
 /** When the test Conversations last had activity, unless a test says otherwise. */
 const lastActivityAt = new Date(2026, 0, 15, 9, 0).toISOString();
+
+/** A Member [userId] of a Channel, joined at [joinedAt] (an ISO instant). */
+export function member(
+  userId: string,
+  { isAdmin = false, joinedAt = lastActivityAt }: { isAdmin?: boolean; joinedAt?: string } = {},
+): MemberDto {
+  return { userId, isAdmin, joinedAt };
+}
 
 export const defaultChannel: ConversationDto = {
   id: 1,
@@ -42,16 +57,22 @@ export const defaultChannel: ConversationDto = {
   isDefault: true,
   partnerId: null,
   lastActivityAt,
+  // Everyone, which in these tests is at most Ada, Alan and Grace; it has no Admins.
+  members: [ada, alan, grace].map((user) => member(user.id)),
 };
 
-/** The Channel [name], with no description and, unless given, created by [creatorId] = Ada. */
+/**
+ * The Channel [name], with no description and, unless given, created by [creatorId] = Ada, who is its only
+ * Member unless [members] are given.
+ */
 export function channel(
   id: number,
   name: string,
   {
     description = null,
     creatorId = ada.id,
-  }: { description?: string | null; creatorId?: string } = {},
+    members = [member(creatorId, { isAdmin: true })],
+  }: { description?: string | null; creatorId?: string; members?: MemberDto[] } = {},
 ): ConversationDto {
   return {
     id,
@@ -62,6 +83,7 @@ export function channel(
     isDefault: false,
     partnerId: null,
     lastActivityAt,
+    members,
   };
 }
 
@@ -80,6 +102,7 @@ export function directMessage(
     isDefault: false,
     partnerId,
     lastActivityAt: activeAt,
+    members: [],
   };
 }
 
@@ -117,13 +140,6 @@ export function reply(
 ): MessageDto {
   return { ...message(id, text, options), parentMessageId: parentId };
 }
-
-export const grace: UserDto = {
-  id: '7d1e0c2a-0000-4000-8000-000000000003',
-  name: 'Grace Hopper',
-  email: 'grace@example.com',
-  avatar: 'AVATAR_3',
-};
 
 export interface RenderAppOptions {
   url?: string;

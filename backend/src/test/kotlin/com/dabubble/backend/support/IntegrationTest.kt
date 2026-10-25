@@ -119,6 +119,19 @@ abstract class IntegrationTest {
             .body(json)
             .exchange()
 
+    protected fun patch(
+        uri: String,
+        token: String,
+        json: String,
+    ): RestTestClient.ResponseSpec =
+        client
+            .patch()
+            .uri(uri)
+            .header(HttpHeaders.AUTHORIZATION, "Bearer $token")
+            .contentType(MediaType.APPLICATION_JSON)
+            .body(json)
+            .exchange()
+
     protected fun delete(
         uri: String,
         token: String,

@@ -1,6 +1,6 @@
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { avatarUrl } from '../../core/data/avatars';
 import { ConversationStore } from '../../core/data/conversation.store';
@@ -40,7 +40,7 @@ import { MessageList } from './message-list';
     <main
       class="flex min-w-0 flex-1 flex-col bg-surface max-lg:hidden max-lg:group-data-[pane=main]:flex lg:rounded-30"
     >
-      <header class="px-16 py-20 shadow-header lg:px-45 lg:py-32">
+      <header class="flex items-center gap-10 px-16 py-20 shadow-header lg:px-45 lg:py-32">
         <h1 class="flex items-center gap-10 text-20 font-bold lg:text-24">
           @if (channel(); as channel) {
             <button
@@ -74,6 +74,42 @@ import { MessageList } from './message-list';
             {{ 'conversation.directMessage' | transloco }}
           }
         </h1>
+        @if (channel(); as channel) {
+          <div class="ml-auto flex items-center gap-10">
+            <button
+              #membersButton
+              type="button"
+              class="flex items-center gap-5 rounded-full py-4 pr-12 pl-4 text-20 font-semibold hover:bg-hover hover:text-menu-active max-lg:hidden"
+              [attr.aria-label]="
+                'channelMembers.open' | transloco: { count: channel.members.length }
+              "
+              (click)="channelDialogs.openMembers(channel.id, membersButton)"
+            >
+              <span class="flex -space-x-12">
+                @for (member of memberStack(); track member.id) {
+                  <app-avatar
+                    class="rounded-full border-2 border-surface"
+                    [src]="avatarUrl(member.avatar)"
+                    [name]="member.name"
+                    [size]="40"
+                    decorative
+                  />
+                }
+              </span>
+              {{ channel.members.length }}
+            </button>
+            @if (iAmChannelAdmin()) {
+              <button
+                type="button"
+                class="flex size-40 items-center justify-center rounded-full bg-hover hover:text-menu-active"
+                [attr.aria-label]="'channelMembers.add' | transloco"
+                (click)="channelDialogs.openAddMembers(channel.id)"
+              >
+                <app-icon name="personAdd" />
+              </button>
+            }
+          </div>
+        }
       </header>
       @if (channel(); as channel) {
         <app-message-list
@@ -124,6 +160,7 @@ export class ConversationPane {
   protected readonly messages = inject(MessageStore);
   private readonly errors = inject(ErrorService);
   private readonly transloco = inject(TranslocoService);
+  private readonly router = inject(Router);
   private readonly params = toSignal(inject(ActivatedRoute).paramMap, { requireSync: true });
 
   protected readonly drafts = inject(DraftService);
@@ -135,6 +172,16 @@ export class ConversationPane {
   protected readonly channel = computed(() => {
     const id = this.params().get('id');
     return id === null ? undefined : this.conversations.get(Number(id));
+  });
+  /** The first three Members, as the stack in the header shows them. */
+  protected readonly memberStack = computed(() =>
+    (this.channel()?.members ?? [])
+      .slice(0, 3)
+      .flatMap((member) => this.users.user(member.userId) ?? []),
+  );
+  protected readonly iAmChannelAdmin = computed(() => {
+    const channel = this.channel();
+    return channel !== undefined && this.conversations.isAdmin(channel.id);
   });
   private readonly partnerId = computed(() => this.params().get('userId'));
   protected readonly partner = computed(() => {
@@ -163,6 +210,16 @@ export class ConversationPane {
         );
       } else if (this.partnerId() !== null) {
         untracked(() => this.messages.conversation.close());
+      }
+    });
+    // A Channel the User lost (they left or were removed) closes, and they land in the Default Channel.
+    effect(() => {
+      const id = this.params().get('id');
+      const defaultChannel = this.conversations.defaultChannel();
+      if (id !== null && this.channel() === undefined && defaultChannel) {
+        void untracked(() =>
+          this.router.navigate(['/channel', defaultChannel.id], { replaceUrl: true }),
+        );
       }
     });
     // A partner who joined after the Workspace was loaded is fetched; an unknown one sends the User to `/`.

@@ -23,8 +23,13 @@ import type {
 } from 'rxjs';
 
 import type {
+  AddMembersRequest,
   ConversationDto,
-  CreateChannelRequest
+  CreateChannelRequest,
+  EditChannelRequest,
+  MemberDto,
+  RestoreMemberRequest,
+  SetAdminRequest
 } from '../model';
 
 import type {
@@ -113,6 +118,235 @@ export class ChannelsService {
       }
     );
   }
+ editChannel<TData = ConversationDto>(id: number,
+    editChannelRequest: EditChannelRequest, options?: HttpClientBodyOptions): Observable<TData>;
+ editChannel<TData = ConversationDto>(id: number,
+    editChannelRequest: EditChannelRequest, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ editChannel<TData = ConversationDto>(id: number,
+    editChannelRequest: EditChannelRequest, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  editChannel<TData = ConversationDto>(
+    id: number,
+    editChannelRequest: EditChannelRequest, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.patch<TData>(
+      `/api/channels/${id}`,
+      editChannelRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.patch<TData>(
+      `/api/channels/${id}`,
+      editChannelRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.patch<TData>(
+      `/api/channels/${id}`,
+      editChannelRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
+ leaveChannel<TData = void>(id: number, options?: HttpClientBodyOptions): Observable<TData>;
+ leaveChannel<TData = void>(id: number, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ leaveChannel<TData = void>(id: number, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  leaveChannel<TData = void>(
+    id: number, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.post<TData>(
+      `/api/channels/${id}/leave`,
+      undefined,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.post<TData>(
+      `/api/channels/${id}/leave`,
+      undefined,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.post<TData>(
+      `/api/channels/${id}/leave`,
+      undefined,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
+ addMembers<TData = ConversationDto>(id: number,
+    addMembersRequest: AddMembersRequest, options?: HttpClientBodyOptions): Observable<TData>;
+ addMembers<TData = ConversationDto>(id: number,
+    addMembersRequest: AddMembersRequest, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ addMembers<TData = ConversationDto>(id: number,
+    addMembersRequest: AddMembersRequest, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  addMembers<TData = ConversationDto>(
+    id: number,
+    addMembersRequest: AddMembersRequest, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.post<TData>(
+      `/api/channels/${id}/members`,
+      addMembersRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.post<TData>(
+      `/api/channels/${id}/members`,
+      addMembersRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.post<TData>(
+      `/api/channels/${id}/members`,
+      addMembersRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
+ removeMember<TData = MemberDto>(id: number,
+    userId: string, options?: HttpClientBodyOptions): Observable<TData>;
+ removeMember<TData = MemberDto>(id: number,
+    userId: string, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ removeMember<TData = MemberDto>(id: number,
+    userId: string, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  removeMember<TData = MemberDto>(
+    id: number,
+    userId: string, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.delete<TData>(
+      `/api/channels/${id}/members/${userId}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.delete<TData>(
+      `/api/channels/${id}/members/${userId}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.delete<TData>(
+      `/api/channels/${id}/members/${userId}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
+ restoreMember<TData = ConversationDto>(id: number,
+    userId: string,
+    restoreMemberRequest: RestoreMemberRequest, options?: HttpClientBodyOptions): Observable<TData>;
+ restoreMember<TData = ConversationDto>(id: number,
+    userId: string,
+    restoreMemberRequest: RestoreMemberRequest, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ restoreMember<TData = ConversationDto>(id: number,
+    userId: string,
+    restoreMemberRequest: RestoreMemberRequest, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  restoreMember<TData = ConversationDto>(
+    id: number,
+    userId: string,
+    restoreMemberRequest: RestoreMemberRequest, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.put<TData>(
+      `/api/channels/${id}/members/${userId}`,
+      restoreMemberRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.put<TData>(
+      `/api/channels/${id}/members/${userId}`,
+      restoreMemberRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.put<TData>(
+      `/api/channels/${id}/members/${userId}`,
+      restoreMemberRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
+ setAdmin<TData = ConversationDto>(id: number,
+    userId: string,
+    setAdminRequest: SetAdminRequest, options?: HttpClientBodyOptions): Observable<TData>;
+ setAdmin<TData = ConversationDto>(id: number,
+    userId: string,
+    setAdminRequest: SetAdminRequest, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ setAdmin<TData = ConversationDto>(id: number,
+    userId: string,
+    setAdminRequest: SetAdminRequest, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  setAdmin<TData = ConversationDto>(
+    id: number,
+    userId: string,
+    setAdminRequest: SetAdminRequest, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.put<TData>(
+      `/api/channels/${id}/members/${userId}/admin`,
+      setAdminRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.put<TData>(
+      `/api/channels/${id}/members/${userId}/admin`,
+      setAdminRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.put<TData>(
+      `/api/channels/${id}/members/${userId}/admin`,
+      setAdminRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
 };
 
 export type CreateChannelClientResult = NonNullable<ConversationDto>
+export type EditChannelClientResult = NonNullable<ConversationDto>
+export type LeaveChannelClientResult = NonNullable<void>
+export type AddMembersClientResult = NonNullable<ConversationDto>
+export type RemoveMemberClientResult = NonNullable<MemberDto>
+export type RestoreMemberClientResult = NonNullable<ConversationDto>
+export type SetAdminClientResult = NonNullable<ConversationDto>

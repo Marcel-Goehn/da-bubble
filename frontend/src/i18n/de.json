@@ -2,6 +2,10 @@
   "app": {
     "name": "DABubble"
   },
+  "addMembers": {
+    "title": "Leute hinzufügen",
+    "add": "Hinzufügen"
+  },
   "avatarStep": {
     "avatar": "Avatar {number}",
     "chooseFromList": "Aus der Liste wählen",
@@ -17,7 +21,35 @@
     "name": "Channel-Name",
     "description": "Beschreibung",
     "noDescription": "Keine Beschreibung",
-    "createdBy": "Erstellt von"
+    "createdBy": "Erstellt von",
+    "edit": "Bearbeiten",
+    "save": "Speichern",
+    "editName": "Channel-Name bearbeiten",
+    "editDescription": "Beschreibung bearbeiten",
+    "saveName": "Channel-Namen speichern",
+    "saveDescription": "Beschreibung speichern",
+    "descriptionPlaceholder": "Dein Text hier",
+    "defaultChannel": "Standard-Channel",
+    "defaultChannelInfo": "Alle sind Mitglied. Niemand kann ihn ändern oder verlassen.",
+    "leave": "Channel verlassen"
+  },
+  "channelMembers": {
+    "title": "Mitglieder",
+    "open": "Mitglieder ({count})",
+    "admins": "Admins · {count}",
+    "members": "Mitglieder · {count}",
+    "everyone": "Alle · {count}",
+    "you": "{name} (Du)",
+    "creator": "Hat den Channel erstellt",
+    "manage": "Verwalten",
+    "done": "Fertig",
+    "admin": "Admin",
+    "adminSwitch": "{name} ist Admin",
+    "remove": "{name} entfernen",
+    "alwaysAdmin": "bleibt immer Admin",
+    "add": "Mitglieder hinzufügen",
+    "onlyAdmins": "Nur Admins können Mitglieder hinzufügen oder entfernen.",
+    "removed": "{name} entfernt"
   },
   "composer": {
     "placeholder": "Nachricht an #{channel}",
@@ -73,7 +105,10 @@
     "editFailed": "Deine Änderung konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
     "deleteFailed": "Die Nachricht konnte nicht gelöscht werden. Bitte versuche es noch einmal.",
     "reactionFailed": "Deine Reaktion konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
-    "createChannelFailed": "Der Channel konnte nicht erstellt werden. Bitte versuche es noch einmal."
+    "createChannelFailed": "Der Channel konnte nicht erstellt werden. Bitte versuche es noch einmal.",
+    "manageMembersFailed": "Die Änderung an den Mitgliedern konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
+    "editChannelFailed": "Der Channel konnte nicht geändert werden. Bitte versuche es noch einmal.",
+    "leaveChannelFailed": "Du konntest den Channel nicht verlassen. Bitte versuche es noch einmal."
   },
   "legal": {
     "back": "Zurück zu DABubble",
@@ -162,5 +197,8 @@
     "emptyState": "Wähle einen Channel oder eine Direktnachricht",
     "name": "Devspace",
     "openMenu": "Workspace-Menü öffnen"
+  },
+  "undo": {
+    "action": "Rückgängig"
   }
 }
