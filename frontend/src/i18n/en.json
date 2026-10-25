@@ -30,8 +30,18 @@
     "saveDescription": "Save description",
     "descriptionPlaceholder": "Your text here",
     "defaultChannel": "Default channel",
-    "defaultChannelInfo": "Everyone is a member. Nobody can change or leave it.",
-    "leave": "Leave channel"
+    "defaultChannelInfo": "Everyone is a member. Nobody can change, leave or delete it.",
+    "leave": "Leave channel",
+    "delete": "Delete channel",
+    "deleteInfo": "As the creator you can't leave the channel, only delete it. That removes it with all messages and files for everyone.",
+    "deleteOpen": "Delete channel …"
+  },
+  "deleteChannel": {
+    "title": "Delete #{name}?",
+    "text": "All {count} members lose the channel with all messages, threads and files. Type its name to confirm.",
+    "name": "Channel name",
+    "cancel": "Cancel",
+    "confirm": "Delete"
   },
   "channelMembers": {
     "title": "Members",
@@ -108,7 +118,8 @@
     "createChannelFailed": "The channel couldn't be created. Please try again.",
     "manageMembersFailed": "The change to the members couldn't be saved. Please try again.",
     "editChannelFailed": "The channel couldn't be changed. Please try again.",
-    "leaveChannelFailed": "You couldn't leave the channel. Please try again."
+    "leaveChannelFailed": "You couldn't leave the channel. Please try again.",
+    "deleteChannelFailed": "The channel couldn't be deleted. Please try again."
   },
   "legal": {
     "back": "Back to DABubble",

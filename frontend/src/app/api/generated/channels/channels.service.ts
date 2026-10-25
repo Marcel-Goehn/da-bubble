@@ -118,6 +118,36 @@ export class ChannelsService {
       }
     );
   }
+ deleteChannel<TData = void>(id: number, options?: HttpClientBodyOptions): Observable<TData>;
+ deleteChannel<TData = void>(id: number, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ deleteChannel<TData = void>(id: number, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  deleteChannel<TData = void>(
+    id: number, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.delete<TData>(
+      `/api/channels/${id}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.delete<TData>(
+      `/api/channels/${id}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.delete<TData>(
+      `/api/channels/${id}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
  editChannel<TData = ConversationDto>(id: number,
     editChannelRequest: EditChannelRequest, options?: HttpClientBodyOptions): Observable<TData>;
  editChannel<TData = ConversationDto>(id: number,
@@ -344,6 +374,7 @@ export class ChannelsService {
 };
 
 export type CreateChannelClientResult = NonNullable<ConversationDto>
+export type DeleteChannelClientResult = NonNullable<void>
 export type EditChannelClientResult = NonNullable<ConversationDto>
 export type LeaveChannelClientResult = NonNullable<void>
 export type AddMembersClientResult = NonNullable<ConversationDto>

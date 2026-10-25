@@ -86,13 +86,14 @@ abstract class IntegrationTest {
 
     private fun testNow() = clock.now().atOffset(ZoneOffset.UTC)
 
+    /** Rows of [fromWhere], which may name the parameter `:sub`. */
     protected fun countRows(
         fromWhere: String,
-        sub: UUID,
+        sub: UUID? = null,
     ): Long =
         jdbc
             .sql("SELECT count(*) FROM $fromWhere")
-            .param("sub", sub)
+            .apply { if (sub != null) param("sub", sub) }
             .query(Long::class.java)
             .single()
 

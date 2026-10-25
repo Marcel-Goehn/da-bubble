@@ -1,7 +1,7 @@
 import { Dialog } from '@angular/cdk/dialog';
 import { Location } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
-import { screen, within } from '@testing-library/angular';
+import { fireEvent, screen, waitFor, within } from '@testing-library/angular';
 import userEvent from '@testing-library/user-event';
 import { ConversationDto } from '../../core/data/conversation.store';
 import { UserDto } from '../../core/data/user.store';
@@ -233,6 +233,123 @@ describe('Channel Members and Admins', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     expect(TestBed.inject(Location).path()).toBe('/channel/1');
     expect(within(screen.getByRole('list', { name: 'Channels' })).queryByText('Büro')).toBeNull();
+  });
+
+  it('gives an Admin who isn\'t the Creator no "Channel löschen"', async () => {
+    const { user } = await openChannel(buero, grace);
+
+    await user.click(screen.getByRole('button', { name: 'Büro' }));
+    const details = within(await screen.findByRole('dialog', { name: 'Büro' }));
+    expect(details.getByRole('button', { name: 'Channel verlassen' })).toBeTruthy();
+    expect(details.queryByRole('button', { name: /Channel löschen/ })).toBeNull();
+  });
+
+  it('shows the Creator a red "Channel löschen" box instead of leaving', async () => {
+    const { user } = await openChannel(buero, alan);
+
+    await user.click(screen.getByRole('button', { name: 'Büro' }));
+    const box = within(await screen.findByRole('region', { name: 'Channel löschen' }));
+    expect(
+      box.getByText(
+        'Als Ersteller kannst du den Channel nicht verlassen, nur löschen. Das entfernt ihn mit allen Nachrichten und Dateien für alle.',
+      ),
+    ).toBeTruthy();
+    expect(box.getByRole('button', { name: 'Channel löschen …' })).toBeTruthy();
+    await expectNoA11yViolations();
+  });
+
+  it('deletes the Channel once the Creator types its name, by keyboard, and lands them in the Default Channel', async () => {
+    const { user, http, fixture } = await openChannel(buero, alan);
+    await user.click(screen.getByRole('button', { name: 'Büro' }));
+    (await screen.findByRole('button', { name: 'Channel löschen …' })).focus();
+    await user.keyboard('{Enter}');
+
+    const confirm = within(await screen.findByRole('dialog', { name: '#Büro löschen?' }));
+    expect(
+      confirm.getByText(
+        'Alle 3 Mitglieder verlieren den Channel mit allen Nachrichten, Threads und Dateien. Gib zur Bestätigung den Namen ein.',
+      ),
+    ).toBeTruthy();
+    const name = confirm.getByRole('textbox', { name: 'Channel-Name' });
+    const remove = confirm.getByRole('button', { name: 'Löschen' });
+    expect(remove).toHaveProperty('disabled', true);
+    await expectNoA11yViolations();
+
+    await user.type(name, 'büro');
+    expect(remove).toHaveProperty('disabled', true);
+    await user.clear(name);
+    await user.type(name, 'Büro{Enter}');
+
+    const request = http.expectOne('/api/channels/7');
+    expect(request.request.method).toBe('DELETE');
+    request.flush(null);
+    await settle(fixture);
+    http
+      .match('/api/conversations/1/messages')
+      .forEach((r) => r.flush({ messages: [], nextCursor: null }));
+    await settle(fixture);
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(TestBed.inject(Location).path()).toBe('/channel/1');
+    expect(within(screen.getByRole('list', { name: 'Channels' })).queryByText('Büro')).toBeNull();
+  });
+
+  it('keeps the Channel when the Creator cancels the delete', async () => {
+    const { user, http } = await openChannel(buero, alan);
+    await user.click(screen.getByRole('button', { name: 'Büro' }));
+    await user.click(await screen.findByRole('button', { name: 'Channel löschen …' }));
+    const confirm = await screen.findByRole('dialog', { name: '#Büro löschen?' });
+
+    // The CDK reads the keyCode, which user-event leaves out.
+    fireEvent.keyDown(confirm, { key: 'Escape', keyCode: 27 });
+
+    await waitFor(() =>
+      expect(screen.queryByRole('dialog', { name: '#Büro löschen?' })).toBeNull(),
+    );
+    expect(screen.getByRole('dialog', { name: 'Büro' })).toBeTruthy();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: 'Channel löschen …' })).toBe(
+        document.activeElement,
+      ),
+    );
+    http.expectNone('/api/channels/7');
+  });
+
+  it('keeps the Channel and says so when deleting fails', async () => {
+    const { user, http, fixture } = await openChannel(buero, alan);
+    await user.click(screen.getByRole('button', { name: 'Büro' }));
+    await user.click(await screen.findByRole('button', { name: 'Channel löschen …' }));
+    await user.type(await screen.findByRole('textbox', { name: 'Channel-Name' }), 'Büro{Enter}');
+
+    http
+      .expectOne('/api/channels/7')
+      .flush(null, { status: 500, statusText: 'Internal Server Error' });
+    await settle(fixture);
+
+    expect(
+      screen.getByText('Der Channel konnte nicht gelöscht werden. Bitte versuche es noch einmal.'),
+    ).toBeTruthy();
+    expect(screen.getByRole('dialog', { name: '#Büro löschen?' })).toBeTruthy();
+    // The sidebar is behind the modal dialogs.
+    const channels = screen.getByRole('list', { name: 'Channels', hidden: true });
+    expect(within(channels).getByText('Büro')).toBeTruthy();
+  });
+
+  it('closes the delete confirm too when the Channel is deleted elsewhere', async () => {
+    const { user, http, fixture, realtime } = await openChannel(buero, alan);
+    await user.click(screen.getByRole('button', { name: 'Büro' }));
+    await user.click(await screen.findByRole('button', { name: 'Channel löschen …' }));
+    await screen.findByRole('dialog', { name: '#Büro löschen?' });
+
+    realtime.emit({ type: 'conversation.removed', conversationId: 7 });
+    await settle(fixture);
+    http
+      .match('/api/conversations/1/messages')
+      .forEach((r) => r.flush({ messages: [], nextCursor: null }));
+    await settle(fixture);
+
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(TestBed.inject(Location).path()).toBe('/channel/1');
   });
 
   it('closes the Channel of a removed Member live and lands them in the Default Channel', async () => {

@@ -1,4 +1,4 @@
-import { DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
+import { Dialog, DIALOG_DATA, DialogRef } from '@angular/cdk/dialog';
 import {
   afterNextRender,
   Component,
@@ -22,6 +22,7 @@ import { Icon } from '../../shared/ui/icon';
 import { ProfileCards } from '../profile/profile-cards';
 import { ChannelMembers } from './channel-members';
 import { fieldClasses, nameMaxLength } from './create-channel-dialog';
+import { DeleteChannelData, DeleteChannelDialog } from './delete-channel-dialog';
 
 export interface ChannelDetailsData {
   channelId: number;
@@ -37,9 +38,10 @@ const editButtonClasses =
 
 /**
  * A Channel's details ("Channel Edition"): its name and description, which its Admins edit in place, and who
- * created it, whose profile card opens from their name. Anyone but the Creator can leave it. The Default
- * Channel is "Standard-Channel" instead, with nothing to edit or leave. On mobile its Members show here
- * too. Closes when the User loses the Channel.
+ * created it, whose profile card opens from their name. Anyone but the Creator can leave it; the Creator can
+ * delete it instead, from a red box, after typing its name. The Default Channel is "Standard-Channel" instead,
+ * with nothing to edit, leave or delete. On mobile its Members show here too. Closes when the User loses the
+ * Channel.
  */
 @Component({
   selector: 'app-channel-details-dialog',
@@ -197,6 +199,19 @@ const editButtonClasses =
           >
             {{ 'channelDetails.leave' | transloco }}
           </button>
+        } @else if (canDelete()) {
+          <section
+            class="flex flex-col items-start gap-10 rounded-20 border border-danger p-20"
+            aria-labelledby="channel-details-delete"
+          >
+            <h3 id="channel-details-delete" class="font-bold text-danger">
+              {{ 'channelDetails.delete' | transloco }}
+            </h3>
+            <p class="text-text-muted">{{ 'channelDetails.deleteInfo' | transloco }}</p>
+            <button appButton="danger-secondary" type="button" (click)="confirmDelete(channel.id)">
+              {{ 'channelDetails.deleteOpen' | transloco }}
+            </button>
+          </section>
         }
       }
     </app-dialog-frame>
@@ -205,6 +220,7 @@ const editButtonClasses =
 export class ChannelDetailsDialog {
   private readonly data = inject<ChannelDetailsData>(DIALOG_DATA);
   private readonly dialogRef = inject(DialogRef);
+  private readonly dialog = inject(Dialog);
   private readonly conversations = inject(ConversationStore);
   private readonly users = inject(UserStore);
   private readonly errors = inject(ErrorService);
@@ -228,6 +244,11 @@ export class ChannelDetailsDialog {
   protected readonly canLeave = computed(() => {
     const channel = this.channel();
     return channel !== undefined && !channel.isDefault && channel.creatorId !== this.users.me()?.id;
+  });
+  /** Only the Creator deletes; the Default Channel has none. */
+  protected readonly canDelete = computed(() => {
+    const creatorId = this.channel()?.creatorId;
+    return creatorId != null && creatorId === this.users.me()?.id;
   });
 
   protected readonly editing = signal<Editing>(null);
@@ -295,6 +316,14 @@ export class ChannelDetailsDialog {
     } finally {
       this.leaving.set(false);
     }
+  }
+
+  /** Asks for the name; the confirm dialog deletes it, and this one closes once it's gone. */
+  protected confirmDelete(channelId: number): void {
+    this.dialog.open<void, DeleteChannelData>(DeleteChannelDialog, {
+      data: { channelId },
+      autoFocus: '#delete-channel-name',
+    });
   }
 
   private async save(change: { name?: string; description?: string }): Promise<void> {

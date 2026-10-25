@@ -68,6 +68,16 @@ class ChannelController(
         channels.leave(id, user.id)
     }
 
+    /** Deletes the Channel with all its Messages, as its Creator; nobody deletes the Default Channel. */
+    @DeleteMapping("/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun deleteChannel(
+        user: User,
+        @PathVariable id: Long,
+    ) {
+        channels.delete(id, user.id)
+    }
+
     /**
      * Removes a Member, as an Admin; never the Creator or the User themselves. Answers with the Membership as it
      * was, which [restoreMember] takes to undo the removal.

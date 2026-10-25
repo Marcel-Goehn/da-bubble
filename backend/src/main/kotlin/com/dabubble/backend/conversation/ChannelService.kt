@@ -116,6 +116,22 @@ class ChannelService(
         realtime.toUsers(setOf(userId), ConversationRemovedEvent(channelId))
     }
 
+    /**
+     * Deletes the Channel [channelId], as its Creator [actorId]. The database cascades to its Messages, Replies,
+     * Reactions and Memberships; every Member loses it at once.
+     */
+    @Transactional
+    fun delete(
+        channelId: Long,
+        actorId: UUID,
+    ) {
+        val channel = conversations.requireVisibleTo(channelId, actorId)
+        channel.requireDeletableBy(actorId)
+        val members = channel.memberIds()
+        conversations.deleteConversation(channelId)
+        realtime.toUsers(members, ConversationRemovedEvent(channelId))
+    }
+
     /** Undoes the removal of [userId] from the Channel [channelId], as the Admin [actorId]. */
     @Transactional
     fun restoreMember(

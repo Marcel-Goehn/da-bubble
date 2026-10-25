@@ -30,8 +30,18 @@
     "saveDescription": "Beschreibung speichern",
     "descriptionPlaceholder": "Dein Text hier",
     "defaultChannel": "Standard-Channel",
-    "defaultChannelInfo": "Alle sind Mitglied. Niemand kann ihn ändern oder verlassen.",
-    "leave": "Channel verlassen"
+    "defaultChannelInfo": "Alle sind Mitglied. Niemand kann ihn ändern, verlassen oder löschen.",
+    "leave": "Channel verlassen",
+    "delete": "Channel löschen",
+    "deleteInfo": "Als Ersteller kannst du den Channel nicht verlassen, nur löschen. Das entfernt ihn mit allen Nachrichten und Dateien für alle.",
+    "deleteOpen": "Channel löschen …"
+  },
+  "deleteChannel": {
+    "title": "#{name} löschen?",
+    "text": "Alle {count} Mitglieder verlieren den Channel mit allen Nachrichten, Threads und Dateien. Gib zur Bestätigung den Namen ein.",
+    "name": "Channel-Name",
+    "cancel": "Abbrechen",
+    "confirm": "Löschen"
   },
   "channelMembers": {
     "title": "Mitglieder",
@@ -108,7 +118,8 @@
     "createChannelFailed": "Der Channel konnte nicht erstellt werden. Bitte versuche es noch einmal.",
     "manageMembersFailed": "Die Änderung an den Mitgliedern konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
     "editChannelFailed": "Der Channel konnte nicht geändert werden. Bitte versuche es noch einmal.",
-    "leaveChannelFailed": "Du konntest den Channel nicht verlassen. Bitte versuche es noch einmal."
+    "leaveChannelFailed": "Du konntest den Channel nicht verlassen. Bitte versuche es noch einmal.",
+    "deleteChannelFailed": "Der Channel konnte nicht gelöscht werden. Bitte versuche es noch einmal."
   },
   "legal": {
     "back": "Zurück zu DABubble",

@@ -30,6 +30,7 @@
   --palette-green: #92c83e; /* "online green" */
   --palette-pink: #ed1e79; /* "Rosa error" */
   --palette-blue: #1381ff; /* unnamed: email link on the profile card */
+  --palette-pink-dark: #c8105f; /* unnamed: "Rosa error" darkened to 5.7:1 on white for text */
 }
 
 /* ── 2. Semantic tokens ─────────────────────────────────────────────────────── */
@@ -84,6 +85,7 @@
   --color-online: var(--palette-green);
   --color-offline: var(--palette-gray);
   --color-error: var(--palette-pink);
+  --color-danger: var(--palette-pink-dark); /* destructive buttons and their text */
 
   /* Intro gradient: bg-linear-to-t from-intro-start to-intro-end */
   --color-intro-start: var(--palette-purple-deep);

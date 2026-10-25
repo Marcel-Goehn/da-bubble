@@ -122,6 +122,12 @@ export class ConversationStore {
     this.remove(id);
   }
 
+  /** Deletes the Channel [id], as its Creator; it's gone from the sidebar at once. */
+  async deleteChannel(id: number): Promise<void> {
+    await firstValueFrom(this.channelsApi.deleteChannel(id));
+    this.remove(id);
+  }
+
   /** Fetches the sidebar once; later calls wait for the same request. */
   load(): Promise<void> {
     this.loading ??= firstValueFrom(this.api.listConversations()).then(

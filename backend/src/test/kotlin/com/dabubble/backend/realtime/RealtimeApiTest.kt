@@ -175,6 +175,25 @@ class RealtimeApiTest : IntegrationTest() {
     }
 
     @Test
+    fun `a deleted Channel is gone live for every Member, in every tab, and for nobody else`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        val adaToken = provision(ada)
+        val alanToken = provision(alan)
+        val id = createChannel(adaToken, alan)
+        val tabs = listOf(stomp.connect(adaToken), stomp.connect(alanToken), stomp.connect(alanToken))
+        val graceToken = provision()
+        val graceTab = stomp.connect(graceToken)
+
+        delete("/api/channels/$id", adaToken).expectStatus().isNoContent
+        // A Message everyone sees, so Grace's missing removal is observed without waiting for nothing.
+        val public = send(graceToken, "Für alle")
+
+        tabs.forEach { assertEquals(ConversationRemovedEvent(id), it.awaitEvent()) }
+        assertEquals(MessageCreatedEvent(public, null), graceTab.awaitEvent())
+    }
+
+    @Test
     fun `a CONNECT without a valid token is refused`() {
         listOf("kaputt", TestTokens.user(emailVerified = false), TestTokens.user(audience = "someone-else")).forEach {
             assertEquals("Unauthenticated", stomp.connectRefused(it))

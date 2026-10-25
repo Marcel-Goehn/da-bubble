@@ -2,6 +2,7 @@ package com.dabubble.backend.conversation
 
 import com.dabubble.backend.support.IntegrationTest
 import com.dabubble.backend.support.TestTokens
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import org.springframework.test.json.JsonCompareMode
 import org.springframework.test.web.servlet.client.RestTestClient
@@ -264,6 +265,74 @@ class ChannelAdminApiTest : IntegrationTest() {
         leave(provision(), id).expectStatus().isNotFound
         listOf(1, id).forEach { canSee(ada, it) }
     }
+
+    @Test
+    fun `only the Creator deletes a Channel, and nobody the Default Channel`() {
+        val ada = provision()
+        val alan = provision()
+        val grace = provision()
+        val id = create(ada, members = listOf(alan, grace))
+        setAdmin(ada, id, alan, true).expectStatus().isOk
+
+        expectCode(deleteChannel(alan, id), "NOT_CHANNEL_CREATOR")
+        expectCode(deleteChannel(grace, id), "NOT_CHANNEL_CREATOR")
+        deleteChannel(provision(), id).expectStatus().isNotFound
+        expectCode(deleteChannel(ada, 1), "DEFAULT_CHANNEL_LOCKED")
+        listOf(ada, alan, grace).forEach { canSee(it, id) }
+
+        deleteChannel(ada, id).expectStatus().isNoContent
+        listOf(ada, alan, grace).forEach {
+            get("/api/conversations/$id", TestTokens.user(it)).expectStatus().isNotFound
+        }
+        deleteChannel(ada, id).expectStatus().isNotFound
+    }
+
+    @Test
+    fun `deleting a Channel deletes its Messages, Replies, Reactions and Memberships, nothing else`() {
+        val ada = provision()
+        val alan = provision()
+        val id = create(ada, members = listOf(alan))
+        val kept = create(ada, "Vertrieb", members = listOf(alan))
+        listOf(id, kept).forEach { conversation ->
+            val messages = "/api/conversations/$conversation/messages"
+            val message = send(ada, conversation, "Hallo")
+            post("$messages/$message/replies", TestTokens.user(alan), """{"text":"Hi"}""").expectStatus().isCreated
+            post("$messages/$message/reactions", TestTokens.user(alan), """{"emoji":"👍"}""").expectStatus().isOk
+        }
+
+        deleteChannel(ada, id).expectStatus().isNoContent
+
+        mapOf(
+            "conversations WHERE id = $id" to 0L,
+            "memberships WHERE conversation_id = $id" to 0L,
+            "messages WHERE conversation_id = $id" to 0L,
+            "reactions r JOIN messages m ON m.id = r.message_id WHERE m.conversation_id = $id" to 0L,
+            "memberships WHERE conversation_id = $kept" to 2L,
+            "messages WHERE conversation_id = $kept" to 2L,
+            "reactions r JOIN messages m ON m.id = r.message_id WHERE m.conversation_id = $kept" to 1L,
+        ).forEach { (fromWhere, count) ->
+            assertEquals(count, countRows(fromWhere), fromWhere)
+        }
+    }
+
+    /** Sends [text] to the Conversation [id] as [author]; the Message's id. */
+    private fun send(
+        author: UUID,
+        id: Long,
+        text: String,
+    ): Long =
+        post("/api/conversations/$id/messages", TestTokens.user(author), json.writeValueAsString(mapOf("text" to text)))
+            .expectStatus()
+            .isCreated
+            .expectBody()
+            .returnResult()
+            .responseBody!!
+            .let { json.readTree(it)["id"].asLong() }
+
+    private fun deleteChannel(
+        user: UUID,
+        id: Long,
+    ) = delete("/api/channels/$id", TestTokens.user(user))
 
     private fun leave(
         user: UUID,

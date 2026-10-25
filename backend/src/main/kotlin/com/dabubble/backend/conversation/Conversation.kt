@@ -139,6 +139,19 @@ class Conversation private constructor(
         memberships.removeIf { it.userId == userId }
     }
 
+    /** Refuses deleting the Channel unless [userId] is its Creator; nobody deletes the Default Channel. */
+    fun requireDeletableBy(userId: UUID) {
+        val refused =
+            when {
+                isDefault -> ProblemCode.DEFAULT_CHANNEL_LOCKED
+                userId != creatorId -> ProblemCode.NOT_CHANNEL_CREATOR
+                else -> null
+            }
+        if (refused != null) {
+            throw ProblemException(refused, "$userId may not delete $id")
+        }
+    }
+
     /** Grants or revokes Admin for the Member [userId], as the Admin [actorId]. */
     fun setAdmin(
         actorId: UUID,

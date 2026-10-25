@@ -37,6 +37,11 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
         at: Instant,
     )
 
+    /** Deletes the Conversation [id] in the database alone, which cascades to everything in it. */
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query("DELETE FROM Conversation c WHERE c.id = :id")
+    fun deleteConversation(id: Long)
+
     @Query(
         """
         SELECT DISTINCT c FROM Conversation c LEFT JOIN c.memberships m
