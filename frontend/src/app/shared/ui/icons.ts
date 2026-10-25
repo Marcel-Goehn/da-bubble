@@ -1,4 +1,6 @@
 import accountCircle from '@material-symbols/svg-400/outlined/account_circle.svg';
+import add from '@material-symbols/svg-400/outlined/add.svg';
+import addCircle from '@material-symbols/svg-400/outlined/add_circle.svg';
 import addReaction from '@material-symbols/svg-400/outlined/add_reaction.svg';
 import arrowBack from '@material-symbols/svg-400/outlined/arrow_back.svg';
 import arrowDropDown from '@material-symbols/svg-400/outlined/arrow_drop_down.svg';
@@ -25,6 +27,8 @@ import workspaces from '@material-symbols/svg-400/outlined/workspaces.svg';
  */
 export const icons = {
   accountCircle,
+  add,
+  addCircle,
   addReaction,
   arrowBack,
   arrowDropDown,

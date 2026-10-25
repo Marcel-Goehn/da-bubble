@@ -141,5 +141,3 @@ export class ConversationsService {
   }
 };
 
-export type ListConversationsClientResult = NonNullable<ConversationDto[]>
-export type GetConversationClientResult = NonNullable<ConversationDto>

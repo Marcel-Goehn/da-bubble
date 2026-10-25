@@ -13,6 +13,12 @@
   "channel": {
     "default": "General"
   },
+  "channelDetails": {
+    "name": "Channel name",
+    "description": "Description",
+    "noDescription": "No description",
+    "createdBy": "Created by"
+  },
   "composer": {
     "placeholder": "Message #{channel}",
     "send": "Send message",
@@ -22,6 +28,25 @@
   },
   "conversation": {
     "directMessage": "Direct message"
+  },
+  "createChannel": {
+    "title": "Create a channel",
+    "intro": "Channels are where your team communicates. They work best around a topic, #marketing for example.",
+    "name": "Channel name",
+    "namePlaceholder": "e.g. Partner projects",
+    "nameTaken": "This channel name is already taken.",
+    "description": "Description",
+    "optional": "(optional)",
+    "descriptionPlaceholder": "Your text here",
+    "create": "Create",
+    "peopleTitle": "Add people",
+    "everyoneBefore": "Add all members of",
+    "everyoneAfter": "to this channel",
+    "specific": "Add specific people",
+    "search": "Enter a name",
+    "matches": "Matching people",
+    "remove": "Remove {name}",
+    "nameTooLong": "A channel name has at most {max} characters."
   },
   "deleteMessage": {
     "title": "Delete message?",
@@ -47,7 +72,8 @@
     "sendFailed": "Your message couldn't be sent. Please try again.",
     "editFailed": "Your change couldn't be saved. Please try again.",
     "deleteFailed": "The message couldn't be deleted. Please try again.",
-    "reactionFailed": "Your reaction couldn't be saved. Please try again."
+    "reactionFailed": "Your reaction couldn't be saved. Please try again.",
+    "createChannelFailed": "The channel couldn't be created. Please try again."
   },
   "legal": {
     "back": "Back to DABubble",
@@ -110,7 +136,9 @@
     "label": "Workspace menu",
     "channels": "Channels",
     "directMessages": "Direct messages",
-    "selfDm": "{name} (you)"
+    "selfDm": "{name} (you)",
+    "createChannel": "Create a channel",
+    "addChannel": "Add channel"
   },
   "thread": {
     "title": "Thread",

@@ -7,6 +7,10 @@
 import type { ConversationKind } from './conversationKind';
 
 export interface ConversationDto {
+  /** @nullable */
+  creatorId: string | null;
+  /** @nullable */
+  description: string | null;
   id: number;
   isDefault: boolean;
   kind: ConversationKind;

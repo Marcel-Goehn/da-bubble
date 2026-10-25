@@ -1,19 +1,24 @@
 import { HttpContext } from '@angular/common/http';
 import { computed, inject, Service, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { ChannelsService } from '../../api/generated/channels/channels.service';
 import { ConversationsService } from '../../api/generated/conversations/conversations.service';
-import { ConversationDto } from '../../api/generated/model';
+import { ConversationDto, CreateChannelRequest } from '../../api/generated/model';
 import { ROUTED_READ } from '../errors/error.interceptor';
 import { UserStore } from './user.store';
 
-export type { ConversationDto };
+export type { ConversationDto, CreateChannelRequest };
 
 const byName = new Intl.Collator(undefined, { sensitivity: 'base' });
+
+/** The Default Channel's shown names, in German and English; no other Channel may use them. */
+const reservedChannelNames = ['allgemein', 'general'];
 
 /** The Conversations the logged-in User can see: their Channels and their DMs, as the sidebar lists them. */
 @Service()
 export class ConversationStore {
   private readonly api = inject(ConversationsService);
+  private readonly channelsApi = inject(ChannelsService);
   private readonly users = inject(UserStore);
   private readonly byId = signal(new Map<number, ConversationDto>());
   private loading: Promise<void> | null = null;
@@ -46,6 +51,27 @@ export class ConversationStore {
   }
 
   readonly defaultChannel = computed(() => this.channels().find((channel) => channel.isDefault));
+
+  /**
+   * Whether the Channel name [name] is known to be taken, ignoring case and surrounding spaces: reserved, or
+   * one of the User's Channels'. Only the server knows the names of Channels the User isn't a Member of.
+   */
+  isChannelNameTaken(name: string): boolean {
+    const wanted = name.trim().toLowerCase();
+    return (
+      reservedChannelNames.includes(wanted) ||
+      this.channels().some(
+        (channel) => !channel.isDefault && channel.name?.toLowerCase() === wanted,
+      )
+    );
+  }
+
+  /** Creates a Channel with the User as its Creator; it joins the sidebar without waiting for its event. */
+  async createChannel(request: CreateChannelRequest): Promise<ConversationDto> {
+    const created = await firstValueFrom(this.channelsApi.createChannel(request));
+    this.upsert(created);
+    return created;
+  }
 
   /** Fetches the sidebar once; later calls wait for the same request. */
   load(): Promise<void> {

@@ -3,6 +3,13 @@
     "schemas" : {
       "ConversationDto" : {
         "properties" : {
+          "creatorId" : {
+            "format" : "uuid",
+            "type" : [ "string", "null" ]
+          },
+          "description" : {
+            "type" : [ "string", "null" ]
+          },
           "id" : {
             "format" : "int64",
             "type" : "integer"
@@ -25,7 +32,7 @@
             "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "id", "isDefault", "kind", "lastActivityAt", "name", "partnerId" ],
+        "required" : [ "creatorId", "description", "id", "isDefault", "kind", "lastActivityAt", "name", "partnerId" ],
         "type" : "object"
       },
       "ConversationKind" : {
@@ -43,6 +50,28 @@
           }
         },
         "required" : [ "conversation", "type" ],
+        "type" : "object"
+      },
+      "CreateChannelRequest" : {
+        "properties" : {
+          "addDefaultChannelMembers" : {
+            "type" : "boolean"
+          },
+          "description" : {
+            "type" : [ "string", "null" ]
+          },
+          "memberIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          },
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "addDefaultChannelMembers", "memberIds", "name" ],
         "type" : "object"
       },
       "EditMessageRequest" : {
@@ -187,7 +216,7 @@
         "type" : "object"
       },
       "ProblemCode" : {
-        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "REPLY_HAS_NO_THREAD", "EMOJI_INVALID", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "INTERNAL_ERROR" ],
+        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "REPLY_HAS_NO_THREAD", "EMOJI_INVALID", "CHANNEL_NAME_EMPTY", "CHANNEL_NAME_TOO_LONG", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "CHANNEL_NAME_TAKEN", "INTERNAL_ERROR" ],
         "type" : "string"
       },
       "ProblemDto" : {
@@ -351,6 +380,34 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/channels" : {
+      "post" : {
+        "operationId" : "createChannel",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CreateChannelRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ConversationDto"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "channels" ]
+      }
+    },
     "/api/conversations" : {
       "get" : {
         "operationId" : "listConversations",

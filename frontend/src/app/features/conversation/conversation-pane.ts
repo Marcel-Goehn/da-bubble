@@ -13,6 +13,7 @@ import { Avatar } from '../../shared/ui/avatar';
 import { ChannelNamePipe } from '../../shared/ui/channel-name.pipe';
 import { Composer } from '../../shared/ui/composer';
 import { Icon } from '../../shared/ui/icon';
+import { ChannelDialogs } from '../channel/channel-dialogs';
 import { ProfileCards } from '../profile/profile-cards';
 import { DmIntro } from './dm-intro';
 import { MessageList } from './message-list';
@@ -42,8 +43,15 @@ import { MessageList } from './message-list';
       <header class="px-16 py-20 shadow-header lg:px-45 lg:py-32">
         <h1 class="flex items-center gap-10 text-20 font-bold lg:text-24">
           @if (channel(); as channel) {
-            <app-icon name="tag" />
-            {{ channel | channelName }}
+            <button
+              type="button"
+              class="flex items-center gap-10 rounded-full py-4 pr-10 pl-15 hover:bg-hover hover:text-menu-active"
+              (click)="channelDialogs.openDetails(channel.id)"
+            >
+              <app-icon name="tag" />
+              {{ channel | channelName }}
+              <app-icon name="keyboardArrowDown" />
+            </button>
           } @else if (partner(); as partner) {
             <button
               type="button"
@@ -121,6 +129,7 @@ export class ConversationPane {
   protected readonly drafts = inject(DraftService);
   protected readonly presence = inject(PresenceStore);
   protected readonly profiles = inject(ProfileCards);
+  protected readonly channelDialogs = inject(ChannelDialogs);
   protected readonly avatarUrl = avatarUrl;
   protected readonly me = this.users.me;
   protected readonly channel = computed(() => {

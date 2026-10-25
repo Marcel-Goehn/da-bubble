@@ -37,13 +37,32 @@ export const defaultChannel: ConversationDto = {
   id: 1,
   kind: 'CHANNEL',
   name: 'Allgemein',
+  description: null,
+  creatorId: null,
   isDefault: true,
   partnerId: null,
   lastActivityAt,
 };
 
-export function channel(id: number, name: string): ConversationDto {
-  return { id, kind: 'CHANNEL', name, isDefault: false, partnerId: null, lastActivityAt };
+/** The Channel [name], with no description and, unless given, created by [creatorId] = Ada. */
+export function channel(
+  id: number,
+  name: string,
+  {
+    description = null,
+    creatorId = ada.id,
+  }: { description?: string | null; creatorId?: string } = {},
+): ConversationDto {
+  return {
+    id,
+    kind: 'CHANNEL',
+    name,
+    description,
+    creatorId,
+    isDefault: false,
+    partnerId: null,
+    lastActivityAt,
+  };
 }
 
 /** The DM with [partnerId]; [activeAt] is its last activity, an ISO instant. */
@@ -56,6 +75,8 @@ export function directMessage(
     id,
     kind: 'DIRECT_MESSAGE',
     name: null,
+    description: null,
+    creatorId: null,
     isDefault: false,
     partnerId,
     lastActivityAt: activeAt,

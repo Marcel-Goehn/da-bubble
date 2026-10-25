@@ -83,6 +83,8 @@ class RealtimeApiTest : IntegrationTest() {
                         id = sent.conversationId,
                         kind = ConversationKind.DIRECT_MESSAGE,
                         name = null,
+                        description = null,
+                        creatorId = null,
                         isDefault = false,
                         partnerId = partner,
                         lastActivityAt = sent.createdAt,
@@ -91,6 +93,29 @@ class RealtimeApiTest : IntegrationTest() {
                 tab.awaitEvent(),
             )
         }
+    }
+
+    @Test
+    fun `a new Channel appears live in the sidebar of each of its Members, and nobody else's`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        val adaToken = provision(ada)
+        val adaTab = stomp.connect(adaToken)
+        val alanTab = stomp.connect(provision(alan))
+        val graceTab = stomp.connect(provision())
+
+        val request = """{"name":"Marketing","addDefaultChannelMembers":false,"memberIds":["$alan"]}"""
+        val created =
+            post("/api/channels", adaToken, request)
+                .expectStatus()
+                .isCreated
+                .expectBody(ConversationDto::class.java)
+                .returnResult()
+                .responseBody!!
+        val public = send(adaToken, "Für alle")
+
+        listOf(adaTab, alanTab).forEach { assertEquals(ConversationUpsertedEvent(created), it.awaitEvent()) }
+        assertEquals(MessageCreatedEvent(public, null), graceTab.awaitEvent())
     }
 
     @Test

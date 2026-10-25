@@ -8,6 +8,7 @@ import { UserStore } from '../../core/data/user.store';
 import { Avatar } from '../../shared/ui/avatar';
 import { ChannelNamePipe } from '../../shared/ui/channel-name.pipe';
 import { Icon } from '../../shared/ui/icon';
+import { ChannelDialogs } from '../channel/channel-dialogs';
 
 const rowClasses =
   'flex items-center gap-15 rounded-full px-20 py-4 hover:bg-hover hover:text-menu-active';
@@ -25,19 +26,29 @@ const activeRowClasses = 'bg-hover font-bold text-menu-active';
     </div>
 
     <section class="flex flex-col gap-10">
-      <h2 class="text-20 font-bold">
+      <div class="flex items-center justify-between gap-10">
+        <h2 class="text-20 font-bold">
+          <button
+            type="button"
+            class="flex items-center gap-10 rounded-15 py-4 pr-10 hover:text-interactive"
+            aria-controls="sidebar-channels"
+            [attr.aria-expanded]="channelsOpen()"
+            (click)="channelsOpen.set(!channelsOpen())"
+          >
+            <app-icon name="arrowDropDown" [class.-rotate-90]="!channelsOpen()" />
+            <app-icon name="workspaces" />
+            {{ 'sidebar.channels' | transloco }}
+          </button>
+        </h2>
         <button
           type="button"
-          class="flex items-center gap-10 rounded-15 py-4 pr-10 hover:text-interactive"
-          aria-controls="sidebar-channels"
-          [attr.aria-expanded]="channelsOpen()"
-          (click)="channelsOpen.set(!channelsOpen())"
+          class="rounded-full p-8 hover:bg-hover hover:text-interactive"
+          [attr.aria-label]="'sidebar.createChannel' | transloco"
+          (click)="channelDialogs.openCreate()"
         >
-          <app-icon name="arrowDropDown" [class.-rotate-90]="!channelsOpen()" />
-          <app-icon name="workspaces" />
-          {{ 'sidebar.channels' | transloco }}
+          <app-icon name="add" />
         </button>
-      </h2>
+      </div>
       <ul
         id="sidebar-channels"
         class="flex flex-col gap-5 pl-25"
@@ -57,6 +68,17 @@ const activeRowClasses = 'bg-hover font-bold text-menu-active';
             </a>
           </li>
         }
+        <li>
+          <button
+            type="button"
+            class="w-full"
+            [class]="rowClasses"
+            (click)="channelDialogs.openCreate()"
+          >
+            <app-icon name="addCircle" />
+            {{ 'sidebar.addChannel' | transloco }}
+          </button>
+        </li>
       </ul>
     </section>
 
@@ -113,6 +135,7 @@ export class Sidebar {
   private readonly users = inject(UserStore);
 
   protected readonly presence = inject(PresenceStore);
+  protected readonly channelDialogs = inject(ChannelDialogs);
   protected readonly rowClasses = rowClasses;
   protected readonly activeRowClasses = activeRowClasses;
   protected readonly avatarUrl = avatarUrl;

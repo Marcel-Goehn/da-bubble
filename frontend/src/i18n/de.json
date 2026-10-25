@@ -13,6 +13,12 @@
   "channel": {
     "default": "Allgemein"
   },
+  "channelDetails": {
+    "name": "Channel-Name",
+    "description": "Beschreibung",
+    "noDescription": "Keine Beschreibung",
+    "createdBy": "Erstellt von"
+  },
   "composer": {
     "placeholder": "Nachricht an #{channel}",
     "send": "Nachricht senden",
@@ -22,6 +28,25 @@
   },
   "conversation": {
     "directMessage": "Direktnachricht"
+  },
+  "createChannel": {
+    "title": "Channel erstellen",
+    "intro": "Channels dienen deinem Team zur Kommunikation. Am besten sollten sie themenbezogen sein, #marketing zum Beispiel.",
+    "name": "Channel-Name",
+    "namePlaceholder": "z.B. Kooperationsprojekte",
+    "nameTaken": "Diesen Channel-Namen gibt es schon.",
+    "description": "Beschreibung",
+    "optional": "(optional)",
+    "descriptionPlaceholder": "Dein Text hier",
+    "create": "Erstellen",
+    "peopleTitle": "Leute hinzufügen",
+    "everyoneBefore": "Alle Mitglieder von",
+    "everyoneAfter": "hinzufügen",
+    "specific": "Bestimmte Leute hinzufügen",
+    "search": "Name eingeben",
+    "matches": "Passende Personen",
+    "remove": "{name} entfernen",
+    "nameTooLong": "Ein Channel-Name hat höchstens {max} Zeichen."
   },
   "deleteMessage": {
     "title": "Nachricht löschen?",
@@ -47,7 +72,8 @@
     "sendFailed": "Deine Nachricht konnte nicht gesendet werden. Bitte versuche es noch einmal.",
     "editFailed": "Deine Änderung konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
     "deleteFailed": "Die Nachricht konnte nicht gelöscht werden. Bitte versuche es noch einmal.",
-    "reactionFailed": "Deine Reaktion konnte nicht gespeichert werden. Bitte versuche es noch einmal."
+    "reactionFailed": "Deine Reaktion konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
+    "createChannelFailed": "Der Channel konnte nicht erstellt werden. Bitte versuche es noch einmal."
   },
   "legal": {
     "back": "Zurück zu DABubble",
@@ -110,7 +136,9 @@
     "label": "Workspace-Menü",
     "channels": "Channels",
     "directMessages": "Direktnachrichten",
-    "selfDm": "{name} (Du)"
+    "selfDm": "{name} (Du)",
+    "createChannel": "Channel erstellen",
+    "addChannel": "Channel hinzufügen"
   },
   "thread": {
     "title": "Thread",

@@ -1,5 +1,7 @@
 package com.dabubble.backend.conversation
 
+import com.dabubble.backend.problem.ProblemCode
+import com.dabubble.backend.problem.ProblemException
 import jakarta.persistence.CascadeType
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
@@ -23,6 +25,9 @@ class Conversation private constructor(
     @Enumerated(EnumType.STRING)
     val kind: ConversationKind,
     val name: String?,
+    val description: String?,
+    /** The User who created a Channel; `null` for the Default Channel and DMs. */
+    val creatorId: UUID?,
     val isDefault: Boolean,
     val userLow: UUID?,
     val userHigh: UUID?,
@@ -59,10 +64,13 @@ class Conversation private constructor(
         lastActivityAt = maxOf(lastActivityAt, at)
     }
 
+    /** A Channel's current Members; none for a DM. */
+    fun memberIds(): Set<UUID> = memberships.mapTo(mutableSetOf()) { it.userId }
+
     /** Who a new Message here concerns: a Channel's current Members, or the one or two Users of a DM. */
     fun recipients(): Set<UUID> =
         when (kind) {
-            ConversationKind.CHANNEL -> memberships.mapTo(mutableSetOf()) { it.userId }
+            ConversationKind.CHANNEL -> memberIds()
             ConversationKind.DIRECT_MESSAGE -> setOfNotNull(userLow, userHigh)
         }
 
@@ -75,13 +83,63 @@ class Conversation private constructor(
         }
 
     companion object {
+        const val CHANNEL_NAME_MAX_LENGTH = 50
+
+        // The Default Channel's shown names, in German and English; nobody else may use them.
+        private val reservedChannelNames = setOf("allgemein", "general")
+
+        /**
+         * A new Channel with its Creator as first Member. The name is trimmed, must not be blank or reserved, and
+         * a blank description is none. The Creator's Admin status follows from [creatorId] and isn't stored on
+         * the Membership. Whether the name is free is up to the database.
+         */
+        fun channel(
+            name: String,
+            description: String?,
+            creatorId: UUID,
+            createdAt: Instant,
+        ): Conversation {
+            val trimmed = name.trim()
+            val length = trimmed.codePointCount(0, trimmed.length)
+            val refused =
+                when {
+                    trimmed.isEmpty() -> ProblemCode.CHANNEL_NAME_EMPTY
+                    length > CHANNEL_NAME_MAX_LENGTH -> ProblemCode.CHANNEL_NAME_TOO_LONG
+                    trimmed.lowercase() in reservedChannelNames -> ProblemCode.CHANNEL_NAME_TAKEN
+                    else -> null
+                }
+            if (refused != null) {
+                throw ProblemException(refused, "Channel name \"$trimmed\" refused")
+            }
+            val shownDescription = description?.trim()?.ifEmpty { null }
+            return Conversation(
+                kind = ConversationKind.CHANNEL,
+                name = trimmed,
+                description = shownDescription,
+                creatorId = creatorId,
+                isDefault = false,
+                userLow = null,
+                userHigh = null,
+                createdAt = createdAt,
+            ).apply { addMember(creatorId, createdAt) }
+        }
+
         fun directMessage(
             a: UUID,
             b: UUID,
             createdAt: Instant,
         ): Conversation {
             val (low, high) = directMessagePair(a, b)
-            return Conversation(ConversationKind.DIRECT_MESSAGE, null, false, low, high, createdAt)
+            return Conversation(
+                kind = ConversationKind.DIRECT_MESSAGE,
+                name = null,
+                description = null,
+                creatorId = null,
+                isDefault = false,
+                userLow = low,
+                userHigh = high,
+                createdAt = createdAt,
+            )
         }
     }
 }

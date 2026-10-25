@@ -1,5 +1,5 @@
 import { HttpContext } from '@angular/common/http';
-import { inject, Service, signal } from '@angular/core';
+import { computed, inject, Service, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { MeService } from '../../api/generated/me/me.service';
 import { PredefinedAvatar, UserDto } from '../../api/generated/model';
@@ -8,6 +8,8 @@ import { ROUTED_READ } from '../errors/error.interceptor';
 
 export type { UserDto };
 export { PredefinedAvatar };
+
+const byName = new Intl.Collator(undefined, { sensitivity: 'base' });
 
 /** Users, starting with the logged-in one ("me"). */
 @Service()
@@ -20,6 +22,13 @@ export class UserStore {
 
   /** The logged-in User; set once `loadMe` has run, which the shell's guard ensures. */
   readonly me = this.meState.asReadonly();
+
+  /** Every loaded User of the Workspace, the logged-in one included, by name. */
+  readonly all = computed(() => {
+    const me = this.me();
+    const others = [...this.byId().values()].filter((user) => user.id !== me?.id);
+    return (me ? [me, ...others] : others).sort((a, b) => byName.compare(a.name, b.name));
+  });
 
   /** The User with [id], if loaded or opened. TODO(#69): live `user.updated`. */
   user(id: string): UserDto | undefined {

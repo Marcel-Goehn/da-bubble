@@ -9,6 +9,7 @@ export * from './conversationDto';
 export * from './conversationKind';
 export * from './conversationUpsertedEvent';
 export * from './conversationUpsertedEventType';
+export * from './createChannelRequest';
 export * from './editMessageRequest';
 export * from './fieldErrorDto';
 export * from './listMessagesParams';
