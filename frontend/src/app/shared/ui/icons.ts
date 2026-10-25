@@ -9,6 +9,7 @@ import chatBubble from '@material-symbols/svg-400/outlined/chat_bubble.svg';
 import close from '@material-symbols/svg-400/outlined/close.svg';
 import comment from '@material-symbols/svg-400/outlined/comment.svg';
 import edit from '@material-symbols/svg-400/outlined/edit.svg';
+import editSquare from '@material-symbols/svg-400/outlined/edit_square.svg';
 import info from '@material-symbols/svg-400/outlined/info.svg';
 import personAdd from '@material-symbols/svg-400/outlined/person_add.svg';
 import personRemove from '@material-symbols/svg-400/outlined/person_remove.svg';
@@ -42,6 +43,7 @@ export const icons = {
   close,
   comment,
   edit,
+  editSquare,
   info,
   personAdd,
   personRemove,

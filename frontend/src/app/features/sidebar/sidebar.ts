@@ -20,9 +20,17 @@ const activeRowClasses = 'bg-hover font-bold text-menu-active';
   imports: [Avatar, ChannelNamePipe, Icon, RouterLink, RouterLinkActive, TranslocoPipe],
   host: { class: 'flex flex-col gap-25' },
   template: `
-    <div class="hidden items-center gap-15 lg:flex">
-      <app-icon name="workspaces" class="size-40! text-accent" />
-      <h2 class="text-24 font-bold">{{ 'workspace.name' | transloco }}</h2>
+    <div class="flex items-center gap-15 max-lg:contents">
+      <app-icon name="workspaces" class="size-40! text-accent max-lg:hidden" />
+      <h2 class="text-24 font-bold max-lg:hidden">{{ 'workspace.name' | transloco }}</h2>
+      <!-- On mobile it floats over the menu, as there is no header row there. -->
+      <a
+        routerLink="/new"
+        class="ml-auto rounded-full max-lg:fixed max-lg:right-20 max-lg:bottom-20 max-lg:z-10 max-lg:bg-accent max-lg:p-15 max-lg:text-text-inverse max-lg:shadow-overlay max-lg:hover:bg-accent-hover lg:p-8 lg:hover:bg-hover lg:hover:text-interactive"
+        [attr.aria-label]="'newMessage.title' | transloco"
+      >
+        <app-icon name="editSquare" />
+      </a>
     </div>
 
     <section class="flex flex-col gap-10">

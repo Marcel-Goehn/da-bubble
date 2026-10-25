@@ -215,5 +215,14 @@
   },
   "undo": {
     "action": "Rückgängig"
+  },
+  "newMessage": {
+    "title": "Neue Nachricht",
+    "recipient": "Empfänger",
+    "recipientPlaceholder": "An: #channel, @jemand oder E-Mail-Adresse",
+    "matches": "Mögliche Empfänger",
+    "remove": "{name} als Empfänger entfernen",
+    "recipientMissing": "Wähle zuerst, an wen die Nachricht geht.",
+    "placeholder": "Starte eine neue Nachricht"
   }
 }

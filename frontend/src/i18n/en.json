@@ -215,5 +215,14 @@
   },
   "undo": {
     "action": "Undo"
+  },
+  "newMessage": {
+    "title": "New message",
+    "recipient": "Recipient",
+    "recipientPlaceholder": "To: #channel, @someone or email address",
+    "matches": "Possible recipients",
+    "remove": "Remove {name} as recipient",
+    "recipientMissing": "First choose who the message is for.",
+    "placeholder": "Start a new message"
   }
 }

@@ -47,6 +47,12 @@ export const routes: Routes = [
               import('./features/shell/workspace-home').then((m) => m.WorkspaceHome),
           },
           {
+            path: 'new',
+            data: { pane: 'main' },
+            loadComponent: () =>
+              import('./features/new-message/new-message').then((m) => m.NewMessage),
+          },
+          {
             path: 'channel/:id',
             canActivate: [channelGuard],
             data: { pane: 'main' },
