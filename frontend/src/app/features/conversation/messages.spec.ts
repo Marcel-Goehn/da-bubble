@@ -16,6 +16,7 @@ import {
 } from '../../../testing/app';
 import { FakeIntersectionObserver } from '../../../testing/intersection-observer';
 import { MessageDto } from '../../core/data/message.store';
+import { shownText } from '../../../testing/shown-text';
 
 const conversations = [defaultChannel, channel(3, 'Entwicklerteam'), directMessage(2, ada.id)];
 const users = [ada, alan];
@@ -35,7 +36,7 @@ function shownMessages(label = 'Nachrichten'): string[] {
   const log = screen.getByRole('region', { name: label });
   return within(log)
     .queryAllByRole('listitem')
-    .map((item) => item.textContent.replace(/\s+/g, ' ').trim());
+    .map((item) => shownText(item));
 }
 
 function composer(name = 'Nachricht an #Allgemein'): HTMLTextAreaElement {

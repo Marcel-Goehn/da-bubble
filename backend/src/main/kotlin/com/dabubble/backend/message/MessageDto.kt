@@ -17,6 +17,8 @@ data class MessageDto(
     val replyCount: Int,
     /** When the newest Reply in its Thread was sent; `null` without one. */
     val lastReplyAt: Instant?,
+    /** One entry per emoji, in the order they were first used. */
+    val reactions: List<ReactionDto>,
 ) {
     companion object {
         /** [message] with its Thread's [summary], `null` while it has no Replies. */
@@ -34,7 +36,19 @@ data class MessageDto(
             deletedAt = message.deletedAt,
             replyCount = summary?.replyCount?.toInt() ?: 0,
             lastReplyAt = summary?.lastReplyAt,
+            reactions = ReactionDto.from(message.reactions),
         )
+    }
+}
+
+/** Everyone who reacted to a Message with [emoji], in the order they did. */
+data class ReactionDto(
+    val emoji: String,
+    val userIds: List<UUID>,
+) {
+    companion object {
+        fun from(reactions: List<Reaction>): List<ReactionDto> =
+            reactions.groupBy { it.emoji }.map { (emoji, group) -> ReactionDto(emoji, group.map { it.userId }) }
     }
 }
 
@@ -69,4 +83,10 @@ data class SendMessageRequest(
 data class EditMessageRequest(
     @field:Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     val text: String,
+)
+
+data class ToggleReactionRequest(
+    /** One emoji as native Unicode, skin tone included. */
+    @field:Schema(requiredMode = Schema.RequiredMode.REQUIRED)
+    val emoji: String,
 )

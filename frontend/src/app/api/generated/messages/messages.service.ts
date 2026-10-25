@@ -27,7 +27,8 @@ import type {
   ListMessagesParams,
   MessageDto,
   MessagePageDto,
-  SendMessageRequest
+  SendMessageRequest,
+  ToggleReactionRequest
 } from '../model';
 
 import type {
@@ -297,6 +298,47 @@ export class MessagesService {
     return this.http.put<TData>(
       `/api/conversations/${conversationId}/messages/${messageId}`,
       editMessageRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
+ toggleReaction<TData = MessageDto>(conversationId: number,
+    messageId: number,
+    toggleReactionRequest: ToggleReactionRequest, options?: HttpClientBodyOptions): Observable<TData>;
+ toggleReaction<TData = MessageDto>(conversationId: number,
+    messageId: number,
+    toggleReactionRequest: ToggleReactionRequest, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ toggleReaction<TData = MessageDto>(conversationId: number,
+    messageId: number,
+    toggleReactionRequest: ToggleReactionRequest, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  toggleReaction<TData = MessageDto>(
+    conversationId: number,
+    messageId: number,
+    toggleReactionRequest: ToggleReactionRequest, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.post<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}/reactions`,
+      toggleReactionRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.post<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}/reactions`,
+      toggleReactionRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.post<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}/reactions`,
+      toggleReactionRequest,{
         ...(options as Omit<NonNullable<typeof options>, 'observe'>),
         observe: 'body',
       }

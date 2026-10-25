@@ -4,6 +4,7 @@
  * DA Bubble API
  * OpenAPI spec version: v1
  */
+import type { ReactionDto } from './reactionDto';
 
 export interface MessageDto {
   authorId: string;
@@ -18,6 +19,7 @@ export interface MessageDto {
   lastReplyAt: string | null;
   /** @nullable */
   parentMessageId: number | null;
+  reactions: ReactionDto[];
   replyCount: number;
   text: string;
 }

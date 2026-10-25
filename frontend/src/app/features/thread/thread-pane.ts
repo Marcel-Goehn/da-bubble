@@ -60,6 +60,7 @@ import { MessageList } from '../conversation/message-list';
           [window]="messages.thread"
           [label]="'thread.messages' | transloco"
           [lead]="messages.threadParent()"
+          compactReactions
         />
         <app-composer
           class="px-16 pb-16 lg:px-40 lg:pb-40"

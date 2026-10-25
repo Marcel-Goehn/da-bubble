@@ -18,8 +18,8 @@ import java.time.Instant
 import java.util.UUID
 
 /**
- * Sends, replies to, edits and deletes Messages in a Conversation the User can see. Each write bumps the Conversation's
- * last activity and tells its Users once committed.
+ * Sends, replies to, edits, deletes and reacts to Messages in a Conversation the User can see. Each write bumps
+ * the Conversation's last activity and tells its Users once committed.
  */
 @Component
 class MessageWriter(
@@ -54,9 +54,7 @@ class MessageWriter(
     ): MessageDto {
         val conversationId = checkNotNull(conversation.id)
         val now = clock.now()
-        val parent =
-            messages.findLockedByIdAndConversationId(parentId, conversationId)
-                ?: throw ProblemException(ProblemCode.NOT_FOUND, "No Message $parentId in Conversation $conversationId")
+        val parent = messages.requireLockedIn(conversationId, parentId)
         val reply = MessageDto.from(messages.save(Message.reply(parent, authorId, text, now)), null)
         val thread = messages.summarizeThreads(listOf(parentId)).single().toDto()
         announce(conversation, now, MessageCreatedEvent(reply, thread))
@@ -97,6 +95,26 @@ class MessageWriter(
             announce(conversation, now, MessageUpdatedEvent(deleted))
         }
         return deleted
+    }
+
+    /**
+     * Adds or removes the User's Reaction with [emoji] on the Message or Reply [messageId] in [conversation]. The
+     * Message stays locked until the commit, so two tabs toggling at once take turns.
+     */
+    @Transactional
+    fun toggleReaction(
+        conversation: Conversation,
+        messageId: Long,
+        userId: UUID,
+        emoji: String,
+    ): MessageDto {
+        val conversationId = checkNotNull(conversation.id)
+        val now = clock.now()
+        val message = messages.requireLockedIn(conversationId, messageId)
+        message.toggleReaction(userId, emoji, now)
+        val toggled = messages.toDto(message)
+        announce(conversation, now, MessageUpdatedEvent(toggled))
+        return toggled
     }
 
     private fun requireMessage(

@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { expectNoA11yViolations } from '../../../testing/a11y';
 import { ada, alan, defaultChannel, message, renderApp, reply, settle } from '../../../testing/app';
 import { MessageDto } from '../../core/data/message.store';
+import { shownText } from '../../../testing/shown-text';
 
 const users = [ada, alan];
 const lastReplyAt = new Date(2026, 0, 15, 14, 56).toISOString();
@@ -30,13 +31,6 @@ function conversation(): HTMLElement {
 
 function threadPane(): HTMLElement {
   return screen.getByRole('complementary', { name: 'Thread' });
-}
-
-/** What [element] shows, with whitespace collapsed; a closed ⋮ popover shows nothing. */
-function shownText(element: HTMLElement): string {
-  const shown = element.cloneNode(true) as HTMLElement;
-  shown.querySelectorAll('[role=menu][hidden]').forEach((menu) => menu.remove());
-  return shown.textContent.replace(/\s+/g, ' ').trim();
 }
 
 /** The Thread's parent and Replies, as shown. */

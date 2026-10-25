@@ -24,3 +24,19 @@
 @utility overflow-anchor-none {
   overflow-anchor: none;
 }
+
+/* The emoji picker (emoji-picker-element) is styled through its CSS variables, with the app's tokens. */
+emoji-picker {
+  --background: var(--color-surface);
+  --border-size: 0;
+  --button-active-background: var(--color-hover);
+  --button-hover-background: var(--color-hover);
+  --category-font-color: var(--color-text-muted);
+  --indicator-color: var(--color-accent);
+  --input-border-color: var(--color-border);
+  --input-border-radius: var(--radius-20);
+  --input-font-color: var(--color-text);
+  --input-placeholder-color: var(--color-text-muted);
+  --outline-color: var(--color-border-focus);
+  font-family: var(--font-sans);
+}

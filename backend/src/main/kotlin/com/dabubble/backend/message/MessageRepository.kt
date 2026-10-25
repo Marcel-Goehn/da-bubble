@@ -111,3 +111,11 @@ fun MessageRepository.requireIn(
 ): Message =
     findByIdAndConversationId(id = id, conversationId = conversationId)
         ?: throw ProblemException(ProblemCode.NOT_FOUND, "No Message $id in Conversation $conversationId")
+
+/** As [requireIn], locking the Message's row until the transaction ends. */
+fun MessageRepository.requireLockedIn(
+    conversationId: Long,
+    id: Long,
+): Message =
+    findLockedByIdAndConversationId(id = id, conversationId = conversationId)
+        ?: throw ProblemException(ProblemCode.NOT_FOUND, "No Message $id in Conversation $conversationId")

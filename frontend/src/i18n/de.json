@@ -17,7 +17,8 @@
     "placeholder": "Nachricht an #{channel}",
     "send": "Nachricht senden",
     "placeholderDm": "Nachricht an {name}",
-    "placeholderThread": "Antworten …"
+    "placeholderThread": "Antworten …",
+    "emoji": "Emoji einfügen"
   },
   "conversation": {
     "directMessage": "Direktnachricht"
@@ -37,12 +38,16 @@
     "selfTitle": "Dieser Raum ist nur für dich da.",
     "selfText": "Mache dir Notizen, liste deine To-dos auf oder bewahre Links und Dateien griffbereit auf. Du kannst hier auch gerne Dinge mit dir selbst besprechen."
   },
+  "emojiPicker": {
+    "label": "Emoji auswählen"
+  },
   "errors": {
     "conversationUnavailable": "Diesen Channel oder diese Direktnachricht gibt es nicht, oder du hast keinen Zugriff darauf.",
     "generic": "Etwas ist schiefgelaufen. Bitte lade die Seite neu.",
     "sendFailed": "Deine Nachricht konnte nicht gesendet werden. Bitte versuche es noch einmal.",
     "editFailed": "Deine Änderung konnte nicht gespeichert werden. Bitte versuche es noch einmal.",
-    "deleteFailed": "Die Nachricht konnte nicht gelöscht werden. Bitte versuche es noch einmal."
+    "deleteFailed": "Die Nachricht konnte nicht gelöscht werden. Bitte versuche es noch einmal.",
+    "reactionFailed": "Deine Reaktion konnte nicht gespeichert werden. Bitte versuche es noch einmal."
   },
   "legal": {
     "back": "Zurück zu DABubble",
@@ -84,6 +89,17 @@
   "presence": {
     "online": "Aktiv",
     "offline": "Abwesend"
+  },
+  "reactions": {
+    "you": "Du",
+    "youAlone": "Du",
+    "reactedYou": "hast reagiert",
+    "reactedOne": "hat reagiert",
+    "reactedMany": "haben reagiert",
+    "more": "+{count} weitere",
+    "less": "Weniger anzeigen",
+    "add": "Reaktion hinzufügen",
+    "quick": "Mit {emoji} reagieren"
   },
   "profile": {
     "title": "Profil",

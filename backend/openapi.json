@@ -120,6 +120,12 @@
             "format" : "int64",
             "type" : [ "integer", "null" ]
           },
+          "reactions" : {
+            "items" : {
+              "$ref" : "#/components/schemas/ReactionDto"
+            },
+            "type" : "array"
+          },
           "replyCount" : {
             "format" : "int32",
             "type" : "integer"
@@ -128,7 +134,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "authorId", "conversationId", "createdAt", "deletedAt", "editedAt", "id", "lastReplyAt", "parentMessageId", "replyCount", "text" ],
+        "required" : [ "authorId", "conversationId", "createdAt", "deletedAt", "editedAt", "id", "lastReplyAt", "parentMessageId", "reactions", "replyCount", "text" ],
         "type" : "object"
       },
       "MessagePageDto" : {
@@ -181,7 +187,7 @@
         "type" : "object"
       },
       "ProblemCode" : {
-        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "REPLY_HAS_NO_THREAD", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "INTERNAL_ERROR" ],
+        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "REPLY_HAS_NO_THREAD", "EMOJI_INVALID", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "INTERNAL_ERROR" ],
         "type" : "string"
       },
       "ProblemDto" : {
@@ -213,6 +219,22 @@
           }
         },
         "required" : [ "code", "detail", "errors", "instance", "status", "title", "type" ],
+        "type" : "object"
+      },
+      "ReactionDto" : {
+        "properties" : {
+          "emoji" : {
+            "type" : "string"
+          },
+          "userIds" : {
+            "items" : {
+              "format" : "uuid",
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [ "emoji", "userIds" ],
         "type" : "object"
       },
       "RealtimeEvent" : {
@@ -287,6 +309,15 @@
           }
         },
         "required" : [ "lastReplyAt", "parentMessageId", "replyCount" ],
+        "type" : "object"
+      },
+      "ToggleReactionRequest" : {
+        "properties" : {
+          "emoji" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "emoji" ],
         "type" : "object"
       },
       "UserDto" : {
@@ -468,6 +499,51 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/EditMessageRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "messages" ]
+      }
+    },
+    "/api/conversations/{conversationId}/messages/{messageId}/reactions" : {
+      "post" : {
+        "operationId" : "toggleReaction",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "conversationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "messageId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ToggleReactionRequest"
               }
             }
           },

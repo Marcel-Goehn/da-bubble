@@ -4,7 +4,7 @@ import { expectNoA11yViolations } from './support/a11y';
 import { expect, logIn, test } from './support/fixtures';
 import { createVerifiedUser, TestUser } from './support/keycloak-admin';
 
-test("a Message sent in one browser, and its sender's Presence, show up live in another", async ({
+test("a Message sent in one browser, a Reaction to it, and its sender's Presence, show up live in another", async ({
   browser,
   request,
   user,
@@ -27,6 +27,32 @@ test("a Message sent in one browser, and its sender's Presence, show up live in 
   await expect(
     sender.page.getByRole('region', { name: 'Nachrichten' }).getByText(text),
   ).toHaveCount(1);
+  await expectNoA11yViolations(reader.page);
+
+  // The reader reacts with ✅ from the hover bar; the sender's browser shows the Reaction through the push.
+  const readerMessage = reader.page
+    .getByRole('region', { name: 'Nachrichten' })
+    .getByRole('listitem')
+    .filter({ hasText: text });
+  const reactionPushed = sender.socket.waitForEvent(
+    'framereceived',
+    (frame) =>
+      String(frame.payload).includes('"emoji":"✅"') && String(frame.payload).includes(text),
+  );
+  await readerMessage.hover();
+  await readerMessage.getByRole('button', { name: 'Mit ✅ reagieren' }).click();
+  await reactionPushed;
+  await expect(
+    sender.page
+      .getByRole('region', { name: 'Nachrichten' })
+      .getByRole('listitem')
+      .filter({ hasText: text })
+      .getByRole('button', { name: '✅ 1' }),
+  ).toHaveAttribute('aria-pressed', 'false');
+  await expect(readerMessage.getByRole('button', { name: '✅ 1' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   await expectNoA11yViolations(reader.page);
 
   // The sender's Avatar beside their Message shows them online, and offline once their browser is gone for

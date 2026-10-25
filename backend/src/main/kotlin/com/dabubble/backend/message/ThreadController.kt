@@ -26,6 +26,7 @@ class ThreadController(
 ) {
     /** A page of the Thread's Replies, newest first, with its parent; without a cursor the newest page. */
     @GetMapping
+    @Transactional(readOnly = true)
     fun listReplies(
         user: User,
         @PathVariable conversationId: Long,

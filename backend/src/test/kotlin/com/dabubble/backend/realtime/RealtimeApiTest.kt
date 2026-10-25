@@ -3,6 +3,7 @@ package com.dabubble.backend.realtime
 import com.dabubble.backend.conversation.ConversationDto
 import com.dabubble.backend.conversation.ConversationKind
 import com.dabubble.backend.message.MessageDto
+import com.dabubble.backend.message.ReactionDto
 import com.dabubble.backend.message.ThreadSummaryDto
 import com.dabubble.backend.support.IntegrationTest
 import com.dabubble.backend.support.TestTokens
@@ -198,6 +199,61 @@ class RealtimeApiTest : IntegrationTest() {
 
         assertEquals(MessageCreatedEvent(after, null), tab.awaitEvent())
     }
+
+    @Test
+    fun `adding and removing a Reaction reach every tab of the Conversation's Users, with the bumped activity`() {
+        val ada = UUID.randomUUID()
+        val alan = UUID.randomUUID()
+        val adaToken = provision(ada)
+        val alanToken = provision(alan)
+        val dm = directMessage(ada, alan)
+        val sent = send(adaToken, "Hallo", dm)
+        val tabs = listOf(adaToken, adaToken, alanToken).map { stomp.connect(it) }
+
+        clock.set(clock.instant() + Duration.ofMinutes(1))
+        val added = react(alanToken, dm, sent.id, "👍")
+        val addedAt = clock.instant().truncatedTo(ChronoUnit.MICROS)
+        clock.set(clock.instant() + Duration.ofMinutes(1))
+        val removed = react(alanToken, dm, sent.id, "👍")
+        val removedAt = clock.instant().truncatedTo(ChronoUnit.MICROS)
+
+        assertEquals(listOf(ReactionDto("👍", listOf(alan))), added.reactions)
+        assertEquals(emptyList<ReactionDto>(), removed.reactions)
+        tabs.forEach { tab ->
+            listOf(added to addedAt, removed to removedAt).forEach { (message, at) ->
+                assertEquals(MessageUpdatedEvent(message), tab.awaitEvent())
+                val upserted = tab.awaitEvent() as ConversationUpsertedEvent
+                assertEquals(at, upserted.conversation.lastActivityAt)
+            }
+        }
+    }
+
+    @Test
+    fun `a rejected Reaction pushes nothing`() {
+        val token = provision()
+        val sent = send(token, "Hallo")
+        val tab = stomp.connect(token)
+
+        post("/api/conversations/1/messages/${sent.id}/reactions", token, """{"emoji":"a"}""")
+            .expectStatus()
+            .isBadRequest
+        val after = send(token, "Danach")
+
+        assertEquals(MessageCreatedEvent(after, null), tab.awaitEvent())
+    }
+
+    private fun react(
+        token: String,
+        conversationId: Long,
+        messageId: Long,
+        emoji: String,
+    ): MessageDto =
+        post("/api/conversations/$conversationId/messages/$messageId/reactions", token, """{"emoji":"$emoji"}""")
+            .expectStatus()
+            .isOk
+            .expectBody(MessageDto::class.java)
+            .returnResult()
+            .responseBody!!
 
     private fun reply(
         token: String,

@@ -21,6 +21,7 @@ import { PresenceStore } from '../../core/data/presence.store';
 import { UserStore } from '../../core/data/user.store';
 import { ErrorService } from '../../core/errors/error.service';
 import { MessageBubble } from '../../shared/ui/message-bubble';
+import { ReactionView } from '../../shared/ui/reaction-chips';
 import { ProfileCards } from '../profile/profile-cards';
 import { DeleteMessageDialog } from './delete-message-dialog';
 
@@ -100,11 +101,14 @@ interface Rendered {
         [replyCount]="message.replyCount"
         [lastReplyAt]="message.lastReplyAt"
         [threadLink]="opensThreads() ? ['thread', message.id] : null"
+        [reactions]="reactionViews(message)"
+        [compactReactions]="compactReactions()"
         (authorSelected)="profiles.open(message.authorId)"
         (editRequested)="editingId.set(message.id)"
         (editCancelled)="editingId.set(null)"
         (editSaved)="saveEdit(message, $event)"
         (deleteRequested)="confirmDelete(message, $event)"
+        (reactionToggled)="toggleReaction(message, $event)"
       />
     </ng-template>
   `,
@@ -116,6 +120,8 @@ export class MessageList {
   readonly label = input.required<string>();
   /** Whether its Messages open Threads, which Replies don't. */
   readonly opensThreads = input(false, { transform: booleanAttribute });
+  /** Whether long Reaction lists collapse after 7 at every width, as in a Thread. */
+  readonly compactReactions = input(false, { transform: booleanAttribute });
   /** A Message always shown above the others, with the count of Replies below it: a Thread's parent. */
   readonly lead = input<MessageDto | null>(null);
 
@@ -228,6 +234,29 @@ export class MessageList {
     } catch {
       this.errors.show(this.transloco.translate('errors.deleteFailed'));
       trigger.focus();
+    }
+  }
+
+  /** [message]'s Reactions as the chips show them: the User's own, and the names of everyone else. */
+  protected reactionViews(message: MessageDto): ReactionView[] {
+    const me = this.users.me()?.id;
+    return message.reactions.map(({ emoji, userIds }) => ({
+      emoji,
+      mine: userIds.includes(me ?? ''),
+      others: userIds
+        .filter((id) => id !== me)
+        .map(
+          (id) => this.users.user(id)?.name ?? this.transloco.translate('message.unknownAuthor'),
+        ),
+    }));
+  }
+
+  /** Adds or removes the User's Reaction with [emoji] on [message]. */
+  protected async toggleReaction(message: MessageDto, emoji: string): Promise<void> {
+    try {
+      await this.store.toggleReaction(message, emoji);
+    } catch {
+      this.errors.show(this.transloco.translate('errors.reactionFailed'));
     }
   }
 

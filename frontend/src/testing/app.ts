@@ -9,6 +9,8 @@ import { MessageDto } from '../app/core/data/message.store';
 import { RealtimeService } from '../app/core/data/realtime.service';
 import { UserDto } from '../app/core/data/user.store';
 import { Language } from '../app/core/i18n/i18n.providers';
+import { EmojiPickerLoader } from '../app/shared/ui/emoji-picker-loader';
+import { FakeEmojiPickerLoader } from './fake-emoji-picker';
 import { FakeKeycloak, provideFakeKeycloak } from './fake-keycloak';
 import { FakeRealtimeService } from './fake-realtime';
 import { provideI18nTesting } from './i18n';
@@ -81,6 +83,7 @@ export function message(
     deletedAt: null,
     replyCount: 0,
     lastReplyAt: null,
+    reactions: [],
   };
 }
 
@@ -134,6 +137,7 @@ export async function startApp({
       provideI18nTesting(lang),
       FakeRealtimeService,
       { provide: RealtimeService, useExisting: FakeRealtimeService },
+      { provide: EmojiPickerLoader, useClass: FakeEmojiPickerLoader },
     ],
   });
   const http = TestBed.inject(HttpTestingController);

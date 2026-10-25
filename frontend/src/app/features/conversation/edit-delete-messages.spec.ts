@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import { expectNoA11yViolations } from '../../../testing/a11y';
 import { ada, alan, defaultChannel, message, renderApp, settle } from '../../../testing/app';
 import { MessageDto, MessageStore } from '../../core/data/message.store';
+import { shownText } from '../../../testing/shown-text';
 
 const users = [ada, alan];
 const editedAt = new Date(2026, 0, 15, 15, 6).toISOString();
@@ -23,13 +24,6 @@ function shownMessage(text: string): HTMLElement {
   return within(log)
     .getAllByRole('listitem')
     .find((item) => item.textContent.includes(text))!;
-}
-
-/** What [element] shows, with whitespace collapsed; a closed ⋮ popover shows nothing. */
-function shownText(element: HTMLElement): string {
-  const shown = element.cloneNode(true) as HTMLElement;
-  shown.querySelectorAll('[role=menu][hidden]').forEach((menu) => menu.remove());
-  return shown.textContent.replace(/\s+/g, ' ').trim();
 }
 
 function toast(): string | undefined {

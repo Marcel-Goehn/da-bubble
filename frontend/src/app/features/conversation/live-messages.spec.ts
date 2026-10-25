@@ -11,6 +11,7 @@ import {
 } from '../../../testing/app';
 import { FakeIntersectionObserver } from '../../../testing/intersection-observer';
 import { MessageDto } from '../../core/data/message.store';
+import { shownText } from '../../../testing/shown-text';
 
 const users = [ada, alan];
 
@@ -27,7 +28,7 @@ function shownTexts(): string[] {
   const log = screen.getByRole('region', { name: 'Nachrichten' });
   return within(log)
     .queryAllByRole('listitem')
-    .map((item) => item.textContent.replace(/\s+/g, ' ').trim().split(' ').at(-1) ?? '');
+    .map((item) => shownText(item).split(' ').at(-1) ?? '');
 }
 
 describe('Live Messages', () => {

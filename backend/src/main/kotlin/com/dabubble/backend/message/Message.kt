@@ -2,11 +2,16 @@ package com.dabubble.backend.message
 
 import com.dabubble.backend.problem.ProblemCode
 import com.dabubble.backend.problem.ProblemException
+import jakarta.persistence.CascadeType
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
+import jakarta.persistence.JoinColumn
+import jakarta.persistence.OneToMany
+import jakarta.persistence.OrderBy
 import jakarta.persistence.Table
+import org.hibernate.annotations.BatchSize
 import java.time.Instant
 import java.util.UUID
 
@@ -27,6 +32,39 @@ class Message private constructor(
     var editedAt: Instant? = null
 
     var deletedAt: Instant? = null
+
+    // Loaded for a whole page of Messages at once rather than one query each.
+    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JoinColumn(name = "message_id", nullable = false)
+    @OrderBy("createdAt, id")
+    @BatchSize(size = 64)
+    private val reactionList: MutableList<Reaction> = mutableListOf()
+
+    /** Its Reactions, oldest first. */
+    val reactions: List<Reaction> get() = reactionList
+
+    /**
+     * Adds the User's Reaction with [emoji], or removes it if they've already reacted with it. A Deleted Message
+     * can't be reacted to, and [emoji] must be exactly one emoji.
+     */
+    fun toggleReaction(
+        userId: UUID,
+        emoji: String,
+        at: Instant,
+    ) {
+        if (deletedAt != null) {
+            throw ProblemException(ProblemCode.MESSAGE_DELETED, "A Deleted Message can't be reacted to")
+        }
+        if (!isSingleEmoji(emoji)) {
+            throw ProblemException(ProblemCode.EMOJI_INVALID, "A Reaction is exactly one emoji")
+        }
+        val existing = reactionList.find { it.userId == userId && it.emoji == emoji }
+        if (existing != null) {
+            reactionList.remove(existing)
+        } else {
+            reactionList += Reaction(userId, emoji, at)
+        }
+    }
 
     /** Replaces the text and sets edited at; only the author may, and not once it's deleted. */
     fun edit(
@@ -49,7 +87,7 @@ class Message private constructor(
     /**
      * Makes it a Deleted Message: its content is erased, its place, author and time stay. Only the author may.
      * Returns whether anything changed, which it doesn't for one deleted already.
-     * TODO(#59, #66): erase its Mentions, Reactions and Attachments once they exist.
+     * TODO(#66): erase its Mentions and Attachments once they exist.
      */
     fun delete(
         userId: UUID,
@@ -60,6 +98,7 @@ class Message private constructor(
             return false
         }
         text = ""
+        reactionList.clear()
         deletedAt = at
         return true
     }

@@ -27,6 +27,7 @@ class MessageController(
 ) {
     /** A page of the Conversation's Messages, newest first; without a cursor the newest page. */
     @GetMapping
+    @Transactional(readOnly = true)
     fun listMessages(
         user: User,
         @PathVariable conversationId: Long,
@@ -74,4 +75,20 @@ class MessageController(
         @PathVariable conversationId: Long,
         @PathVariable messageId: Long,
     ): MessageDto = writer.delete(conversations.requireVisibleTo(conversationId, user.id), messageId, user.id)
+
+    /**
+     * Adds the User's Reaction with the emoji to a Message or Reply, or removes it if they've reacted with it
+     * already. A Deleted Message can't be reacted to.
+     */
+    @PostMapping("/{messageId}/reactions")
+    @Transactional
+    fun toggleReaction(
+        user: User,
+        @PathVariable conversationId: Long,
+        @PathVariable messageId: Long,
+        @RequestBody request: ToggleReactionRequest,
+    ): MessageDto {
+        val conversation = conversations.requireVisibleTo(conversationId, user.id)
+        return writer.toggleReaction(conversation, messageId, user.id, request.emoji)
+    }
 }

@@ -14,8 +14,10 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { DateFormatOptions, TranslocoDatePipe } from '@jsverse/transloco-locale';
 import { Presence } from '../../core/data/presence.store';
 import { Avatar } from './avatar';
+import { EmojiPickerButton } from './emoji-picker-button';
 import { Icon } from './icon';
 import { MessageEditor } from './message-editor';
+import { ReactionChips, ReactionView } from './reaction-chips';
 
 type MessageAction = 'edit' | 'delete';
 
@@ -34,18 +36,20 @@ const itemClasses =
   selector: 'app-message-bubble',
   imports: [
     Avatar,
+    EmojiPickerButton,
     Icon,
     Menu,
     MenuContent,
     MenuItem,
     MenuTrigger,
     MessageEditor,
+    ReactionChips,
     RouterLink,
     TranslocoDatePipe,
     TranslocoPipe,
   ],
   host: {
-    class: 'group relative flex gap-20 px-16 py-10 hover:bg-hover lg:px-45',
+    class: 'group/message relative flex gap-20 px-16 py-10 hover:bg-hover lg:px-45',
     '[class.flex-row-reverse]': 'own()',
     '[class.bg-hover]': 'showsEditor()',
   },
@@ -111,6 +115,14 @@ const itemClasses =
           {{ text() }}
         </p>
       }
+      @if (reactions().length > 0 && !deleted()) {
+        <app-reaction-chips
+          [class.justify-end]="own()"
+          [reactions]="reactions()"
+          [compact]="compactReactions()"
+          (toggled)="reactionToggled.emit($event)"
+        />
+      }
       @if (threadLink(); as threadLink) {
         @if (replyCount() > 0) {
           <a
@@ -133,11 +145,31 @@ const itemClasses =
     @if (hasToolbar()) {
       <!-- Shown on hover, and while focus is in it, so it's reachable by keyboard. -->
       <div
-        class="absolute top-0 flex -translate-y-1/2 gap-4 rounded-25 border border-border bg-surface px-10 py-4 opacity-0 group-hover:opacity-100 focus-within:opacity-100"
+        data-hover-bar
+        class="absolute top-0 flex -translate-y-1/2 items-center gap-4 rounded-25 border border-border bg-surface px-10 py-4 opacity-0 group-hover/message:opacity-100 focus-within:opacity-100"
+        [class.opacity-100]="picking()"
         [class]="
           own() ? 'left-16 rounded-bl-none lg:left-45' : 'right-16 rounded-br-none lg:right-45'
         "
       >
+        @if (!deleted()) {
+          @for (emoji of quickReactions; track emoji) {
+            <button
+              type="button"
+              class="flex size-32 items-center justify-center rounded-20 hover:bg-hover"
+              [attr.aria-label]="'reactions.quick' | transloco: { emoji }"
+              (click)="reactionToggled.emit(emoji)"
+            >
+              {{ emoji }}
+            </button>
+          }
+          <app-emoji-picker-button
+            icon="addReaction"
+            position="below"
+            [label]="'reactions.add' | transloco"
+            (picked)="reactionToggled.emit($event)"
+          />
+        }
         @if (threadLink(); as threadLink) {
           <a
             class="flex rounded-20 p-4 hover:bg-hover hover:text-interactive"
@@ -203,6 +235,10 @@ export class MessageBubble {
   readonly lastReplyAt = input<string | null>(null);
   /** Where its Thread opens, as router link commands; `null` for one that has none here, such as a Reply. */
   readonly threadLink = input<readonly unknown[] | null>(null);
+  /** Its Reactions, one entry per emoji. */
+  readonly reactions = input<readonly ReactionView[]>([]);
+  /** Whether long Reaction lists collapse after 7 at every width, as in a Thread. */
+  readonly compactReactions = input(false, { transform: booleanAttribute });
   /** While an edit is being saved. */
   readonly saving = input(false, { transform: booleanAttribute });
   /** The author's name was clicked, e.g. to open their profile card. */
@@ -214,19 +250,28 @@ export class MessageBubble {
   /** The edited text, trimmed. */
   readonly editSaved = output<string>();
   readonly editCancelled = output();
+  /** The User's Reaction with this emoji is to be added, or removed if they've reacted with it. */
+  readonly reactionToggled = output<string>();
 
   /** A Deleted Message can't be edited, so its editor closes if it's deleted meanwhile. */
   protected readonly showsEditor = computed(() => this.editing() && !this.deleted());
   /** Only the author's own Messages have actions, and none once deleted or while editing. */
   protected readonly hasActions = computed(() => this.own() && !this.deleted() && !this.editing());
-  /** The hover toolbar: "Antworten" for a Message with a Thread, and ⋮ for the author's actions. */
+  /**
+   * The hover toolbar: the quick reactions and the emoji picker, "Antworten" for a Message with a Thread, and
+   * ⋮ for the author's actions. A Deleted Message can't be reacted to, but keeps its Thread.
+   */
   protected readonly hasToolbar = computed(
-    () => !this.editing() && (this.threadLink() !== null || this.hasActions()),
+    () => !this.editing() && (!this.deleted() || this.threadLink() !== null),
   );
+  protected readonly quickReactions = ['✅', '👍'];
   protected readonly itemClasses = itemClasses;
   protected readonly timeFormat: DateFormatOptions = { timeStyle: 'short' };
 
   private readonly trigger = viewChild<ElementRef<HTMLElement>>('trigger');
+  private readonly reactionPicker = viewChild(EmojiPickerButton);
+  /** The toolbar stays while its emoji picker is open, even once the pointer has moved onto the picker. */
+  protected readonly picking = computed(() => this.reactionPicker()?.open() ?? false);
 
   constructor() {
     // When the editor closes, focus goes back to the ⋮ it was opened from rather than to the page.

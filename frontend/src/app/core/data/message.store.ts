@@ -3,12 +3,12 @@ import { inject, Service, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { DirectMessagesService } from '../../api/generated/direct-messages/direct-messages.service';
 import { MessagesService } from '../../api/generated/messages/messages.service';
-import { MessageDto, ThreadSummaryDto } from '../../api/generated/model';
+import { MessageDto, ReactionDto, ThreadSummaryDto } from '../../api/generated/model';
 import { ThreadsService } from '../../api/generated/threads/threads.service';
 import { ROUTED_READ } from '../errors/error.interceptor';
 import { MessageWindow, MessageWindowView } from './message-window';
 
-export type { MessageDto, ThreadSummaryDto };
+export type { MessageDto, ReactionDto, ThreadSummaryDto };
 export type { MessageWindowView };
 
 /** A Thread, identified by its parent Message, in that Message's Conversation. */
@@ -100,6 +100,13 @@ export class MessageStore {
   /** Deletes the User's own [message] for everyone; it stays as a Deleted Message. */
   async delete(message: MessageDto): Promise<void> {
     this.replace(await firstValueFrom(this.api.deleteMessage(message.conversationId, message.id)));
+  }
+
+  /** Adds the User's Reaction with [emoji] to [message], or removes it if they've reacted with it. */
+  async toggleReaction(message: MessageDto, emoji: string): Promise<void> {
+    this.replace(
+      await firstValueFrom(this.api.toggleReaction(message.conversationId, message.id, { emoji })),
+    );
   }
 
   /**

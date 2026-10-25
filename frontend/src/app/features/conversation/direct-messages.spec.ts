@@ -12,6 +12,7 @@ import {
   renderApp,
   settle,
 } from '../../../testing/app';
+import { shownText } from '../../../testing/shown-text';
 
 const users = [ada, alan];
 
@@ -19,7 +20,7 @@ function shownMessages(): string[] {
   const log = screen.getByRole('region', { name: 'Nachrichten' });
   return within(log)
     .queryAllByRole('listitem')
-    .map((item) => item.textContent.replace(/\s+/g, ' ').trim());
+    .map((item) => shownText(item));
 }
 
 function composer(name = 'Nachricht an Alan Turing'): HTMLTextAreaElement {

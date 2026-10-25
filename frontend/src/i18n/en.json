@@ -17,7 +17,8 @@
     "placeholder": "Message #{channel}",
     "send": "Send message",
     "placeholderDm": "Message {name}",
-    "placeholderThread": "Reply …"
+    "placeholderThread": "Reply …",
+    "emoji": "Insert emoji"
   },
   "conversation": {
     "directMessage": "Direct message"
@@ -37,12 +38,16 @@
     "selfTitle": "This space is just for you.",
     "selfText": "Make notes, list your to-dos or keep links and files at hand. You can also talk things through with yourself here."
   },
+  "emojiPicker": {
+    "label": "Choose an emoji"
+  },
   "errors": {
     "conversationUnavailable": "This channel or direct message doesn't exist, or you don't have access to it.",
     "generic": "Something went wrong. Please reload the page.",
     "sendFailed": "Your message couldn't be sent. Please try again.",
     "editFailed": "Your change couldn't be saved. Please try again.",
-    "deleteFailed": "The message couldn't be deleted. Please try again."
+    "deleteFailed": "The message couldn't be deleted. Please try again.",
+    "reactionFailed": "Your reaction couldn't be saved. Please try again."
   },
   "legal": {
     "back": "Back to DABubble",
@@ -84,6 +89,17 @@
   "presence": {
     "online": "Online",
     "offline": "Offline"
+  },
+  "reactions": {
+    "you": "you",
+    "youAlone": "You",
+    "reactedYou": "reacted",
+    "reactedOne": "reacted",
+    "reactedMany": "reacted",
+    "more": "+{count} more",
+    "less": "Show less",
+    "add": "Add reaction",
+    "quick": "React with {emoji}"
   },
   "profile": {
     "title": "Profile",

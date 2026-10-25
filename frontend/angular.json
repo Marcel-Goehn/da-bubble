@@ -23,6 +23,16 @@
               {
                 "glob": "**/*",
                 "input": "public"
+              },
+              {
+                "glob": "data.json",
+                "input": "node_modules/emoji-picker-element-data/de/cldr-native",
+                "output": "emoji/de"
+              },
+              {
+                "glob": "data.json",
+                "input": "node_modules/emoji-picker-element-data/en/cldr-native",
+                "output": "emoji/en"
               }
             ],
             "styles": ["src/styles.css"],
