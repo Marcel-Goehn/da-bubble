@@ -45,7 +45,7 @@
   },
   "channelMembers": {
     "title": "Members",
-    "open": "Members ({count})",
+    "open": "Members: {count}",
     "admins": "Admins · {count}",
     "members": "Members · {count}",
     "everyone": "Everyone · {count}",
@@ -66,7 +66,12 @@
     "send": "Send message",
     "placeholderDm": "Message {name}",
     "placeholderThread": "Reply …",
-    "emoji": "Insert emoji"
+    "emoji": "Insert emoji",
+    "attach": "Attach file",
+    "chooseFiles": "Choose files",
+    "attachments": "Attachments",
+    "removeAttachment": "Remove {name}",
+    "uploading": "Uploading {name}"
   },
   "mentions": {
     "users": "People",
@@ -123,7 +128,8 @@
     "manageMembersFailed": "The change to the members couldn't be saved. Please try again.",
     "editChannelFailed": "The channel couldn't be changed. Please try again.",
     "leaveChannelFailed": "You couldn't leave the channel. Please try again.",
-    "deleteChannelFailed": "The channel couldn't be deleted. Please try again."
+    "deleteChannelFailed": "The channel couldn't be deleted. Please try again.",
+    "openAttachmentFailed": "The file couldn't be opened. Please try again."
   },
   "legal": {
     "back": "Back to DABubble",
@@ -226,5 +232,15 @@
     "remove": "Remove {name} as recipient",
     "recipientMissing": "First choose who the message is for.",
     "placeholder": "Start a new message"
+  },
+  "attachments": {
+    "open": "Open {name} {size}",
+    "openImage": "Open image {name}",
+    "download": "Download {name}",
+    "errors": {
+      "tooLarge": "Larger than 25 MB",
+      "tooMany": "At most 5 files per message",
+      "failed": "Upload failed"
+    }
   }
 }

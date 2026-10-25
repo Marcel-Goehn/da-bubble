@@ -19,12 +19,15 @@ data class MessageDto(
     val lastReplyAt: Instant?,
     /** One entry per emoji, in the order they were first used. */
     val reactions: List<ReactionDto>,
+    /** In the order they were sent; none once it's deleted. */
+    val attachments: List<AttachmentDto>,
 ) {
     companion object {
-        /** [message] with its Thread's [summary], `null` while it has no Replies. */
+        /** [message] with its Thread's [summary], `null` while it has no Replies, and its [attachments]. */
         fun from(
             message: Message,
             summary: ThreadSummary?,
+            attachments: List<AttachmentDto>,
         ) = MessageDto(
             id = checkNotNull(message.id),
             conversationId = message.conversationId,
@@ -37,9 +40,31 @@ data class MessageDto(
             replyCount = summary?.replyCount?.toInt() ?: 0,
             lastReplyAt = summary?.lastReplyAt,
             reactions = ReactionDto.from(message.reactions),
+            attachments = attachments,
         )
     }
 }
+
+/**
+ * A file sent with a Message. Its URLs work for 5 minutes, so they're for showing it; opening or downloading
+ * it asks for a fresh URL, which checks access at that moment.
+ */
+data class AttachmentDto(
+    val id: Long,
+    /** The original file name. */
+    val name: String,
+    /** In bytes. */
+    val size: Long,
+    val contentType: String,
+    val url: String,
+    /** An image's 320 px thumbnail; `null` for other files, and for an image without one, which shows itself. */
+    val thumbnailUrl: String?,
+)
+
+/** A fresh URL to open or download an Attachment, which works for 1 minute. */
+data class AttachmentUrlDto(
+    val url: String,
+)
 
 /** Everyone who reacted to a Message with [emoji], in the order they did. */
 data class ReactionDto(
@@ -76,11 +101,15 @@ data class ThreadSummaryDto(
 )
 
 data class SendMessageRequest(
+    /** May be blank if it has Attachments. */
     @field:Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     val text: String,
+    /** The User's own Pending Uploads, uploaded and not yet used, to send as its Attachments; at most 5. */
+    val attachmentIds: List<Long> = emptyList(),
 )
 
 data class EditMessageRequest(
+    /** May be blank if the Message has Attachments. */
     @field:Schema(requiredMode = Schema.RequiredMode.REQUIRED)
     val text: String,
 )

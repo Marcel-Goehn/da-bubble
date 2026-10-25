@@ -26,7 +26,7 @@ class ThreadApiTest : IntegrationTest() {
                 {
                   "id":2,"conversationId":1,"authorId":"$ada","parentMessageId":${parent.id},"text":"Angular 22",
                   "createdAt":"2026-01-15T09:35:00.123456Z","editedAt":null,"deletedAt":null,
-                  "replyCount":0,"lastReplyAt":null,"reactions":[]
+                  "replyCount":0,"lastReplyAt":null,"reactions":[],"attachments":[]
                 }
                 """.trimIndent(),
                 JsonCompareMode.STRICT,

@@ -373,11 +373,3 @@ export class ChannelsService {
   }
 };
 
-export type CreateChannelClientResult = NonNullable<ConversationDto>
-export type DeleteChannelClientResult = NonNullable<void>
-export type EditChannelClientResult = NonNullable<ConversationDto>
-export type LeaveChannelClientResult = NonNullable<void>
-export type AddMembersClientResult = NonNullable<ConversationDto>
-export type RemoveMemberClientResult = NonNullable<MemberDto>
-export type RestoreMemberClientResult = NonNullable<ConversationDto>
-export type SetAdminClientResult = NonNullable<ConversationDto>

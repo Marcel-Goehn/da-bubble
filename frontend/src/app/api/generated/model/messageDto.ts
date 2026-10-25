@@ -4,9 +4,11 @@
  * DA Bubble API
  * OpenAPI spec version: v1
  */
+import type { AttachmentDto } from './attachmentDto';
 import type { ReactionDto } from './reactionDto';
 
 export interface MessageDto {
+  attachments: AttachmentDto[];
   authorId: string;
   conversationId: number;
   createdAt: string;

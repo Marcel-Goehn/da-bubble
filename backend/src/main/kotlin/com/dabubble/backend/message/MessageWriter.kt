@@ -1,5 +1,6 @@
 package com.dabubble.backend.message
 
+import com.dabubble.backend.attachment.PendingUploads
 import com.dabubble.backend.conversation.Conversation
 import com.dabubble.backend.conversation.ConversationDto
 import com.dabubble.backend.conversation.ConversationRepository
@@ -25,6 +26,8 @@ import java.util.UUID
 @Component
 class MessageWriter(
     private val messages: MessageRepository,
+    private val views: MessageViews,
+    private val pendingUploads: PendingUploads,
     private val conversations: ConversationRepository,
     private val users: UserRepository,
     private val realtime: RealtimePublisher,
@@ -35,11 +38,13 @@ class MessageWriter(
         conversation: Conversation,
         authorId: UUID,
         text: String,
+        attachmentIds: List<Long>,
     ): MessageDto {
         val conversationId = checkNotNull(conversation.id)
         val now = clock.now()
-        val sent = Message.send(conversationId, authorId, text, mentionsIn(text), now)
-        val message = MessageDto.from(messages.save(sent), null)
+        val attachments = pendingUploads.useAsAttachments(authorId, attachmentIds)
+        val sent = Message.send(conversationId, authorId, text, mentionsIn(text), attachments, now)
+        val message = views.toDto(messages.save(sent), null)
         announce(conversation, now, MessageCreatedEvent(message, null))
         return message
     }
@@ -54,11 +59,14 @@ class MessageWriter(
         parentId: Long,
         authorId: UUID,
         text: String,
+        attachmentIds: List<Long>,
     ): MessageDto {
         val conversationId = checkNotNull(conversation.id)
         val now = clock.now()
         val parent = messages.requireLockedIn(conversationId, parentId)
-        val reply = MessageDto.from(messages.save(Message.reply(parent, authorId, text, mentionsIn(text), now)), null)
+        val attachments = pendingUploads.useAsAttachments(authorId, attachmentIds)
+        val sent = Message.reply(parent, authorId, text, mentionsIn(text), attachments, now)
+        val reply = views.toDto(messages.save(sent), null)
         val thread = messages.summarizeThreads(listOf(parentId)).single().toDto()
         announce(conversation, now, MessageCreatedEvent(reply, thread))
         return reply
@@ -75,7 +83,7 @@ class MessageWriter(
         val now = clock.now()
         val message = requireMessage(conversation, messageId)
         message.edit(userId, text, mentionsIn(text), now)
-        val edited = messages.toDto(message)
+        val edited = views.toDto(message)
         announce(conversation, now, MessageUpdatedEvent(edited))
         return edited
     }
@@ -93,7 +101,7 @@ class MessageWriter(
         val now = clock.now()
         val message = requireMessage(conversation, messageId)
         val changed = message.delete(userId, now)
-        val deleted = messages.toDto(message)
+        val deleted = views.toDto(message)
         if (changed) {
             announce(conversation, now, MessageUpdatedEvent(deleted))
         }
@@ -115,7 +123,7 @@ class MessageWriter(
         val now = clock.now()
         val message = messages.requireLockedIn(conversationId, messageId)
         message.toggleReaction(userId, emoji, now)
-        val toggled = messages.toDto(message)
+        val toggled = views.toDto(message)
         announce(conversation, now, MessageUpdatedEvent(toggled))
         return toggled
     }

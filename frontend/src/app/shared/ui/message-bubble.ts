@@ -13,6 +13,8 @@ import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { DateFormatOptions, TranslocoDatePipe } from '@jsverse/transloco-locale';
 import { Presence } from '../../core/data/presence.store';
+import { AttachmentDto } from '../../core/data/message.store';
+import { AttachmentList, AttachmentOpening } from './attachment-list';
 import { Avatar } from './avatar';
 import { EmojiPickerButton } from './emoji-picker-button';
 import { Icon } from './icon';
@@ -30,6 +32,7 @@ const itemClasses =
  * speech bubble. Others' Messages sit on the left, the User's own mirror to the right in the accent colour.
  * The User's own Messages offer a ⋮ popover (sheets 52. and 76.) to edit them in place or delete them.
  * A Deleted Message keeps its place, author and time, with a dashed ghost in place of the bubble.
+ * Attachments sit below the bubble; a Message with only Attachments has no bubble.
  * A Message that opens a Thread offers "Antworten" on hover (sheet 52.) and, once it has Replies, the
  * "N Antworten" link with the time of the last one (sheet 50.), which a Deleted Message keeps, and "N neu"
  * for its Unread Replies.
@@ -37,6 +40,7 @@ const itemClasses =
 @Component({
   selector: 'app-message-bubble',
   imports: [
+    AttachmentList,
     Avatar,
     EmojiPickerButton,
     Icon,
@@ -103,10 +107,11 @@ const itemClasses =
           class="self-stretch"
           [text]="text()"
           [busy]="saving()"
+          [allowEmpty]="attachments().length > 0"
           (saved)="editSaved.emit($event)"
           (cancelled)="editCancelled.emit()"
         />
-      } @else {
+      } @else if (text() !== '') {
         <p
           class="rounded-30 p-15 break-words whitespace-pre-wrap"
           [class]="
@@ -121,6 +126,14 @@ const itemClasses =
             (userSelected)="mentionSelected.emit($event)"
           />&ngsp;
         </p>
+      }
+      @if (attachments().length > 0 && !deleted()) {
+        <app-attachment-list
+          [class.justify-end]="own()"
+          [attachments]="attachments()"
+          (opened)="attachmentOpened.emit($event)"
+          (failed)="attachmentFailed.emit()"
+        />
       }
       @if (reactions().length > 0 && !deleted()) {
         <app-reaction-chips
@@ -252,6 +265,8 @@ export class MessageBubble {
   readonly lastReplyAt = input<string | null>(null);
   /** Where its Thread opens, as router link commands; `null` for one that has none here, such as a Reply. */
   readonly threadLink = input<readonly unknown[] | null>(null);
+  /** Its Attachments, in the order they were sent. */
+  readonly attachments = input<readonly AttachmentDto[]>([]);
   /** Its Reactions, one entry per emoji. */
   readonly reactions = input<readonly ReactionView[]>([]);
   /** Whether long Reaction lists collapse after 7 at every width, as in a Thread. */
@@ -269,6 +284,10 @@ export class MessageBubble {
   /** The edited text, trimmed. */
   readonly editSaved = output<string>();
   readonly editCancelled = output();
+  /** An Attachment is to be opened in a new tab or downloaded. */
+  readonly attachmentOpened = output<AttachmentOpening>();
+  /** An image of its Attachments didn't load, e.g. because its URL has expired. */
+  readonly attachmentFailed = output();
   /** The User's Reaction with this emoji is to be added, or removed if they've reacted with it. */
   readonly reactionToggled = output<string>();
 

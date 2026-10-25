@@ -19,7 +19,7 @@ import { MessageStore, ThreadKey } from '../../core/data/message.store';
 import { UserStore } from '../../core/data/user.store';
 import { ErrorService } from '../../core/errors/error.service';
 import { ChannelNamePipe } from '../../shared/ui/channel-name.pipe';
-import { Composer } from '../../shared/ui/composer';
+import { ComposedMessage, Composer, PendingAttachment } from '../../shared/ui/composer';
 import { Icon } from '../../shared/ui/icon';
 import { MessageList } from '../conversation/message-list';
 
@@ -67,6 +67,7 @@ import { MessageList } from '../conversation/message-list';
           [label]="'composer.placeholderThread' | transloco"
           [text]="drafts.get(draft(key))"
           (textChange)="drafts.set(draft(key), $event)"
+          [(attachments)]="attachments"
           [busy]="sending() === draft(key)"
           (send)="send(key, $event)"
         />
@@ -120,11 +121,14 @@ export class ThreadPane {
 
   /** The Thread a Reply is in flight for, if any. */
   protected readonly sending = signal<DraftKey | null>(null);
+  /** The files attached in the composer; unlike its text, they're not kept for another Thread. */
+  protected readonly attachments = signal<readonly PendingAttachment[]>([]);
 
   constructor() {
     effect(() => {
       const key = this.key();
       untracked(() => {
+        this.attachments.set([]);
         if (key === null) {
           this.messages.closeThread();
           return;
@@ -157,13 +161,14 @@ export class ThreadPane {
     return `thread:${key.parentId}`;
   }
 
-  /** Sends a Reply; only a sent one clears the draft, so a failed one can be retried. */
-  protected async send(key: ThreadKey, text: string): Promise<void> {
+  /** Sends a Reply; only a sent one clears the draft and its files, so a failed one can be retried. */
+  protected async send(key: ThreadKey, message: ComposedMessage): Promise<void> {
     const draft = this.draft(key);
     this.sending.set(draft);
     try {
-      await this.messages.sendReply(key, text);
+      await this.messages.sendReply(key, message.text, message.attachmentIds);
       this.drafts.set(draft, '');
+      this.attachments.set([]);
     } catch {
       this.errors.show(this.transloco.translate('errors.sendFailed'));
     } finally {

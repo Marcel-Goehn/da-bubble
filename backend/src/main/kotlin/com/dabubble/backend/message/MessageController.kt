@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RestController
 class MessageController(
     private val conversations: ConversationRepository,
     private val messages: MessageRepository,
+    private val views: MessageViews,
     private val writer: MessageWriter,
 ) {
     /** A page of the Conversation's Messages, newest first; without a cursor the newest page. */
@@ -42,7 +43,19 @@ class MessageController(
                     messages.findOlder(conversationId, position.createdAt, position.id, limit)
                 },
             )
-        return MessagePageDto(messages.toDtos(page.messages), page.nextCursor)
+        return MessagePageDto(views.toDtos(page.messages), page.nextCursor)
+    }
+
+    /** One Message or Reply as it is now, e.g. once the URLs of its Attachments have expired. */
+    @GetMapping("/{messageId}")
+    @Transactional(readOnly = true)
+    fun getMessage(
+        user: User,
+        @PathVariable conversationId: Long,
+        @PathVariable messageId: Long,
+    ): MessageDto {
+        conversations.requireVisibleTo(conversationId, user.id)
+        return views.toDto(messages.requireIn(conversationId, messageId))
     }
 
     @PostMapping
@@ -52,7 +65,13 @@ class MessageController(
         user: User,
         @PathVariable conversationId: Long,
         @RequestBody request: SendMessageRequest,
-    ): MessageDto = writer.send(conversations.requireVisibleTo(conversationId, user.id), user.id, request.text)
+    ): MessageDto =
+        writer.send(
+            conversations.requireVisibleTo(conversationId, user.id),
+            user.id,
+            request.text,
+            request.attachmentIds,
+        )
 
     /** Replaces the text of the User's own Message and marks it edited. */
     @PutMapping("/{messageId}")

@@ -1,3 +1,10 @@
+import attachFile from '@material-symbols/svg-400/outlined/attach_file.svg';
+import audioFile from '@material-symbols/svg-400/outlined/audio_file.svg';
+import description from '@material-symbols/svg-400/outlined/description.svg';
+import download from '@material-symbols/svg-400/outlined/download.svg';
+import image from '@material-symbols/svg-400/outlined/image.svg';
+import movie from '@material-symbols/svg-400/outlined/movie.svg';
+import pictureAsPdf from '@material-symbols/svg-400/outlined/picture_as_pdf.svg';
 import accountCircle from '@material-symbols/svg-400/outlined/account_circle.svg';
 import add from '@material-symbols/svg-400/outlined/add.svg';
 import addCircle from '@material-symbols/svg-400/outlined/add_circle.svg';
@@ -32,6 +39,13 @@ import workspaces from '@material-symbols/svg-400/outlined/workspaces.svg';
  * here before using its name.
  */
 export const icons = {
+  attachFile,
+  audioFile,
+  description,
+  download,
+  image,
+  movie,
+  pictureAsPdf,
   accountCircle,
   add,
   addCircle,

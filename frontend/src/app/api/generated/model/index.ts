@@ -6,6 +6,9 @@
  */
 
 export * from './addMembersRequest';
+export * from './attachmentDto';
+export * from './attachmentUploadDto';
+export * from './attachmentUrlDto';
 export * from './conversationDto';
 export * from './conversationKind';
 export * from './conversationRemovedEvent';
@@ -17,6 +20,7 @@ export * from './createChannelRequest';
 export * from './editChannelRequest';
 export * from './editMessageRequest';
 export * from './fieldErrorDto';
+export * from './getAttachmentUrlParams';
 export * from './listMessagesParams';
 export * from './listRepliesParams';
 export * from './memberDto';
@@ -35,6 +39,7 @@ export * from './reactionDto';
 export * from './readUpdatedEvent';
 export * from './readUpdatedEventType';
 export * from './realtimeEvent';
+export * from './requestUploadRequest';
 export * from './restoreMemberRequest';
 export * from './sendMessageRequest';
 export * from './setAdminRequest';

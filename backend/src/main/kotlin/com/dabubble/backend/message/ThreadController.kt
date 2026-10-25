@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 class ThreadController(
     private val conversations: ConversationRepository,
     private val messages: MessageRepository,
+    private val views: MessageViews,
     private val writer: MessageWriter,
 ) {
     /** A page of the Thread's Replies, newest first, with its parent; without a cursor the newest page. */
@@ -44,7 +45,7 @@ class ThreadController(
                     messages.findOlderReplies(messageId, position.createdAt, position.id, limit)
                 },
             )
-        return ThreadPageDto(messages.toDto(parent), messages.toDtos(page.messages), page.nextCursor)
+        return ThreadPageDto(views.toDto(parent), views.toDtos(page.messages), page.nextCursor)
     }
 
     /** Replies in the Thread of the Message [messageId], which may be deleted but not a Reply itself. */
@@ -58,6 +59,6 @@ class ThreadController(
         @RequestBody request: SendMessageRequest,
     ): MessageDto {
         val conversation = conversations.requireVisibleTo(conversationId, user.id)
-        return writer.reply(conversation, messageId, user.id, request.text)
+        return writer.reply(conversation, messageId, user.id, request.text, request.attachmentIds)
     }
 }

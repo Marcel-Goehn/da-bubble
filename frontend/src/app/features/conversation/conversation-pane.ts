@@ -11,7 +11,7 @@ import { UserStore } from '../../core/data/user.store';
 import { ErrorService } from '../../core/errors/error.service';
 import { Avatar } from '../../shared/ui/avatar';
 import { ChannelNamePipe } from '../../shared/ui/channel-name.pipe';
-import { Composer } from '../../shared/ui/composer';
+import { ComposedMessage, Composer, PendingAttachment } from '../../shared/ui/composer';
 import { Icon } from '../../shared/ui/icon';
 import { ChannelDialogs } from '../channel/channel-dialogs';
 import { ProfileCards } from '../profile/profile-cards';
@@ -123,6 +123,7 @@ import { MessageList } from './message-list';
           [label]="'composer.placeholder' | transloco: { channel: channel | channelName }"
           [text]="drafts.get(conversationDraft(channel.id))"
           (textChange)="drafts.set(conversationDraft(channel.id), $event)"
+          [(attachments)]="attachments"
           [busy]="sending() === conversationDraft(channel.id)"
           (send)="sendToChannel(channel.id, $event)"
         />
@@ -144,6 +145,7 @@ import { MessageList } from './message-list';
           [label]="'composer.placeholderDm' | transloco: { name: partner.name }"
           [text]="drafts.get(dmDraft(partner.id))"
           (textChange)="drafts.set(dmDraft(partner.id), $event)"
+          [(attachments)]="attachments"
           [busy]="sending() === dmDraft(partner.id)"
           (send)="sendToPartner(partner.id, $event)"
         />
@@ -198,8 +200,19 @@ export class ConversationPane {
 
   /** The composer a send is in flight for, if any. */
   protected readonly sending = signal<DraftKey | null>(null);
+  /** The files attached in the composer; unlike its text, they're not kept for another Conversation. */
+  protected readonly attachments = signal<readonly PendingAttachment[]>([]);
 
   constructor() {
+    const draft = computed(() => {
+      const channel = this.channel();
+      const partnerId = this.partnerId();
+      return channel ? this.conversationDraft(channel.id) : partnerId && this.dmDraft(partnerId);
+    });
+    effect(() => {
+      draft();
+      untracked(() => this.attachments.set([]));
+    });
     // On the id, not the Conversation, so a renamed or bumped one doesn't reload its Messages.
     const conversationId = computed(() => (this.channel() ?? this.directMessage())?.id);
     effect(() => {
@@ -240,16 +253,16 @@ export class ConversationPane {
     return `dm:${partnerId}`;
   }
 
-  protected sendToChannel(conversationId: number, text: string): Promise<void> {
+  protected sendToChannel(conversationId: number, message: ComposedMessage): Promise<void> {
     return this.send(this.conversationDraft(conversationId), () =>
-      this.messages.send(conversationId, text),
+      this.messages.send(conversationId, message.text, message.attachmentIds),
     );
   }
 
   /** Sends to the DM by partner, so the first Message creates it; the sidebar then lists it. */
-  protected sendToPartner(partnerId: string, text: string): Promise<void> {
+  protected sendToPartner(partnerId: string, message: ComposedMessage): Promise<void> {
     return this.send(this.dmDraft(partnerId), async () => {
-      const sent = await this.messages.sendDirect(partnerId, text);
+      const sent = await this.messages.sendDirect(partnerId, message.text, message.attachmentIds);
       // Without waiting for `conversation.upserted`, which a dropped connection would lose.
       this.conversations
         .ensure(sent.conversationId)
@@ -257,12 +270,13 @@ export class ConversationPane {
     });
   }
 
-  /** Runs [sendMessage]; only a sent Message clears the draft, so a failed one can be retried. */
+  /** Runs [sendMessage]; only a sent Message clears the draft and its files, so a failed one can be retried. */
   private async send(draft: DraftKey, sendMessage: () => Promise<void>): Promise<void> {
     this.sending.set(draft);
     try {
       await sendMessage();
       this.drafts.set(draft, '');
+      this.attachments.set([]);
     } catch {
       this.errors.show(this.transloco.translate('errors.sendFailed'));
     } finally {

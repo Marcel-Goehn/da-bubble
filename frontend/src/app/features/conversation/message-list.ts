@@ -21,10 +21,14 @@ import { PresenceStore } from '../../core/data/presence.store';
 import { ReadStore } from '../../core/data/read.store';
 import { UserStore } from '../../core/data/user.store';
 import { ErrorService } from '../../core/errors/error.service';
+import { AttachmentOpening } from '../../shared/ui/attachment-list';
 import { MessageBubble } from '../../shared/ui/message-bubble';
 import { ReactionView } from '../../shared/ui/reaction-chips';
 import { ProfileCards } from '../profile/profile-cards';
 import { DeleteMessageDialog } from './delete-message-dialog';
+
+/** How long a Message fetched again for fresh Attachment URLs isn't fetched again. */
+const refreshIntervalMs = 60_000;
 
 /** How close to the bottom, in px, still counts as at the bottom. */
 const bottomSlackPx = 40;
@@ -103,6 +107,7 @@ interface Rendered {
         [lastReplyAt]="message.lastReplyAt"
         [unreadReplies]="opensThreads() ? reads.unreadRepliesIn(message.id) : 0"
         [threadLink]="opensThreads() ? ['thread', message.id] : null"
+        [attachments]="message.attachments"
         [reactions]="reactionViews(message)"
         [compactReactions]="compactReactions()"
         (authorSelected)="profiles.open(message.authorId)"
@@ -112,6 +117,8 @@ interface Rendered {
         (editSaved)="saveEdit(message, $event)"
         (deleteRequested)="confirmDelete(message, $event)"
         (reactionToggled)="toggleReaction(message, $event)"
+        (attachmentOpened)="openAttachment(message, $event)"
+        (attachmentFailed)="refreshAttachments(message)"
       />
     </ng-template>
   `,
@@ -142,6 +149,9 @@ export class MessageList {
   private readonly dialog = inject(Dialog);
   private readonly errors = inject(ErrorService);
   private readonly transloco = inject(TranslocoService);
+
+  /** When each Message was last fetched again for fresh Attachment URLs, in ms since the epoch. */
+  private readonly refreshedAt = new Map<number, number>();
 
   private readonly scroller = viewChild.required<ElementRef<HTMLElement>>('scroller');
   private readonly olderSentinel = viewChild.required<ElementRef<HTMLElement>>('olderSentinel');
@@ -262,6 +272,51 @@ export class MessageList {
     } catch {
       this.errors.show(this.transloco.translate('errors.reactionFailed'));
     }
+  }
+
+  /**
+   * Opens [attachment] of [message] in a new tab, or downloads it, with a fresh URL from the backend. The tab
+   * opens right away, while the click still counts, so a popup blocker lets it through; it gets the URL once
+   * it has arrived.
+   */
+  protected async openAttachment(
+    message: MessageDto,
+    { attachment, download }: AttachmentOpening,
+  ): Promise<void> {
+    const tab = download ? null : window.open('', '_blank');
+    if (tab) {
+      // The file's page gets no handle on the app.
+      tab.opener = null;
+    }
+    try {
+      const url = await this.store.attachmentUrl(message, attachment, download);
+      if (tab) {
+        tab.location.href = url;
+      } else {
+        // Served as an attachment, so the browser downloads it and stays on the app.
+        const link = document.createElement('a');
+        link.href = url;
+        link.click();
+      }
+    } catch {
+      tab?.close();
+      this.errors.show(this.transloco.translate('errors.openAttachmentFailed'));
+    }
+  }
+
+  /**
+   * Fetches [message] again for fresh URLs, as one of its images didn't load; most likely its URLs have
+   * expired. At most once a minute per Message: fresh URLs are new ones, so an image that's really gone
+   * would otherwise be fetched again and again.
+   */
+  protected refreshAttachments(message: MessageDto): void {
+    const now = Date.now();
+    if (now - (this.refreshedAt.get(message.id) ?? -Infinity) < refreshIntervalMs) {
+      return;
+    }
+    this.refreshedAt.set(message.id, now);
+    // Nothing to tell the User: the image stays broken, and a failed fetch is no worse.
+    this.store.refresh(message).catch(() => undefined);
   }
 
   /** Asks the observer about the new layout; it reports on observe, but otherwise only when the view changes. */

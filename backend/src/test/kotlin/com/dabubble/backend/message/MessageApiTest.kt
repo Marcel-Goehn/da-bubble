@@ -26,7 +26,7 @@ class MessageApiTest : IntegrationTest() {
                 {
                   "id":1,"conversationId":1,"authorId":"$ada","parentMessageId":null,"text":"Hallo zusammen",
                   "createdAt":"2026-01-15T09:30:00.123456Z","editedAt":null,"deletedAt":null,
-                  "replyCount":0,"lastReplyAt":null,"reactions":[]
+                  "replyCount":0,"lastReplyAt":null,"reactions":[],"attachments":[]
                 }
                 """.trimIndent(),
                 JsonCompareMode.STRICT,
@@ -92,6 +92,40 @@ class MessageApiTest : IntegrationTest() {
             .expectStatus()
             .isNotFound
         assertEquals(listOf("Intern"), page(TestTokens.user(alan), marketing).messages.map { it.text })
+    }
+
+    @Test
+    fun `a Message or Reply is fetched again by itself, for fresh Attachment URLs`() {
+        val ada = provision()
+        val sent = send(ada, "Hallo")
+        val reply =
+            post("/api/conversations/1/messages/${sent.id}/replies", ada, """{"text":"Antwort"}""")
+                .expectStatus()
+                .isCreated
+                .expectBody(MessageDto::class.java)
+                .returnResult()
+                .responseBody!!
+
+        // The parent as it is now, with its Reply counted.
+        listOf(sent.copy(replyCount = 1, lastReplyAt = reply.createdAt), reply).forEach {
+            get("/api/conversations/1/messages/${it.id}", ada)
+                .expectStatus()
+                .isOk
+                .expectBody(MessageDto::class.java)
+                .isEqualTo(it)
+        }
+    }
+
+    @Test
+    fun `a Message in a Channel the User isn't a Member of is not found`() {
+        val alan = UUID.randomUUID()
+        provision(alan)
+        val marketing = channel("Marketing", members = listOf(alan))
+        val secret = send(TestTokens.user(alan), "Intern", marketing)
+        val ada = provision()
+
+        get("/api/conversations/$marketing/messages/${secret.id}", ada).expectStatus().isNotFound
+        get("/api/conversations/1/messages/${secret.id}", ada).expectStatus().isNotFound
     }
 
     @Test

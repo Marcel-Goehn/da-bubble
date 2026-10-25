@@ -51,14 +51,18 @@ export class MessageEditor {
   readonly text = input.required<string>();
   /** While a save is in flight: the text stays as it is and can't be saved again. */
   readonly busy = input(false, { transform: booleanAttribute });
-  /** The new text, trimmed; never blank. TODO(#66): may be blank when the Message has Attachments. */
+  /** Whether the Message has Attachments, which lets its text be removed altogether. */
+  readonly allowEmpty = input(false, { transform: booleanAttribute });
+  /** The new text, trimmed; only blank when [allowEmpty]. */
   readonly saved = output<string>();
   readonly cancelled = output();
 
   // Follows the Message's text until the User types, so a live edit from another tab doesn't wipe theirs.
   protected readonly typed = signal<string | null>(null);
   protected readonly draft = computed(() => this.typed() ?? this.text());
-  protected readonly canSave = computed(() => !this.busy() && this.draft().trim() !== '');
+  protected readonly canSave = computed(
+    () => !this.busy() && (this.allowEmpty() || this.draft().trim() !== ''),
+  );
 
   private readonly field = viewChild.required(MentionField);
 

@@ -21,7 +21,7 @@ import { MessageStore } from '../../core/data/message.store';
 import { UserStore } from '../../core/data/user.store';
 import { ErrorService } from '../../core/errors/error.service';
 import { Avatar } from '../../shared/ui/avatar';
-import { Composer } from '../../shared/ui/composer';
+import { ComposedMessage, Composer, PendingAttachment } from '../../shared/ui/composer';
 import { Icon } from '../../shared/ui/icon';
 
 const optionKey = (mention: Mention) => `${mention.kind}:${mention.id}`;
@@ -142,6 +142,7 @@ const optionKey = (mention: Mention) => `${mention.kind}:${mention.id}`;
         [label]="'newMessage.placeholder' | transloco"
         [text]="drafts.get('new')"
         (textChange)="drafts.set('new', $event)"
+        [(attachments)]="attachments"
         [busy]="sending()"
         (send)="send($event)"
       />
@@ -167,6 +168,8 @@ export class NewMessage {
   /** Set when the User sent without a recipient, until they pick one. */
   protected readonly missingRecipient = signal(false);
   protected readonly sending = signal(false);
+  /** The files attached in the composer. */
+  protected readonly attachments = signal<readonly PendingAttachment[]>([]);
 
   private readonly recipientInput = viewChild<ElementRef<HTMLInputElement>>('recipientInput');
   private readonly combobox = viewChild(Combobox);
@@ -212,7 +215,7 @@ export class NewMessage {
   }
 
   /** Sends to the recipient's Channel or DM, the first Message creating the DM, and opens it. */
-  protected async send(text: string): Promise<void> {
+  protected async send({ text, attachmentIds }: ComposedMessage): Promise<void> {
     const recipient = this.recipient();
     if (!recipient) {
       this.missingRecipient.set(true);
@@ -222,15 +225,16 @@ export class NewMessage {
     this.sending.set(true);
     try {
       if (recipient.kind === 'channel') {
-        await this.messages.send(recipient.id, text);
+        await this.messages.send(recipient.id, text, attachmentIds);
       } else {
-        const sent = await this.messages.sendDirect(recipient.id, text);
+        const sent = await this.messages.sendDirect(recipient.id, text, attachmentIds);
         // Without waiting for `conversation.upserted`, which a dropped connection would lose.
         this.conversations
           .ensure(sent.conversationId)
           .catch(() => this.errors.show(this.transloco.translate('errors.generic')));
       }
       this.drafts.set('new', '');
+      this.attachments.set([]);
     } catch {
       this.errors.show(this.transloco.translate('errors.sendFailed'));
       return;

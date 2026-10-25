@@ -29,5 +29,8 @@ class DirectMessageController(
         user: User,
         @PathVariable partnerId: UUID,
         @RequestBody request: SendMessageRequest,
-    ): MessageDto = writer.send(directMessages.findOrCreate(user.id, partnerId), user.id, request.text)
+    ): MessageDto {
+        val conversation = directMessages.findOrCreate(user.id, partnerId)
+        return writer.send(conversation, user.id, request.text, request.attachmentIds)
+    }
 }

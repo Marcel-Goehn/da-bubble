@@ -47,6 +47,15 @@ class Message private constructor(
     @JoinColumn(name = "message_id", nullable = false)
     private val mentionList: MutableList<MessageMention> = mutableListOf()
 
+    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JoinColumn(name = "message_id", nullable = false)
+    @OrderBy("id")
+    @BatchSize(size = 64)
+    private val attachmentList: MutableList<Attachment> = mutableListOf()
+
+    /** Its Attachments, in the order they were sent. */
+    val attachments: List<Attachment> get() = attachmentList
+
     /** The Users and Channels its text mentions. */
     val mentions: Set<MentionTarget> get() = mentionList.mapTo(linkedSetOf()) { it.target }
 
@@ -85,7 +94,7 @@ class Message private constructor(
 
     /**
      * Replaces the text and the [mentions] in it and sets edited at; only the author may, and not once it's
-     * deleted.
+     * deleted. The text may only be blank if it has Attachments.
      */
     fun edit(
         userId: UUID,
@@ -97,11 +106,8 @@ class Message private constructor(
         if (deletedAt != null) {
             throw ProblemException(ProblemCode.MESSAGE_DELETED, "A Deleted Message can't be edited")
         }
-        // TODO(#66): may be blank once it has Attachments.
-        if (text.isBlank()) {
-            throw ProblemException(ProblemCode.MESSAGE_EMPTY, "A Message needs text or an Attachment")
-        }
-        this.text = text
+        requireContent(text, attachmentList)
+        this.text = text.ifBlank { "" }
         mention(mentions)
         editedAt = at
     }
@@ -109,7 +115,6 @@ class Message private constructor(
     /**
      * Makes it a Deleted Message: its content is erased, its place, author and time stay. Only the author may.
      * Returns whether anything changed, which it doesn't for one deleted already.
-     * TODO(#66): erase its Attachments once they exist.
      */
     fun delete(
         userId: UUID,
@@ -122,6 +127,8 @@ class Message private constructor(
         text = ""
         reactionList.clear()
         mentionList.clear()
+        // TODO(#68): delete the files of its Attachments after the commit, before their keys are gone.
+        attachmentList.clear()
         deletedAt = at
         return true
     }
@@ -140,42 +147,58 @@ class Message private constructor(
     }
 
     companion object {
+        /** At most this many Attachments per Message. */
+        const val MAX_ATTACHMENTS = 5
+
         /**
-         * A new top-level Message, with the Users and Channels its text [mentions]. TODO(#66): may be blank once
-         * it has Attachments.
+         * A new top-level Message, with the Users and Channels its text [mentions] and its [attachments]. It
+         * needs text or at least one Attachment.
          */
         fun send(
             conversationId: Long,
             authorId: UUID,
             text: String,
             mentions: Set<MentionTarget>,
+            attachments: List<Attachment>,
             createdAt: Instant,
         ): Message {
-            requireText(text)
-            return Message(conversationId, authorId, null, text, createdAt).apply { mention(mentions) }
+            requireContent(text, attachments)
+            return Message(conversationId, authorId, null, text.ifBlank { "" }, createdAt).apply {
+                mention(mentions)
+                attachmentList += attachments
+            }
         }
 
         /**
          * A new Reply in the Thread of [parent], in the same Conversation. The parent may be a Deleted Message,
-         * whose Thread stays open, but not a Reply. TODO(#66): may be blank once it has Attachments.
+         * whose Thread stays open, but not a Reply. Like a Message, it needs text or at least one Attachment.
          */
         fun reply(
             parent: Message,
             authorId: UUID,
             text: String,
             mentions: Set<MentionTarget>,
+            attachments: List<Attachment>,
             createdAt: Instant,
         ): Message {
             parent.requireThreadable()
-            requireText(text)
-            return Message(parent.conversationId, authorId, checkNotNull(parent.id), text, createdAt).apply {
+            requireContent(text, attachments)
+            val parentId = checkNotNull(parent.id)
+            return Message(parent.conversationId, authorId, parentId, text.ifBlank { "" }, createdAt).apply {
                 mention(mentions)
+                attachmentList += attachments
             }
         }
 
-        private fun requireText(text: String) {
-            if (text.isBlank()) {
+        private fun requireContent(
+            text: String,
+            attachments: List<Attachment>,
+        ) {
+            if (text.isBlank() && attachments.isEmpty()) {
                 throw ProblemException(ProblemCode.MESSAGE_EMPTY, "A Message needs text or an Attachment")
+            }
+            if (attachments.size > MAX_ATTACHMENTS) {
+                throw ProblemException(ProblemCode.TOO_MANY_ATTACHMENTS, "At most $MAX_ATTACHMENTS Attachments")
             }
         }
     }

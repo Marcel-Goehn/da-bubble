@@ -91,19 +91,6 @@ interface MessageRepository : JpaRepository<Message, Long> {
     ): Message?
 }
 
-/** [messages] as DTOs, with the reply count and last reply of their Threads. */
-fun MessageRepository.toDtos(messages: List<Message>): List<MessageDto> {
-    val summaries =
-        if (messages.isEmpty()) {
-            emptyMap()
-        } else {
-            summarizeThreads(messages.map { checkNotNull(it.id) }).associateBy { it.parentMessageId }
-        }
-    return messages.map { MessageDto.from(it, summaries[it.id]) }
-}
-
-fun MessageRepository.toDto(message: Message): MessageDto = toDtos(listOf(message)).single()
-
 /** The Message [id] of the Conversation [conversationId], which the caller has checked the User can see. */
 fun MessageRepository.requireIn(
     conversationId: Long,

@@ -14,6 +14,57 @@
         "required" : [ "userIds" ],
         "type" : "object"
       },
+      "AttachmentDto" : {
+        "properties" : {
+          "contentType" : {
+            "type" : "string"
+          },
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "size" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "thumbnailUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "contentType", "id", "name", "size", "thumbnailUrl", "url" ],
+        "type" : "object"
+      },
+      "AttachmentUploadDto" : {
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "thumbnailUploadUrl" : {
+            "type" : [ "string", "null" ]
+          },
+          "uploadUrl" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "thumbnailUploadUrl", "uploadUrl" ],
+        "type" : "object"
+      },
+      "AttachmentUrlDto" : {
+        "properties" : {
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "url" ],
+        "type" : "object"
+      },
       "ConversationDto" : {
         "properties" : {
           "creatorId" : {
@@ -192,6 +243,12 @@
       },
       "MessageDto" : {
         "properties" : {
+          "attachments" : {
+            "items" : {
+              "$ref" : "#/components/schemas/AttachmentDto"
+            },
+            "type" : "array"
+          },
           "authorId" : {
             "format" : "uuid",
             "type" : "string"
@@ -238,7 +295,7 @@
             "type" : "string"
           }
         },
-        "required" : [ "authorId", "conversationId", "createdAt", "deletedAt", "editedAt", "id", "lastReplyAt", "parentMessageId", "reactions", "replyCount", "text" ],
+        "required" : [ "attachments", "authorId", "conversationId", "createdAt", "deletedAt", "editedAt", "id", "lastReplyAt", "parentMessageId", "reactions", "replyCount", "text" ],
         "type" : "object"
       },
       "MessagePageDto" : {
@@ -291,7 +348,7 @@
         "type" : "object"
       },
       "ProblemCode" : {
-        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "REPLY_HAS_NO_THREAD", "EMOJI_INVALID", "CHANNEL_NAME_EMPTY", "CHANNEL_NAME_TOO_LONG", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_CHANNEL_ADMIN", "NOT_CHANNEL_CREATOR", "CHANNEL_CREATOR_PROTECTED", "MANAGING_YOURSELF", "DEFAULT_CHANNEL_LOCKED", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "CHANNEL_NAME_TAKEN", "INTERNAL_ERROR" ],
+        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "REPLY_HAS_NO_THREAD", "EMOJI_INVALID", "CHANNEL_NAME_EMPTY", "CHANNEL_NAME_TOO_LONG", "TOO_MANY_ATTACHMENTS", "UPLOAD_NOT_FOUND", "UPLOAD_INCOMPLETE", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_CHANNEL_ADMIN", "NOT_CHANNEL_CREATOR", "CHANNEL_CREATOR_PROTECTED", "MANAGING_YOURSELF", "DEFAULT_CHANNEL_LOCKED", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "CHANNEL_NAME_TAKEN", "ATTACHMENT_TOO_LARGE", "INTERNAL_ERROR" ],
         "type" : "string"
       },
       "ProblemDto" : {
@@ -389,6 +446,26 @@
           "$ref" : "#/components/schemas/PresenceChangedEvent"
         } ]
       },
+      "RequestUploadRequest" : {
+        "properties" : {
+          "contentType" : {
+            "type" : "string"
+          },
+          "name" : {
+            "type" : "string"
+          },
+          "size" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "thumbnailSize" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
+          }
+        },
+        "required" : [ "contentType", "name", "size" ],
+        "type" : "object"
+      },
       "RestoreMemberRequest" : {
         "properties" : {
           "isAdmin" : {
@@ -404,6 +481,13 @@
       },
       "SendMessageRequest" : {
         "properties" : {
+          "attachmentIds" : {
+            "items" : {
+              "format" : "int64",
+              "type" : "integer"
+            },
+            "type" : "array"
+          },
           "text" : {
             "type" : "string"
           }
@@ -541,6 +625,34 @@
   },
   "openapi" : "3.1.0",
   "paths" : {
+    "/api/attachments/uploads" : {
+      "post" : {
+        "operationId" : "requestUpload",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RequestUploadRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AttachmentUploadDto"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "attachments" ]
+      }
+    },
     "/api/channels" : {
       "post" : {
         "operationId" : "createChannel",
@@ -946,6 +1058,39 @@
         },
         "tags" : [ "messages" ]
       },
+      "get" : {
+        "operationId" : "getMessage",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "conversationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "messageId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/MessageDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "messages" ]
+      },
       "put" : {
         "operationId" : "editMessage",
         "parameters" : [ {
@@ -988,6 +1133,57 @@
           }
         },
         "tags" : [ "messages" ]
+      }
+    },
+    "/api/conversations/{conversationId}/messages/{messageId}/attachments/{attachmentId}/url" : {
+      "get" : {
+        "operationId" : "getAttachmentUrl",
+        "parameters" : [ {
+          "in" : "path",
+          "name" : "conversationId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "messageId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "path",
+          "name" : "attachmentId",
+          "required" : true,
+          "schema" : {
+            "format" : "int64",
+            "type" : "integer"
+          }
+        }, {
+          "in" : "query",
+          "name" : "download",
+          "required" : false,
+          "schema" : {
+            "default" : false,
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AttachmentUrlDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "attachments" ]
       }
     },
     "/api/conversations/{conversationId}/messages/{messageId}/reactions" : {

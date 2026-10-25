@@ -1,15 +1,27 @@
 import { HttpContext } from '@angular/common/http';
 import { inject, Service, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
+import { AttachmentsService } from '../../api/generated/attachments/attachments.service';
 import { DirectMessagesService } from '../../api/generated/direct-messages/direct-messages.service';
 import { MessagesService } from '../../api/generated/messages/messages.service';
-import { MessageDto, ReactionDto, ThreadSummaryDto } from '../../api/generated/model';
+import {
+  AttachmentDto,
+  MessageDto,
+  ReactionDto,
+  SendMessageRequest,
+  ThreadSummaryDto,
+} from '../../api/generated/model';
 import { ThreadsService } from '../../api/generated/threads/threads.service';
 import { ROUTED_READ } from '../errors/error.interceptor';
 import { MessageWindow, MessageWindowView } from './message-window';
 
-export type { MessageDto, ReactionDto, ThreadSummaryDto };
+export type { AttachmentDto, MessageDto, ReactionDto, ThreadSummaryDto };
 export type { MessageWindowView };
+
+/** What sends [text] with [attachmentIds]; a Message without Attachments is just its text. */
+function sendRequest(text: string, attachmentIds: number[]): SendMessageRequest {
+  return attachmentIds.length === 0 ? { text } : { text, attachmentIds };
+}
 
 /** A Thread, identified by its parent Message, in that Message's Conversation. */
 export interface ThreadKey {
@@ -26,6 +38,7 @@ export class MessageStore {
   private readonly api = inject(MessagesService);
   private readonly directMessagesApi = inject(DirectMessagesService);
   private readonly threadsApi = inject(ThreadsService);
+  private readonly attachmentsApi = inject(AttachmentsService);
   private readonly parentState = signal<MessageDto | null>(null);
 
   /** The open Conversation's top-level Messages. */
@@ -61,31 +74,41 @@ export class MessageStore {
     await Promise.all([this.conversation.refreshNewest(), this.thread.refreshNewest()]);
   }
 
-  /** Sends [text] to [conversationId]; the Message joins the window if that Conversation is still open. */
-  async send(conversationId: number, text: string): Promise<void> {
+  /**
+   * Sends [text] with the Pending Uploads [attachmentIds] to [conversationId]; the Message joins the window
+   * if that Conversation is still open.
+   */
+  async send(conversationId: number, text: string, attachmentIds: number[] = []): Promise<void> {
+    const sent = await firstValueFrom(
+      this.api.sendMessage(conversationId, sendRequest(text, attachmentIds)),
+    );
     // Not contiguous: while disconnected, others' Messages before it may be missing.
-    this.conversation.merge([await firstValueFrom(this.api.sendMessage(conversationId, { text }))]);
+    this.conversation.merge([sent]);
   }
 
   /**
-   * Sends [text] to the DM with [partnerId], which the first Message creates. Returns the sent Message, whose
-   * Conversation is that DM.
+   * Sends [text] with the Pending Uploads [attachmentIds] to the DM with [partnerId], which the first Message
+   * creates. Returns the sent Message, whose Conversation is that DM.
    */
-  async sendDirect(partnerId: string, text: string): Promise<MessageDto> {
+  async sendDirect(
+    partnerId: string,
+    text: string,
+    attachmentIds: number[] = [],
+  ): Promise<MessageDto> {
     const sent = await firstValueFrom(
-      this.directMessagesApi.sendDirectMessage(partnerId, { text }),
+      this.directMessagesApi.sendDirectMessage(partnerId, sendRequest(text, attachmentIds)),
     );
     this.conversation.merge([sent]);
     return sent;
   }
 
   /**
-   * Replies [text] in the Thread of [key]; the Reply joins the window if that Thread is still open. Its
-   * parent's reply count follows with the `message.created` echo.
+   * Replies [text] with the Pending Uploads [attachmentIds] in the Thread of [key]; the Reply joins the
+   * window if that Thread is still open. Its parent's reply count follows with the `message.created` echo.
    */
-  async sendReply(key: ThreadKey, text: string): Promise<void> {
+  async sendReply(key: ThreadKey, text: string, attachmentIds: number[] = []): Promise<void> {
     const sent = await firstValueFrom(
-      this.threadsApi.sendReply(key.conversationId, key.parentId, { text }),
+      this.threadsApi.sendReply(key.conversationId, key.parentId, sendRequest(text, attachmentIds)),
     );
     this.thread.merge([sent]);
   }
@@ -100,6 +123,28 @@ export class MessageStore {
   /** Deletes the User's own [message] for everyone; it stays as a Deleted Message. */
   async delete(message: MessageDto): Promise<void> {
     this.replace(await firstValueFrom(this.api.deleteMessage(message.conversationId, message.id)));
+  }
+
+  /** Fetches [message] again, e.g. once the URLs of its Attachments have expired. */
+  async refresh(message: MessageDto): Promise<void> {
+    this.replace(await firstValueFrom(this.api.getMessage(message.conversationId, message.id)));
+  }
+
+  /**
+   * A fresh URL that opens [attachment] of [message] for a minute, or [download]s it whatever its type. The
+   * backend checks that the User can still see the Conversation.
+   */
+  async attachmentUrl(
+    message: MessageDto,
+    attachment: AttachmentDto,
+    download: boolean,
+  ): Promise<string> {
+    const { url } = await firstValueFrom(
+      this.attachmentsApi.getAttachmentUrl(message.conversationId, message.id, attachment.id, {
+        download,
+      }),
+    );
+    return url;
   }
 
   /** Adds the User's Reaction with [emoji] to [message], or removes it if they've reacted with it. */

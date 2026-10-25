@@ -6,5 +6,6 @@
  */
 
 export interface SendMessageRequest {
+  attachmentIds?: number[];
   text: string;
 }

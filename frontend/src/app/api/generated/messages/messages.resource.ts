@@ -6,6 +6,7 @@
  */
 import type {
   ListMessagesParams,
+  MessageDto,
   MessagePageDto
 } from '../model';
 
@@ -195,7 +196,23 @@ export function listMessagesResource(conversationId: Signal<number>,
   }, options);
 }
 
+/**
+ * @remarks httpResource is available in Angular 19.2 and later.
+ */
+export function getMessageResource(conversationId: Signal<number>,
+    messageId: Signal<number>,
+  options: OrvalHttpResourceOptions<MessageDto, unknown> & { defaultValue: NoInfer<MessageDto> }): HttpResourceRef<MessageDto>;
+export function getMessageResource(conversationId: Signal<number>,
+    messageId: Signal<number>,
+  options?: OrvalHttpResourceOptions<MessageDto, unknown>): HttpResourceRef<MessageDto | undefined>;
+export function getMessageResource(conversationId: Signal<number>,
+    messageId: Signal<number>,
+  options?: OrvalHttpResourceOptions<MessageDto, unknown>): HttpResourceRef<MessageDto | undefined> {
+  return httpResource<MessageDto>(() => applyOrvalRequestExtension(`/api/conversations/${conversationId()}/messages/${messageId()}`, options), options);
+}
+
 export type ListMessagesResourceResult = NonNullable<MessagePageDto>
+export type GetMessageResourceResult = NonNullable<MessageDto>
 
 /**
  * Utility type for httpResource results with status tracking.

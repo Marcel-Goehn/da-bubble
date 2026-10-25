@@ -1,4 +1,5 @@
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { Provider } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { render } from '@testing-library/angular';
 import { App } from '../app/app';
@@ -129,6 +130,7 @@ export function message(
     replyCount: 0,
     lastReplyAt: null,
     reactions: [],
+    attachments: [],
   };
 }
 
@@ -155,6 +157,8 @@ export interface RenderAppOptions {
   unread?: UnreadDto;
   keycloak?: FakeKeycloak;
   lang?: Language;
+  /** More providers, e.g. fakes for what jsdom can't do. */
+  providers?: Provider[];
 }
 
 /**
@@ -169,6 +173,7 @@ export async function startApp({
   unread = noUnread,
   keycloak = new FakeKeycloak(),
   lang = 'de',
+  providers = [],
 }: RenderAppOptions = {}) {
   vi.stubGlobal('IntersectionObserver', FakeIntersectionObserver);
   const result = await render(App, {
@@ -181,6 +186,7 @@ export async function startApp({
       FakeRealtimeService,
       { provide: RealtimeService, useExisting: FakeRealtimeService },
       { provide: EmojiPickerLoader, useClass: FakeEmojiPickerLoader },
+      ...providers,
     ],
   });
   const http = TestBed.inject(HttpTestingController);

@@ -1,3 +1,4 @@
+export * from './attachments/attachments.service';
 export * from './channels/channels.service';
 export * from './conversations/conversations.service';
 export * from './direct-messages/direct-messages.service';
@@ -7,8 +8,9 @@ export * from './presence/presence.service';
 export * from './reads/reads.service';
 export * from './threads/threads.service';
 export * from './users/users.service';
-export type { OrvalHttpResourceOptions, OrvalHttpResourceRequestExtension, ResolvedResourceState, ResourceState } from './conversations/conversations.resource';
-export { applyOrvalRequestExtension, toResourceState } from './conversations/conversations.resource';
+export type { OrvalHttpResourceOptions, OrvalHttpResourceRequestExtension, ResolvedResourceState, ResourceState } from './attachments/attachments.resource';
+export { applyOrvalRequestExtension, toResourceState } from './attachments/attachments.resource';
+export * from './attachments/attachments.resource';
 export * from './conversations/conversations.resource';
 export * from './me/me.resource';
 export * from './messages/messages.resource';

@@ -262,6 +262,40 @@ export class MessagesService {
       }
     );
   }
+ getMessage<TData = MessageDto>(conversationId: number,
+    messageId: number, options?: HttpClientBodyOptions): Observable<TData>;
+ getMessage<TData = MessageDto>(conversationId: number,
+    messageId: number, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ getMessage<TData = MessageDto>(conversationId: number,
+    messageId: number, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  getMessage<TData = MessageDto>(
+    conversationId: number,
+    messageId: number, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.get<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.get<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.get<TData>(
+      `/api/conversations/${conversationId}/messages/${messageId}`,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
  editMessage<TData = MessageDto>(conversationId: number,
     messageId: number,
     editMessageRequest: EditMessageRequest, options?: HttpClientBodyOptions): Observable<TData>;

@@ -57,7 +57,7 @@ describe('Channel Members and Admins', () => {
   it("shows a Member the Admins and Members, the Creator first, and why they can't manage them", async () => {
     const { user } = await openChannel(buero);
 
-    await user.click(screen.getByRole('button', { name: 'Mitglieder (3)' }));
+    await user.click(screen.getByRole('button', { name: 'Mitglieder: 3' }));
 
     await screen.findByRole('dialog', { name: 'Mitglieder' });
     expect(group('Admins · 2')).toEqual(['Alan Turing Hat den Channel erstellt', 'Grace Hopper']);
@@ -72,7 +72,7 @@ describe('Channel Members and Admins', () => {
 
   it('lets an Admin grant Admin in "Verwalten", by keyboard, never on the Creator or themselves', async () => {
     const { user, http, fixture } = await openChannel(buero, grace);
-    await user.click(screen.getByRole('button', { name: 'Mitglieder (3)' }));
+    await user.click(screen.getByRole('button', { name: 'Mitglieder: 3' }));
     await screen.findByRole('dialog', { name: 'Mitglieder' });
 
     expect(group('Admins · 2')).toEqual([
@@ -113,7 +113,7 @@ describe('Channel Members and Admins', () => {
 
   it('removes a Member at once, and "Rückgängig" restores their Admin flag and join time', async () => {
     const { user, http, fixture } = await openChannel(buero, grace);
-    await user.click(screen.getByRole('button', { name: 'Mitglieder (3)' }));
+    await user.click(screen.getByRole('button', { name: 'Mitglieder: 3' }));
     await user.click(await screen.findByRole('button', { name: 'Verwalten' }));
 
     await user.click(screen.getByRole('button', { name: 'Ada Lovelace entfernen' }));
@@ -397,7 +397,7 @@ describe('Channel Members and Admins', () => {
     );
     await settle(fixture);
     expect(screen.queryByRole('dialog')).toBeNull();
-    expect(screen.getByRole('button', { name: 'Mitglieder (3)' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Mitglieder: 3' })).toBeTruthy();
   });
 
   it('gives a plain Member no "Mitglieder hinzufügen" in the Channel header', async () => {
