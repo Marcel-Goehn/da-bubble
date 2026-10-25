@@ -247,7 +247,7 @@ describe('Reactions', () => {
   it("inserts an emoji from the composer's picker where the caret is, and keeps typing there", async () => {
     const user = userEvent.setup();
     await openChannel([]);
-    const composer = screen.getByRole<HTMLTextAreaElement>('textbox', {
+    const composer = screen.getByRole<HTMLTextAreaElement>('combobox', {
       name: 'Nachricht an #Allgemein',
     });
     await user.type(composer, 'Gute Nacht');

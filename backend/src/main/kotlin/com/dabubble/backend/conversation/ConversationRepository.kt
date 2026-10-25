@@ -13,6 +13,15 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
     @Query("SELECT c FROM Conversation c WHERE c.isDefault = true")
     fun findDefaultChannel(): Conversation
 
+    /** Those of [ids] that are Channels. */
+    @Query(
+        """
+        SELECT c.id FROM Conversation c
+        WHERE c.id IN :ids AND c.kind = com.dabubble.backend.conversation.ConversationKind.CHANNEL
+        """,
+    )
+    fun findChannelIds(ids: Collection<Long>): Set<Long>
+
     // A DM row exists only once it has a Message (or is a self-DM), so every DM of the User is listed.
     @Query(
         """

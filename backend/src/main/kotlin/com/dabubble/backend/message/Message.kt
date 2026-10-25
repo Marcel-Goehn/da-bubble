@@ -43,6 +43,23 @@ class Message private constructor(
     /** Its Reactions, oldest first. */
     val reactions: List<Reaction> get() = reactionList
 
+    @OneToMany(cascade = [CascadeType.ALL], orphanRemoval = true)
+    @JoinColumn(name = "message_id", nullable = false)
+    private val mentionList: MutableList<MessageMention> = mutableListOf()
+
+    /** The Users and Channels its text mentions. */
+    val mentions: Set<MentionTarget> get() = mentionList.mapTo(linkedSetOf()) { it.target }
+
+    /**
+     * Makes [targets] the Users and Channels it mentions. Only what changed is written, as Hibernate inserts
+     * before it deletes and a Mention kept would otherwise clash with itself.
+     */
+    private fun mention(targets: Set<MentionTarget>) {
+        mentionList.removeAll { it.target !in targets }
+        val kept = mentions
+        targets.filterNot { it in kept }.forEach { mentionList += MessageMention.of(it) }
+    }
+
     /**
      * Adds the User's Reaction with [emoji], or removes it if they've already reacted with it. A Deleted Message
      * can't be reacted to, and [emoji] must be exactly one emoji.
@@ -66,10 +83,14 @@ class Message private constructor(
         }
     }
 
-    /** Replaces the text and sets edited at; only the author may, and not once it's deleted. */
+    /**
+     * Replaces the text and the [mentions] in it and sets edited at; only the author may, and not once it's
+     * deleted.
+     */
     fun edit(
         userId: UUID,
         text: String,
+        mentions: Set<MentionTarget>,
         at: Instant,
     ) {
         requireAuthor(userId)
@@ -81,13 +102,14 @@ class Message private constructor(
             throw ProblemException(ProblemCode.MESSAGE_EMPTY, "A Message needs text or an Attachment")
         }
         this.text = text
+        mention(mentions)
         editedAt = at
     }
 
     /**
      * Makes it a Deleted Message: its content is erased, its place, author and time stay. Only the author may.
      * Returns whether anything changed, which it doesn't for one deleted already.
-     * TODO(#66): erase its Mentions and Attachments once they exist.
+     * TODO(#66): erase its Attachments once they exist.
      */
     fun delete(
         userId: UUID,
@@ -99,6 +121,7 @@ class Message private constructor(
         }
         text = ""
         reactionList.clear()
+        mentionList.clear()
         deletedAt = at
         return true
     }
@@ -117,15 +140,19 @@ class Message private constructor(
     }
 
     companion object {
-        /** A new top-level Message. TODO(#66): may be blank once it has Attachments. */
+        /**
+         * A new top-level Message, with the Users and Channels its text [mentions]. TODO(#66): may be blank once
+         * it has Attachments.
+         */
         fun send(
             conversationId: Long,
             authorId: UUID,
             text: String,
+            mentions: Set<MentionTarget>,
             createdAt: Instant,
         ): Message {
             requireText(text)
-            return Message(conversationId, authorId, null, text, createdAt)
+            return Message(conversationId, authorId, null, text, createdAt).apply { mention(mentions) }
         }
 
         /**
@@ -136,11 +163,14 @@ class Message private constructor(
             parent: Message,
             authorId: UUID,
             text: String,
+            mentions: Set<MentionTarget>,
             createdAt: Instant,
         ): Message {
             parent.requireThreadable()
             requireText(text)
-            return Message(parent.conversationId, authorId, checkNotNull(parent.id), text, createdAt)
+            return Message(parent.conversationId, authorId, checkNotNull(parent.id), text, createdAt).apply {
+                mention(mentions)
+            }
         }
 
         private fun requireText(text: String) {

@@ -17,6 +17,7 @@ import { Avatar } from './avatar';
 import { EmojiPickerButton } from './emoji-picker-button';
 import { Icon } from './icon';
 import { MessageEditor } from './message-editor';
+import { MessageText } from './message-text';
 import { ReactionChips, ReactionView } from './reaction-chips';
 
 type MessageAction = 'edit' | 'delete';
@@ -43,6 +44,7 @@ const itemClasses =
     MenuItem,
     MenuTrigger,
     MessageEditor,
+    MessageText,
     ReactionChips,
     RouterLink,
     TranslocoDatePipe,
@@ -112,7 +114,11 @@ const itemClasses =
               : 'rounded-tl-none bg-bubble-other'
           "
         >
-          {{ text() }}
+          <!-- Spaced off the author line, as the text was before it had Mentions. -->
+          &ngsp;<app-message-text
+            [text]="text()"
+            (userSelected)="mentionSelected.emit($event)"
+          />&ngsp;
         </p>
       }
       @if (reactions().length > 0 && !deleted()) {
@@ -243,6 +249,8 @@ export class MessageBubble {
   readonly saving = input(false, { transform: booleanAttribute });
   /** The author's name was clicked, e.g. to open their profile card. */
   readonly authorSelected = output();
+  /** An `@` Mention of the User with this id was clicked. */
+  readonly mentionSelected = output<string>();
   /** "Nachricht bearbeiten" was chosen. */
   readonly editRequested = output();
   /** "Nachricht löschen" was chosen, with the ⋮ to return focus to; the owner confirms before deleting. */

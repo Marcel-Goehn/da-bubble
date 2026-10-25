@@ -104,6 +104,7 @@ interface Rendered {
         [reactions]="reactionViews(message)"
         [compactReactions]="compactReactions()"
         (authorSelected)="profiles.open(message.authorId)"
+        (mentionSelected)="profiles.open($event)"
         (editRequested)="editingId.set(message.id)"
         (editCancelled)="editingId.set(null)"
         (editSaved)="saveEdit(message, $event)"

@@ -68,6 +68,10 @@
     "placeholderThread": "Reply …",
     "emoji": "Insert emoji"
   },
+  "mentions": {
+    "users": "People",
+    "channels": "Channels"
+  },
   "conversation": {
     "directMessage": "Direct message"
   },

@@ -24,7 +24,7 @@ function shownMessages(): string[] {
 }
 
 function composer(name = 'Nachricht an Alan Turing'): HTMLTextAreaElement {
-  return screen.getByRole<HTMLTextAreaElement>('textbox', { name });
+  return screen.getByRole<HTMLTextAreaElement>('combobox', { name });
 }
 
 describe('A Direct Message', () => {

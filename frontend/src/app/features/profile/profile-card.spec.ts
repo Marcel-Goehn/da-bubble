@@ -60,7 +60,7 @@ describe('Profile card', () => {
 
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
     expect(TestBed.inject(Router).url).toBe(`/dm/${alan.id}`);
-    expect(screen.getByRole('textbox', { name: 'Nachricht an Alan Turing' })).toBeTruthy();
+    expect(screen.getByRole('combobox', { name: 'Nachricht an Alan Turing' })).toBeTruthy();
   });
 
   it('opens from the DM header', async () => {

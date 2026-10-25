@@ -56,7 +56,7 @@ describe('Edited Messages', () => {
 
     await user.click(actionsButton('Hallo zusamen'));
     await user.click(screen.getByRole('menuitem', { name: 'Nachricht bearbeiten' }));
-    const editor = screen.getByRole('textbox', { name: 'Nachricht bearbeiten' });
+    const editor = screen.getByRole('combobox', { name: 'Nachricht bearbeiten' });
     expect((editor as HTMLTextAreaElement).value).toBe('Hallo zusamen');
     await user.clear(editor);
     await user.type(editor, 'Hallo zusammen');
@@ -68,7 +68,7 @@ describe('Edited Messages', () => {
     request.flush({ ...message(1, 'Hallo zusammen'), editedAt });
     await settle(fixture);
 
-    expect(screen.queryByRole('textbox', { name: 'Nachricht bearbeiten' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Nachricht bearbeiten' })).toBeNull();
     expect(shownText(shownMessage('Hallo zusammen'))).toContain(
       '14:25 Uhr (bearbeitet) Hallo zusammen',
     );
@@ -80,17 +80,17 @@ describe('Edited Messages', () => {
 
     await user.click(actionsButton('Hallo'));
     await user.click(screen.getByRole('menuitem', { name: 'Nachricht bearbeiten' }));
-    await user.type(screen.getByRole('textbox', { name: 'Nachricht bearbeiten' }), ' Welt');
+    await user.type(screen.getByRole('combobox', { name: 'Nachricht bearbeiten' }), ' Welt');
     await user.click(screen.getByRole('button', { name: 'Abbrechen' }));
 
-    expect(screen.queryByRole('textbox', { name: 'Nachricht bearbeiten' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Nachricht bearbeiten' })).toBeNull();
     expect(shownText(shownMessage('Hallo'))).toBe('Ada Lovelace 14:25 Uhr Hallo');
 
     await user.click(actionsButton('Hallo'));
     await user.click(screen.getByRole('menuitem', { name: 'Nachricht bearbeiten' }));
     await user.keyboard(' Welt{Escape}');
 
-    expect(screen.queryByRole('textbox', { name: 'Nachricht bearbeiten' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Nachricht bearbeiten' })).toBeNull();
     await waitFor(() => expect(actionsButton('Hallo')).toBe(document.activeElement));
     http.expectNone('/api/conversations/1/messages/1');
   });
@@ -106,7 +106,7 @@ describe('Edited Messages', () => {
     await settle(fixture);
 
     expect(
-      screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Nachricht bearbeiten' }).value,
+      screen.getByRole<HTMLTextAreaElement>('combobox', { name: 'Nachricht bearbeiten' }).value,
     ).toBe('Hallo Welt');
   });
 
@@ -115,7 +115,7 @@ describe('Edited Messages', () => {
     const { http } = await openChannel([message(1, 'Hallo')]);
     await user.click(actionsButton('Hallo'));
     await user.click(screen.getByRole('menuitem', { name: 'Nachricht bearbeiten' }));
-    const editor = screen.getByRole('textbox', { name: 'Nachricht bearbeiten' });
+    const editor = screen.getByRole('combobox', { name: 'Nachricht bearbeiten' });
 
     await user.clear(editor);
     await user.type(editor, '   ');
@@ -125,7 +125,7 @@ describe('Edited Messages', () => {
 
     await user.clear(editor);
     await user.type(editor, 'Hallo{Enter}');
-    expect(screen.queryByRole('textbox', { name: 'Nachricht bearbeiten' })).toBeNull();
+    expect(screen.queryByRole('combobox', { name: 'Nachricht bearbeiten' })).toBeNull();
     http.expectNone('/api/conversations/1/messages/1');
   });
 
@@ -142,7 +142,7 @@ describe('Edited Messages', () => {
     await settle(fixture);
 
     expect(
-      screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Nachricht bearbeiten' }).value,
+      screen.getByRole<HTMLTextAreaElement>('combobox', { name: 'Nachricht bearbeiten' }).value,
     ).toBe('Hallo Welt');
     await waitFor(() =>
       expect(toast()).toContain('Deine Änderung konnte nicht gespeichert werden.'),
@@ -190,7 +190,7 @@ describe('Edited Messages', () => {
     await userEvent.keyboard('{Enter}');
     await screen.findByRole('menu', { name: 'Weitere Aktionen' });
     await userEvent.keyboard('{Enter}');
-    const editor = screen.getByRole('textbox', { name: 'Nachricht bearbeiten' });
+    const editor = screen.getByRole('combobox', { name: 'Nachricht bearbeiten' });
     await waitFor(() => expect(editor).toBe(document.activeElement));
     await expectNoA11yViolations();
     await userEvent.keyboard('!{Enter}');

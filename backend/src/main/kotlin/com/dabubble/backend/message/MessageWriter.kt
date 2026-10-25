@@ -11,6 +11,7 @@ import com.dabubble.backend.realtime.MessageUpdatedEvent
 import com.dabubble.backend.realtime.RealtimeEvent
 import com.dabubble.backend.realtime.RealtimePublisher
 import com.dabubble.backend.time.now
+import com.dabubble.backend.user.UserRepository
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
 import java.time.Clock
@@ -25,6 +26,7 @@ import java.util.UUID
 class MessageWriter(
     private val messages: MessageRepository,
     private val conversations: ConversationRepository,
+    private val users: UserRepository,
     private val realtime: RealtimePublisher,
     private val clock: Clock,
 ) {
@@ -36,7 +38,8 @@ class MessageWriter(
     ): MessageDto {
         val conversationId = checkNotNull(conversation.id)
         val now = clock.now()
-        val message = MessageDto.from(messages.save(Message.send(conversationId, authorId, text, now)), null)
+        val sent = Message.send(conversationId, authorId, text, mentionsIn(text), now)
+        val message = MessageDto.from(messages.save(sent), null)
         announce(conversation, now, MessageCreatedEvent(message, null))
         return message
     }
@@ -55,7 +58,7 @@ class MessageWriter(
         val conversationId = checkNotNull(conversation.id)
         val now = clock.now()
         val parent = messages.requireLockedIn(conversationId, parentId)
-        val reply = MessageDto.from(messages.save(Message.reply(parent, authorId, text, now)), null)
+        val reply = MessageDto.from(messages.save(Message.reply(parent, authorId, text, mentionsIn(text), now)), null)
         val thread = messages.summarizeThreads(listOf(parentId)).single().toDto()
         announce(conversation, now, MessageCreatedEvent(reply, thread))
         return reply
@@ -71,7 +74,7 @@ class MessageWriter(
     ): MessageDto {
         val now = clock.now()
         val message = requireMessage(conversation, messageId)
-        message.edit(userId, text, now)
+        message.edit(userId, text, mentionsIn(text), now)
         val edited = messages.toDto(message)
         announce(conversation, now, MessageUpdatedEvent(edited))
         return edited
@@ -115,6 +118,24 @@ class MessageWriter(
         val toggled = messages.toDto(message)
         announce(conversation, now, MessageUpdatedEvent(toggled))
         return toggled
+    }
+
+    /**
+     * The Users and Channels [text] mentions. A token for one that doesn't exist, or for a DM, stays in the text
+     * but mentions nothing, so it reads as plain text.
+     */
+    private fun mentionsIn(text: String): Set<MentionTarget> {
+        val targets = MentionTokens.targetsIn(text)
+        val userIds = targets.filterIsInstance<MentionTarget.User>().map { it.id }
+        val channelIds = targets.filterIsInstance<MentionTarget.Channel>().map { it.id }
+        val users = if (userIds.isEmpty()) emptySet() else users.findExistingIds(userIds)
+        val channels = if (channelIds.isEmpty()) emptySet() else conversations.findChannelIds(channelIds)
+        return targets.filterTo(linkedSetOf()) {
+            when (it) {
+                is MentionTarget.User -> it.id in users
+                is MentionTarget.Channel -> it.id in channels
+            }
+        }
     }
 
     private fun requireMessage(

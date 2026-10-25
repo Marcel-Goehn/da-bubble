@@ -180,5 +180,5 @@ describe('Catching up after a reconnect', () => {
 });
 
 function composer(): HTMLTextAreaElement {
-  return screen.getByRole<HTMLTextAreaElement>('textbox', { name: 'Nachricht an #Allgemein' });
+  return screen.getByRole<HTMLTextAreaElement>('combobox', { name: 'Nachricht an #Allgemein' });
 }

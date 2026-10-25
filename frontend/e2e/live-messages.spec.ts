@@ -17,7 +17,7 @@ test("a Message sent in one browser, a Reaction to it, and its sender's Presence
     String(frame.payload).includes(text),
   );
 
-  await sender.page.getByRole('textbox', { name: 'Nachricht an #Allgemein' }).fill(text);
+  await sender.page.getByRole('combobox', { name: 'Nachricht an #Allgemein' }).fill(text);
   await sender.page.keyboard.press('Enter');
 
   await pushed;
@@ -90,6 +90,6 @@ async function openDefaultChannel(
   await logIn(page, user);
   await page.getByAltText('Avatar 1').click();
   await page.getByRole('button', { name: 'Weiter' }).click();
-  await expect(page.getByRole('textbox', { name: 'Nachricht an #Allgemein' })).toBeVisible();
+  await expect(page.getByRole('combobox', { name: 'Nachricht an #Allgemein' })).toBeVisible();
   return { page, socket: await subscribed };
 }

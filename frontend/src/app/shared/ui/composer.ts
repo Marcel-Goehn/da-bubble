@@ -1,11 +1,7 @@
 import {
-  afterNextRender,
   booleanAttribute,
   Component,
   computed,
-  ElementRef,
-  inject,
-  Injector,
   input,
   model,
   output,
@@ -14,31 +10,29 @@ import {
 import { TranslocoPipe } from '@jsverse/transloco';
 import { EmojiPickerButton } from './emoji-picker-button';
 import { Icon } from './icon';
+import { MentionField } from './mention-field';
 
 /**
  * The text box Messages are written in (component sheets 61. and 63.). Enter sends, Shift+Enter starts a
- * new line. The emoji button inserts an emoji from the picker where the caret is. The text is a model, so
- * the owner can keep it as a draft; it's only cleared by the owner.
+ * new line. `@` and `#` mention a User or Channel from a picker, and the emoji button inserts an emoji from
+ * the picker where the caret is. The text is a model, with Mentions as tokens, so the owner can keep it as a
+ * draft; it's only cleared by the owner.
  */
 @Component({
   selector: 'app-composer',
-  imports: [EmojiPickerButton, Icon, TranslocoPipe],
+  imports: [EmojiPickerButton, Icon, MentionField, TranslocoPipe],
   template: `
     <form
       class="flex flex-col gap-20 rounded-20 border border-border bg-surface p-20 hover:border-border-hover has-[textarea:focus-visible]:border-border-focus"
       (submit)="submit($event)"
     >
-      <textarea
-        class="resize-none bg-transparent outline-none placeholder:text-text-muted"
-        rows="2"
-        [attr.aria-label]="label()"
+      <app-mention-field
+        [label]="label()"
         [placeholder]="label()"
-        [value]="text()"
-        [readOnly]="busy()"
-        (input)="text.set(textarea.value)"
-        (keydown.enter)="enter($event)"
-        #textarea
-      ></textarea>
+        [busy]="busy()"
+        [(text)]="text"
+        (enterPressed)="enter($event)"
+      />
       <div class="flex items-center justify-between">
         <app-emoji-picker-button
           icon="mood"
@@ -69,32 +63,21 @@ export class Composer {
 
   protected readonly canSend = computed(() => !this.busy() && this.text().trim() !== '');
 
-  private readonly injector = inject(Injector);
-  private readonly textarea = viewChild.required<ElementRef<HTMLTextAreaElement>>('textarea');
+  private readonly field = viewChild.required(MentionField);
 
   /** Moves focus into the text box, e.g. when the pane it belongs to opens. */
   focus(): void {
-    this.textarea().nativeElement.focus();
+    this.field().focus();
   }
 
   /** Puts [emoji] in place of the selection, with the caret after it and focus back in the text box. */
   protected insert(emoji: string): void {
-    const textarea = this.textarea().nativeElement;
-    if (this.busy()) {
-      return;
-    }
-    const { selectionStart, selectionEnd, value } = textarea;
-    textarea.value = value.slice(0, selectionStart) + emoji + value.slice(selectionEnd);
-    this.text.set(textarea.value);
-    const caret = selectionStart + emoji.length;
-    textarea.focus();
-    // After the text binding has written the new value, which may move the caret to the end.
-    afterNextRender(() => textarea.setSelectionRange(caret, caret), { injector: this.injector });
+    this.field().insert(emoji);
   }
 
-  protected enter(event: Event): void {
+  protected enter(event: KeyboardEvent): void {
     // An Enter that confirms an IME composition isn't meant to send.
-    if (!(event as KeyboardEvent).isComposing) {
+    if (!event.isComposing) {
       this.submit(event);
     }
   }

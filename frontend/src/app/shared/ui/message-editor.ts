@@ -3,7 +3,6 @@ import {
   booleanAttribute,
   Component,
   computed,
-  ElementRef,
   input,
   output,
   signal,
@@ -11,30 +10,31 @@ import {
 } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Button } from './button';
+import { MentionField } from './mention-field';
 
 /**
  * The text box a Message is edited in, in place of its bubble (page 13., component sheet 60B.): Speichern
- * or Enter saves, Abbrechen or Escape cancels. It takes focus when it opens.
+ * or Enter saves, Abbrechen or Escape cancels. It takes focus when it opens. Mentions are offered as in
+ * the composer.
  */
 @Component({
   selector: 'app-message-editor',
-  imports: [Button, TranslocoPipe],
+  imports: [Button, MentionField, TranslocoPipe],
   template: `
     <form
       class="flex flex-col gap-20 rounded-20 border border-border bg-surface p-20 hover:border-border-hover has-[textarea:focus-visible]:border-border-focus"
       (submit)="submit($event)"
     >
-      <textarea
-        class="resize-none bg-transparent outline-none"
-        rows="3"
-        [attr.aria-label]="'message.edit' | transloco"
-        [value]="draft()"
-        [readOnly]="busy()"
-        (input)="typed.set(textarea.value)"
-        (keydown.enter)="enter($event)"
-        (keydown.escape)="cancelled.emit()"
-        #textarea
-      ></textarea>
+      <app-mention-field
+        position="below"
+        [rows]="3"
+        [label]="'message.edit' | transloco"
+        [busy]="busy()"
+        [text]="draft()"
+        (textChange)="typed.set($event)"
+        (enterPressed)="enter($event)"
+        (escapePressed)="cancelled.emit()"
+      />
       <div class="flex justify-end gap-20">
         <button appButton="secondary" type="button" (click)="cancelled.emit()">
           {{ 'message.cancel' | transloco }}
@@ -60,20 +60,15 @@ export class MessageEditor {
   protected readonly draft = computed(() => this.typed() ?? this.text());
   protected readonly canSave = computed(() => !this.busy() && this.draft().trim() !== '');
 
-  private readonly textarea = viewChild.required<ElementRef<HTMLTextAreaElement>>('textarea');
+  private readonly field = viewChild.required(MentionField);
 
   constructor() {
-    afterNextRender(() => {
-      const textarea = this.textarea().nativeElement;
-      textarea.focus();
-      textarea.setSelectionRange(textarea.value.length, textarea.value.length);
-    });
+    afterNextRender(() => this.field().focus({ atEnd: true }));
   }
 
-  protected enter(event: Event): void {
-    const keyboardEvent = event as KeyboardEvent;
+  protected enter(event: KeyboardEvent): void {
     // Shift+Enter starts a new line; an Enter that confirms an IME composition isn't meant to save.
-    if (!keyboardEvent.shiftKey && !keyboardEvent.isComposing) {
+    if (!event.shiftKey && !event.isComposing) {
       this.submit(event);
     }
   }

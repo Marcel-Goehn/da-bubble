@@ -40,7 +40,7 @@ function shownMessages(label = 'Nachrichten'): string[] {
 }
 
 function composer(name = 'Nachricht an #Allgemein'): HTMLTextAreaElement {
-  return screen.getByRole<HTMLTextAreaElement>('textbox', { name });
+  return screen.getByRole<HTMLTextAreaElement>('combobox', { name });
 }
 
 function toast(): string | undefined {

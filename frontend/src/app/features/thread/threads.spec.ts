@@ -81,7 +81,7 @@ describe('Threads', () => {
     });
     await settle(fixture);
 
-    const composer = within(threadPane()).getByRole('textbox', { name: 'Antworten …' });
+    const composer = within(threadPane()).getByRole('combobox', { name: 'Antworten …' });
     expect(document.activeElement).toBe(composer);
     await user.keyboard('Meine Antwort{Enter}');
     const request = http.expectOne('/api/conversations/1/messages/1/replies');
@@ -154,7 +154,7 @@ describe('Threads', () => {
       nextCursor: null,
     });
     await settle(fixture);
-    await user.type(within(threadPane()).getByRole('textbox', { name: 'Antworten …' }), 'Entwurf');
+    await user.type(within(threadPane()).getByRole('combobox', { name: 'Antworten …' }), 'Entwurf');
 
     const links = within(conversation()).getAllByRole('link', { name: 'Im Thread antworten' });
     await user.click(links[1]);
@@ -165,7 +165,7 @@ describe('Threads', () => {
     });
     await settle(fixture);
     const composer = () =>
-      within(threadPane()).getByRole<HTMLTextAreaElement>('textbox', { name: 'Antworten …' });
+      within(threadPane()).getByRole<HTMLTextAreaElement>('combobox', { name: 'Antworten …' });
     expect(composer().value).toBe('');
 
     await user.click(links[0]);
