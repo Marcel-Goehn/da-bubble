@@ -31,6 +31,9 @@ class PendingUpload private constructor(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
 
+    /** Where its file is stored, and its thumbnail if it's meant to have one. */
+    val objectKeys: List<String> get() = listOfNotNull(objectKey, thumbnailKey)
+
     companion object {
         /** 25 MB, per file. */
         const val MAX_SIZE: Long = 25L * 1024 * 1024
@@ -54,9 +57,13 @@ class PendingUpload private constructor(
                 throw ProblemException(ProblemCode.ATTACHMENT_TOO_LARGE, "A file may have at most $MAX_SIZE bytes")
             }
             val key = "attachments/${UUID.randomUUID()}"
-            val thumbnailKey = "$key-thumb".takeIf { thumbnailSize != null && AttachmentTypes.isImage(contentType) }
+            val hasThumbnail = thumbnailSize != null && AttachmentTypes.isImage(contentType)
+            val thumbnailKey = thumbnailKeyOf(key).takeIf { hasThumbnail }
             return PendingUpload(uploaderId, key, thumbnailKey, trimmed, size, contentType, createdAt)
         }
+
+        /** Where the thumbnail of the image stored at [objectKey] goes. */
+        fun thumbnailKeyOf(objectKey: String) = "$objectKey-thumb"
 
         private fun requireWellFormed(
             name: String,

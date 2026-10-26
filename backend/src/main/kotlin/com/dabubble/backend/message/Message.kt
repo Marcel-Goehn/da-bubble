@@ -114,7 +114,8 @@ class Message private constructor(
 
     /**
      * Makes it a Deleted Message: its content is erased, its place, author and time stay. Only the author may.
-     * Returns whether anything changed, which it doesn't for one deleted already.
+     * Returns whether anything changed, which it doesn't for one deleted already. Its files are the caller's
+     * to delete.
      */
     fun delete(
         userId: UUID,
@@ -127,7 +128,6 @@ class Message private constructor(
         text = ""
         reactionList.clear()
         mentionList.clear()
-        // TODO(#68): delete the files of its Attachments after the commit, before their keys are gone.
         attachmentList.clear()
         deletedAt = at
         return true

@@ -82,6 +82,7 @@ abstract class IntegrationTest {
             ).param("now", testNow())
             .update()
         scheduler.reset()
+        StorageOutage.down = false
     }
 
     private fun testNow() = clock.now().atOffset(ZoneOffset.UTC)

@@ -26,10 +26,11 @@ class IntegrationTestConfiguration {
     fun testJwtDecoder(jwtValidator: OAuth2TokenValidator<Jwt>): JwtDecoder =
         NimbusJwtDecoder.withPublicKey(TestTokens.publicKey).build().apply { setJwtValidator(jwtValidator) }
 
-    // SeaweedFS starts with the first test that stores or signs anything, not with the context.
+    // SeaweedFS starts with the first test that stores or signs anything, not with the context; StorageOutage
+    // can make it refuse deletes.
     @Bean
     @Primary
-    fun testS3Client(): S3Client = SeaweedFs.s3Client()
+    fun testS3Client(): S3Client = StorageOutage.wrap(SeaweedFs.s3Client())
 
     @Bean
     @Primary

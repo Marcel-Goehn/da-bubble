@@ -4,8 +4,7 @@ import com.dabubble.backend.message.AttachmentDto
 import com.dabubble.backend.message.MessageDto
 import com.dabubble.backend.message.MessagePageDto
 import com.dabubble.backend.message.ThreadPageDto
-import com.dabubble.backend.support.IntegrationTest
-import com.dabubble.backend.support.TestTokens
+import com.dabubble.backend.support.StorageApiTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -16,11 +15,11 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.util.UUID
 
-class AttachmentSendApiTest : IntegrationTest() {
+class AttachmentSendApiTest : StorageApiTest() {
     @Test
     fun `a Message with only an Attachment is sent, and everyone who sees it can fetch the file`() {
         val ada = provision()
-        val upload = upload(ada, "Plan.pdf", "%PDF-1", "application/pdf")
+        val upload = uploadId(ada, "Plan.pdf", "%PDF-1", "application/pdf")
 
         val sent = send(ada, "", listOf(upload)).expectStatus().isCreated.message()
 
@@ -43,7 +42,7 @@ class AttachmentSendApiTest : IntegrationTest() {
     @Test
     fun `an image's Attachment carries its thumbnail`() {
         val ada = provision()
-        val upload = upload(ada, "Foto.png", "png!", "image/png", thumbnail = "webp")
+        val upload = uploadId(ada, "Foto.png", "png!", "image/png", thumbnail = "webp")
 
         val attachment =
             send(ada, "Schau", listOf(upload))
@@ -60,7 +59,7 @@ class AttachmentSendApiTest : IntegrationTest() {
     @Test
     fun `an image whose thumbnail never arrived is sent without one`() {
         val ada = provision()
-        val upload = upload(ada, "Foto.png", "png!", "image/png", thumbnail = "webp", putThumbnail = false)
+        val upload = uploadId(ada, "Foto.png", "png!", "image/png", thumbnail = "webp", putThumbnail = false)
 
         val attachment =
             send(ada, "", listOf(upload))
@@ -76,7 +75,7 @@ class AttachmentSendApiTest : IntegrationTest() {
     @Test
     fun `Attachments keep the order they were sent in`() {
         val ada = provision()
-        val uploads = listOf("b.txt", "a.txt", "c.txt").map { upload(ada, it, it, "text/plain") }
+        val uploads = listOf("b.txt", "a.txt", "c.txt").map { uploadId(ada, it, it, "text/plain") }
 
         val sent = send(ada, "", uploads).expectStatus().isCreated.message()
 
@@ -86,7 +85,7 @@ class AttachmentSendApiTest : IntegrationTest() {
     @Test
     fun `a file that was never uploaded can't be sent`() {
         val ada = provision()
-        val upload = upload(ada, "Plan.pdf", "%PDF-1", "application/pdf", putFile = false)
+        val upload = uploadId(ada, "Plan.pdf", "%PDF-1", "application/pdf", putFile = false)
 
         send(ada, "Hier", listOf(upload)).expectProblem(400, "UPLOAD_INCOMPLETE")
         assertEquals(emptyList<MessageDto>(), page(ada).messages)
@@ -95,7 +94,7 @@ class AttachmentSendApiTest : IntegrationTest() {
     @Test
     fun `only its uploader may send a Pending Upload`() {
         val ada = provision()
-        val upload = upload(ada, "Plan.pdf", "%PDF-1", "application/pdf")
+        val upload = uploadId(ada, "Plan.pdf", "%PDF-1", "application/pdf")
         val alan = provision()
 
         send(alan, "Meins", listOf(upload)).expectProblem(400, "UPLOAD_NOT_FOUND")
@@ -104,7 +103,7 @@ class AttachmentSendApiTest : IntegrationTest() {
     @Test
     fun `a Pending Upload is used once`() {
         val ada = provision()
-        val upload = upload(ada, "Plan.pdf", "%PDF-1", "application/pdf")
+        val upload = uploadId(ada, "Plan.pdf", "%PDF-1", "application/pdf")
         send(ada, "Einmal", listOf(upload)).expectStatus().isCreated
 
         send(ada, "Nochmal", listOf(upload)).expectProblem(400, "UPLOAD_NOT_FOUND")
@@ -114,7 +113,7 @@ class AttachmentSendApiTest : IntegrationTest() {
     @Test
     fun `a Message has at most 5 Attachments`() {
         val ada = provision()
-        val uploads = (1..6).map { upload(ada, "$it.txt", "$it", "text/plain") }
+        val uploads = (1..6).map { uploadId(ada, "$it.txt", "$it", "text/plain") }
 
         send(ada, "Viele", uploads).expectProblem(400, "TOO_MANY_ATTACHMENTS")
         send(ada, "Fünf", uploads.take(5)).expectStatus().isCreated
@@ -139,7 +138,7 @@ class AttachmentSendApiTest : IntegrationTest() {
             post(
                 "/api/conversations/1/messages/${parent.id}/replies",
                 alan,
-                body("", listOf(upload(alan, "Antwort.txt", "ja", "text/plain"))),
+                body("", listOf(uploadId(alan, "Antwort.txt", "ja", "text/plain"))),
             ).expectStatus()
                 .isCreated
                 .message()
@@ -147,7 +146,7 @@ class AttachmentSendApiTest : IntegrationTest() {
             post(
                 "/api/direct-messages/$adaId/messages",
                 alan,
-                body("", listOf(upload(alan, "Privat.txt", "psst", "text/plain"))),
+                body("", listOf(uploadId(alan, "Privat.txt", "psst", "text/plain"))),
             ).expectStatus()
                 .isCreated
                 .message()
@@ -174,7 +173,7 @@ class AttachmentSendApiTest : IntegrationTest() {
     fun `a Message with Attachments may be edited to no text, one without may not`() {
         val ada = provision()
         val withFile =
-            send(ada, "Text", listOf(upload(ada, "a.txt", "a", "text/plain"))).expectStatus().isCreated.message()
+            send(ada, "Text", listOf(uploadId(ada, "a.txt", "a", "text/plain"))).expectStatus().isCreated.message()
         val without = send(ada, "Text", emptyList()).expectStatus().isCreated.message()
 
         val edited =
@@ -191,7 +190,7 @@ class AttachmentSendApiTest : IntegrationTest() {
     @Test
     fun `a Deleted Message loses its Attachments`() {
         val ada = provision()
-        val sent = send(ada, "", listOf(upload(ada, "a.txt", "a", "text/plain"))).expectStatus().isCreated.message()
+        val sent = send(ada, "", listOf(uploadId(ada, "a.txt", "a", "text/plain"))).expectStatus().isCreated.message()
 
         val deleted = delete("/api/conversations/1/messages/${sent.id}", ada).expectStatus().isOk.message()
 
@@ -199,14 +198,7 @@ class AttachmentSendApiTest : IntegrationTest() {
         assertEquals(emptyList<AttachmentDto>(), page(ada).messages.single().attachments)
     }
 
-    private fun provision(sub: UUID = UUID.randomUUID()): String {
-        val token = TestTokens.user(sub)
-        get("/api/me", token).expectStatus().isOk
-        return token
-    }
-
-    /** A Pending Upload of [name] holding [content], uploaded as the browser would unless told not to. */
-    private fun upload(
+    private fun uploadId(
         token: String,
         name: String,
         content: String,
@@ -214,48 +206,19 @@ class AttachmentSendApiTest : IntegrationTest() {
         thumbnail: String? = null,
         putFile: Boolean = true,
         putThumbnail: Boolean = true,
-    ): Long {
-        val thumbnailSize = thumbnail?.let { ",\"thumbnailSize\":${it.length}" }.orEmpty()
-        val upload =
-            post(
-                "/api/attachments/uploads",
-                token,
-                """{"name":"$name","size":${content.length},"contentType":"$contentType"$thumbnailSize}""",
-            ).expectStatus()
-                .isCreated
-                .expectBody(AttachmentUploadDto::class.java)
-                .returnResult()
-                .responseBody!!
-        if (putFile) {
-            putObject(upload.uploadUrl, content, contentType)
-        }
-        if (thumbnail != null && putThumbnail) {
-            putObject(upload.thumbnailUploadUrl!!, thumbnail, "image/webp")
-        }
-        return upload.id
-    }
+    ): Long = upload(token, name, content, contentType, thumbnail, putFile, putThumbnail).id
 
     private fun send(
         token: String,
         text: String,
         uploadIds: List<Long>,
-    ) = post("/api/conversations/1/messages", token, body(text, uploadIds))
-
-    private fun body(
-        text: String,
-        uploadIds: List<Long>,
-    ) = """{"text":"$text","attachmentIds":[${uploadIds.joinToString()}]}"""
+    ) = send(token, 1, text, uploadIds)
 
     private fun page(token: String): MessagePageDto =
         get("/api/conversations/1/messages", token)
             .expectStatus()
             .isOk
             .expectBody(MessagePageDto::class.java)
-            .returnResult()
-            .responseBody!!
-
-    private fun RestTestClient.ResponseSpec.message(): MessageDto =
-        expectBody(MessageDto::class.java)
             .returnResult()
             .responseBody!!
 
@@ -268,25 +231,6 @@ class AttachmentSendApiTest : IntegrationTest() {
             .expectBody()
             .jsonPath("$.code")
             .isEqualTo(code)
-    }
-
-    private fun putObject(
-        url: String,
-        body: String,
-        contentType: String,
-    ) {
-        val status =
-            HttpClient
-                .newHttpClient()
-                .send(
-                    HttpRequest
-                        .newBuilder(URI(url))
-                        .header("Content-Type", contentType)
-                        .PUT(HttpRequest.BodyPublishers.ofString(body))
-                        .build(),
-                    HttpResponse.BodyHandlers.discarding(),
-                ).statusCode()
-        assertEquals(200, status)
     }
 
     private fun fetch(url: String): HttpResponse<String> =

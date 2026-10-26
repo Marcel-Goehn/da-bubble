@@ -77,6 +77,10 @@ interface MessageRepository : JpaRepository<Message, Long> {
     )
     fun summarizeThreads(parentMessageIds: Collection<Long>): List<ThreadSummary>
 
+    /** The Attachments of every Message and Reply in the Conversation [conversationId]. */
+    @Query("SELECT a FROM Message m JOIN m.attachmentList a WHERE m.conversationId = :conversationId")
+    fun findAttachmentsIn(conversationId: Long): List<Attachment>
+
     fun findByIdAndConversationId(
         id: Long,
         conversationId: Long,

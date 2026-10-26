@@ -1,10 +1,12 @@
 package com.dabubble.backend.conversation
 
+import com.dabubble.backend.message.MessageRepository
 import com.dabubble.backend.problem.ProblemCode
 import com.dabubble.backend.problem.ProblemException
 import com.dabubble.backend.realtime.ConversationRemovedEvent
 import com.dabubble.backend.realtime.ConversationUpsertedEvent
 import com.dabubble.backend.realtime.RealtimePublisher
+import com.dabubble.backend.storage.FileDeletions
 import com.dabubble.backend.time.now
 import com.dabubble.backend.user.UserRepository
 import org.hibernate.exception.ConstraintViolationException
@@ -30,7 +32,9 @@ sealed interface NewMembers {
 class ChannelService(
     private val conversations: ConversationRepository,
     private val users: UserRepository,
+    private val messages: MessageRepository,
     private val realtime: RealtimePublisher,
+    private val files: FileDeletions,
     private val clock: Clock,
 ) {
     /**
@@ -118,7 +122,8 @@ class ChannelService(
 
     /**
      * Deletes the Channel [channelId], as its Creator [actorId]. The database cascades to its Messages, Replies,
-     * Reactions and Memberships; every Member loses it at once.
+     * Reactions, Attachments and Memberships; every Member loses it at once, and its files go in one batch once
+     * committed.
      */
     @Transactional
     fun delete(
@@ -128,7 +133,11 @@ class ChannelService(
         val channel = conversations.requireVisibleTo(channelId, actorId)
         channel.requireDeletableBy(actorId)
         val members = channel.memberIds()
+        // Locked first, so no Attachment arrives after its files are listed.
+        conversations.lock(channelId)
+        val fileKeys = messages.findAttachmentsIn(channelId).flatMap { it.objectKeys }
         conversations.deleteConversation(channelId)
+        files.deleteAfterCommit(fileKeys)
         realtime.toUsers(members, ConversationRemovedEvent(channelId))
     }
 

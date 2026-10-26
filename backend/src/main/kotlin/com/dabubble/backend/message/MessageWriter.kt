@@ -11,6 +11,7 @@ import com.dabubble.backend.realtime.MessageCreatedEvent
 import com.dabubble.backend.realtime.MessageUpdatedEvent
 import com.dabubble.backend.realtime.RealtimeEvent
 import com.dabubble.backend.realtime.RealtimePublisher
+import com.dabubble.backend.storage.FileDeletions
 import com.dabubble.backend.time.now
 import com.dabubble.backend.user.UserRepository
 import org.springframework.stereotype.Component
@@ -31,6 +32,7 @@ class MessageWriter(
     private val conversations: ConversationRepository,
     private val users: UserRepository,
     private val realtime: RealtimePublisher,
+    private val files: FileDeletions,
     private val clock: Clock,
 ) {
     @Transactional
@@ -89,8 +91,8 @@ class MessageWriter(
     }
 
     /**
-     * Turns the Message [messageId] in [conversation] into a Deleted Message, which only its author may do.
-     * Deleting it again changes nothing and tells nobody.
+     * Turns the Message [messageId] in [conversation] into a Deleted Message, which only its author may do; the
+     * files of its Attachments go once committed. Deleting it again changes nothing and tells nobody.
      */
     @Transactional
     fun delete(
@@ -100,9 +102,11 @@ class MessageWriter(
     ): MessageDto {
         val now = clock.now()
         val message = requireMessage(conversation, messageId)
+        val fileKeys = message.attachments.flatMap { it.objectKeys }
         val changed = message.delete(userId, now)
         val deleted = views.toDto(message)
         if (changed) {
+            files.deleteAfterCommit(fileKeys)
             announce(conversation, now, MessageUpdatedEvent(deleted))
         }
         return deleted

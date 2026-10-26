@@ -1,5 +1,6 @@
 package com.dabubble.backend.message
 
+import com.dabubble.backend.attachment.AttachmentTypes.isImage
 import com.dabubble.backend.attachment.PendingUpload
 import jakarta.persistence.Entity
 import jakarta.persistence.GeneratedValue
@@ -21,6 +22,16 @@ class Attachment private constructor(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null
+
+    /**
+     * Where its file is stored, and an image's thumbnail: one that hadn't arrived when it was sent may arrive
+     * later, as its upload URL is still valid, so its key is listed either way.
+     */
+    val objectKeys: List<String>
+        get() {
+            val thumbnail = thumbnailKey ?: PendingUpload.thumbnailKeyOf(objectKey).takeIf { isImage(contentType) }
+            return listOfNotNull(objectKey, thumbnail)
+        }
 
     companion object {
         /** The Attachment [upload] becomes, with its thumbnail only if [hasThumbnail]. */

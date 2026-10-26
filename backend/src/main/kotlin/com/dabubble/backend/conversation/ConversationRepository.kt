@@ -2,7 +2,9 @@ package com.dabubble.backend.conversation
 
 import com.dabubble.backend.problem.ProblemCode
 import com.dabubble.backend.problem.ProblemException
+import jakarta.persistence.LockModeType
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Lock
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import java.time.Instant
@@ -45,6 +47,14 @@ interface ConversationRepository : JpaRepository<Conversation, Long> {
         id: Long,
         at: Instant,
     )
+
+    /**
+     * Locks the Conversation [id] until the transaction ends. Its row's foreign key holds back new Messages,
+     * which then wait.
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT c.id FROM Conversation c WHERE c.id = :id")
+    fun lock(id: Long): Long?
 
     /** Deletes the Conversation [id] in the database alone, which cascades to everything in it. */
     @Modifying(flushAutomatically = true, clearAutomatically = true)

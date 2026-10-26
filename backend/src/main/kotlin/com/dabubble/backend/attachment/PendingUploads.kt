@@ -4,15 +4,25 @@ import com.dabubble.backend.message.Attachment
 import com.dabubble.backend.message.Message
 import com.dabubble.backend.problem.ProblemCode
 import com.dabubble.backend.problem.ProblemException
+import com.dabubble.backend.storage.FileDeletions
 import com.dabubble.backend.storage.ObjectStorage
+import com.dabubble.backend.time.now
 import org.springframework.stereotype.Component
+import org.springframework.transaction.annotation.Transactional
+import java.time.Clock
+import java.time.Duration
 import java.util.UUID
 
-/** Uses Pending Uploads: each one only by its uploader, only once, and only once its file is in storage. */
+/**
+ * Uses Pending Uploads: each one only by its uploader, only once, and only once its file is in storage. One
+ * unused for [MAX_AGE] is swept.
+ */
 @Component
 class PendingUploads(
     private val pendingUploads: PendingUploadRepository,
     private val storage: ObjectStorage,
+    private val files: FileDeletions,
+    private val clock: Clock,
 ) {
     /**
      * The Attachments the Pending Uploads [ids] of [uploaderId] become, in that order; the Pending Uploads are
@@ -36,6 +46,14 @@ class PendingUploads(
         return attachments
     }
 
+    /** Discards the Pending Uploads unused for [MAX_AGE]; their files go once committed. */
+    @Transactional
+    fun sweep() {
+        val expired = pendingUploads.findByCreatedAtLessThanEqual(clock.now() - MAX_AGE)
+        pendingUploads.deleteAll(expired)
+        files.deleteAfterCommit(expired.flatMap { it.objectKeys })
+    }
+
     /** The Pending Uploads [ids] of [uploaderId], in that order; one used already is gone. */
     private fun find(
         uploaderId: UUID,
@@ -53,5 +71,9 @@ class PendingUploads(
             throw ProblemException(ProblemCode.UPLOAD_INCOMPLETE, "Pending Upload ${upload.id} isn't uploaded")
         }
         return Attachment.of(upload, hasThumbnail = upload.thumbnailKey?.let(storage::sizeOf) != null)
+    }
+
+    private companion object {
+        val MAX_AGE: Duration = Duration.ofHours(24)
     }
 }
