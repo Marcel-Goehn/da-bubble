@@ -1,7 +1,8 @@
 import { NgOptimizedImage } from '@angular/common';
-import { booleanAttribute, Component, computed, input } from '@angular/core';
+import { booleanAttribute, Component, computed, inject, Injector, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Presence } from '../../core/data/presence.store';
+import { UserStore } from '../../core/data/user.store';
 import { Icon } from './icon';
 
 /** The diameters the Figma uses for Avatars, in px. */
@@ -32,6 +33,7 @@ const sizes: Record<AvatarSize, string> = {
         [width]="size()"
         [height]="size()"
         [alt]="decorative() ? '' : name()"
+        (error)="failed(src)"
       />
     } @else {
       <span
@@ -65,7 +67,17 @@ export class Avatar {
   /** Hidden from assistive technology where the name is already next to it, e.g. in a sidebar row. */
   readonly decorative = input(false, { transform: booleanAttribute });
 
+  private readonly injector = inject(Injector);
+
   protected readonly classes = computed(
     () => `relative inline-block shrink-0 ${sizes[this.size()]}`,
   );
+
+  /** An uploaded Avatar's URL expires; the User is refetched for a fresh one. Static pictures don't. */
+  protected failed(src: string): void {
+    if (/^https?:/.test(src)) {
+      // Looked up only now, so an Avatar renders without the stores, e.g. in isolated tests.
+      this.injector.get(UserStore).refreshAvatar(src);
+    }
+  }
 }

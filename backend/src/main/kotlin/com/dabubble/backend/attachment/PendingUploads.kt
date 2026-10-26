@@ -40,10 +40,35 @@ class PendingUploads(
         if (distinct.size > Message.MAX_ATTACHMENTS) {
             throw ProblemException(ProblemCode.TOO_MANY_ATTACHMENTS, "At most ${Message.MAX_ATTACHMENTS} Attachments")
         }
-        val uploads = find(uploaderId, distinct)
+        val uploads = find(uploaderId, distinct, PendingUploadKind.ATTACHMENT)
         val attachments = uploads.map(::toAttachment)
         pendingUploads.deleteAll(uploads)
         return attachments
+    }
+
+    /**
+     * Stores [image], an Avatar of [contentType] the backend made itself, as a Pending Upload of [uploaderId].
+     * Inside the transaction: if storage fails, the Pending Upload is never committed.
+     */
+    fun avatar(
+        uploaderId: UUID,
+        image: ByteArray,
+        contentType: String,
+    ): PendingUpload {
+        val upload =
+            pendingUploads.save(PendingUpload.avatar(uploaderId, image.size.toLong(), contentType, clock.now()))
+        storage.put(upload.objectKey, image, contentType)
+        return upload
+    }
+
+    /** The key of the Avatar the Pending Upload [id] of [uploaderId] holds; the Pending Upload is used up. */
+    fun useAsAvatar(
+        uploaderId: UUID,
+        id: Long,
+    ): String {
+        val upload = find(uploaderId, listOf(id), PendingUploadKind.AVATAR).single()
+        pendingUploads.delete(upload)
+        return upload.objectKey
     }
 
     /** Discards the Pending Uploads unused for [MAX_AGE]; their files go once committed. */
@@ -54,12 +79,13 @@ class PendingUploads(
         files.deleteAfterCommit(expired.flatMap { it.objectKeys })
     }
 
-    /** The Pending Uploads [ids] of [uploaderId], in that order; one used already is gone. */
+    /** The Pending Uploads [ids] of [uploaderId] for [kind], in that order; one used already is gone. */
     private fun find(
         uploaderId: UUID,
         ids: List<Long>,
+        kind: PendingUploadKind,
     ): List<PendingUpload> {
-        val found = pendingUploads.findByIdInAndUploaderId(ids, uploaderId).associateBy { it.id }
+        val found = pendingUploads.findByIdInAndUploaderIdAndKind(ids, uploaderId, kind).associateBy { it.id }
         return ids.map {
             found[it] ?: throw ProblemException(ProblemCode.UPLOAD_NOT_FOUND, "No Pending Upload $it of the User")
         }

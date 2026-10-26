@@ -3,6 +3,7 @@ package com.dabubble.backend.realtime
 import com.dabubble.backend.conversation.ConversationDto
 import com.dabubble.backend.message.MessageDto
 import com.dabubble.backend.message.ThreadSummaryDto
+import com.dabubble.backend.user.UserDto
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import io.swagger.v3.oas.annotations.media.DiscriminatorMapping
@@ -22,6 +23,7 @@ import java.util.UUID
     JsonSubTypes.Type(ConversationUpsertedEvent::class, name = ConversationUpsertedEvent.TYPE),
     JsonSubTypes.Type(ConversationRemovedEvent::class, name = ConversationRemovedEvent.TYPE),
     JsonSubTypes.Type(ReadUpdatedEvent::class, name = ReadUpdatedEvent.TYPE),
+    JsonSubTypes.Type(UserUpdatedEvent::class, name = UserUpdatedEvent.TYPE),
     JsonSubTypes.Type(PresenceChangedEvent::class, name = PresenceChangedEvent.TYPE),
 )
 @Schema(
@@ -31,6 +33,7 @@ import java.util.UUID
         ConversationUpsertedEvent::class,
         ConversationRemovedEvent::class,
         ReadUpdatedEvent::class,
+        UserUpdatedEvent::class,
         PresenceChangedEvent::class,
     ],
     discriminatorProperty = "type",
@@ -40,6 +43,7 @@ import java.util.UUID
         DiscriminatorMapping(ConversationUpsertedEvent.TYPE, schema = ConversationUpsertedEvent::class),
         DiscriminatorMapping(ConversationRemovedEvent.TYPE, schema = ConversationRemovedEvent::class),
         DiscriminatorMapping(ReadUpdatedEvent.TYPE, schema = ReadUpdatedEvent::class),
+        DiscriminatorMapping(UserUpdatedEvent.TYPE, schema = UserUpdatedEvent::class),
         DiscriminatorMapping(PresenceChangedEvent.TYPE, schema = PresenceChangedEvent::class),
     ],
 )
@@ -113,6 +117,18 @@ data class ReadUpdatedEvent(
 
     companion object {
         const val TYPE = "read.updated"
+    }
+}
+
+/** A User changed their name or Avatar; [user] is as they are now. Sent to the whole Workspace. */
+data class UserUpdatedEvent(
+    val user: UserDto,
+) : RealtimeEvent {
+    @get:Schema(allowableValues = [TYPE])
+    override val type get() = TYPE
+
+    companion object {
+        const val TYPE = "user.updated"
     }
 }
 

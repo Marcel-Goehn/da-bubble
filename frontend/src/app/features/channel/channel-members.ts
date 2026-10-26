@@ -4,7 +4,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { avatarUrl } from '../../core/data/avatars';
 import { ConversationStore } from '../../core/data/conversation.store';
 import { PresenceStore } from '../../core/data/presence.store';
-import { UserDto, UserStore } from '../../core/data/user.store';
+import { UserStore } from '../../core/data/user.store';
 import { ErrorService } from '../../core/errors/error.service';
 import { Avatar } from '../../shared/ui/avatar';
 import { Icon } from '../../shared/ui/icon';
@@ -16,7 +16,7 @@ import { openAddMembers } from './add-members-dialog';
 interface MemberRow {
   userId: string;
   name: string;
-  avatar: UserDto['avatar'];
+  avatarSrc: string | null;
   isMe: boolean;
   isCreator: boolean;
   isAdmin: boolean;
@@ -76,7 +76,7 @@ let nextId = 0;
             <li class="flex items-center gap-15 rounded-30 px-15 py-5">
               <span class="relative">
                 <app-avatar
-                  [src]="avatarUrl(row.avatar)"
+                  [src]="row.avatarSrc"
                   [name]="row.name"
                   [size]="50"
                   [presence]="presence.of(row.userId)"
@@ -183,7 +183,6 @@ export class ChannelMembers {
 
   protected readonly presence = inject(PresenceStore);
   protected readonly profiles = inject(ProfileCards);
-  protected readonly avatarUrl = avatarUrl;
   protected readonly id = `channel-members-${nextId++}-`;
   protected readonly managing = signal(false);
   private readonly manageButton = viewChild<ElementRef<HTMLButtonElement>>('manageButton');
@@ -212,7 +211,7 @@ export class ChannelMembers {
         return {
           userId: member.userId,
           name: user.name,
-          avatar: user.avatar,
+          avatarSrc: avatarUrl(user),
           isMe,
           isCreator,
           isAdmin: member.isAdmin,

@@ -129,7 +129,8 @@
     "editChannelFailed": "The channel couldn't be changed. Please try again.",
     "leaveChannelFailed": "You couldn't leave the channel. Please try again.",
     "deleteChannelFailed": "The channel couldn't be deleted. Please try again.",
-    "openAttachmentFailed": "The file couldn't be opened. Please try again."
+    "openAttachmentFailed": "The file couldn't be opened. Please try again.",
+    "saveProfileFailed": "Your profile couldn't be saved. Please try again."
   },
   "legal": {
     "back": "Back to DABubble",
@@ -186,7 +187,30 @@
   "profile": {
     "title": "Profile",
     "email": "Email address",
-    "message": "Message"
+    "message": "Message",
+    "edit": "Edit",
+    "editTitle": "Edit your profile",
+    "name": "Full name",
+    "nameBlank": "Please enter your name.",
+    "nameTooLong": "A name has at most {max} characters.",
+    "cancel": "Cancel",
+    "save": "Save",
+    "avatar": {
+      "change": "Change Avatar",
+      "upload": "Upload photo",
+      "choose": "Choose from the list",
+      "remove": "Remove photo",
+      "formats": "JPG, PNG or WebP, up to 5 MB",
+      "hint": "Click or drop a picture on it",
+      "drop": "Drop to upload",
+      "uploading": "Uploading Avatar",
+      "dismissError": "Dismiss error",
+      "errors": {
+        "tooLarge": "“{name}” is too large. An Avatar has at most 5 MB.",
+        "unsupported": "“{name}” won't work: only JPG, PNG or WebP.",
+        "failed": "“{name}” couldn't be uploaded. Please try again."
+      }
+    }
   },
   "sidebar": {
     "label": "Workspace menu",

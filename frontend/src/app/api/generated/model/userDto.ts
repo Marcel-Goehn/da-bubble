@@ -11,4 +11,6 @@ export interface UserDto {
   email: string;
   id: string;
   name: string;
+  /** @nullable */
+  uploadedAvatarUrl: string | null;
 }

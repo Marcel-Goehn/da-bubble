@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.ServletWebRequest
 import org.springframework.web.context.request.WebRequest
 import org.springframework.web.method.annotation.HandlerMethodValidationException
+import org.springframework.web.multipart.MaxUploadSizeExceededException
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
 
 /**
@@ -48,6 +49,17 @@ class ProblemHandler : ResponseEntityExceptionHandler() {
         log.error("Unhandled exception", ex)
         val code = ProblemCode.INTERNAL_ERROR
         return problem(code, code.status, null, emptyList(), HttpHeaders(), request)
+    }
+
+    // Avatar uploads are the only multipart requests, so a file over the multipart limit is one of them.
+    override fun handleMaxUploadSizeExceededException(
+        ex: MaxUploadSizeExceededException,
+        headers: HttpHeaders,
+        status: HttpStatusCode,
+        request: WebRequest,
+    ): ResponseEntity<Any> {
+        val code = ProblemCode.AVATAR_TOO_LARGE
+        return problem(code, code.status, null, emptyList(), headers, request)
     }
 
     override fun handleExceptionInternal(

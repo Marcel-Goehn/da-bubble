@@ -2,6 +2,7 @@ package com.dabubble.backend.storage
 
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.core.exception.SdkException
+import software.amazon.awssdk.core.sync.RequestBody
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.Delete
 import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest
@@ -69,6 +70,23 @@ class ObjectStorage(
                 .getObjectRequest(get)
                 .build()
         return presigner.presignGetObject(request).url().toString()
+    }
+
+    /** Stores [bytes] of [contentType] as the object [key]; for files the backend makes itself. */
+    fun put(
+        key: String,
+        bytes: ByteArray,
+        contentType: String,
+    ) {
+        s3.putObject(
+            PutObjectRequest
+                .builder()
+                .bucket(properties.bucket)
+                .key(key)
+                .contentType(contentType)
+                .build(),
+            RequestBody.fromBytes(bytes),
+        )
     }
 
     /** The size in bytes of the object [key], or `null` if there is none. */

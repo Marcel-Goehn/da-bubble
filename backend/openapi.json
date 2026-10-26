@@ -65,6 +65,19 @@
         "required" : [ "url" ],
         "type" : "object"
       },
+      "AvatarUploadDto" : {
+        "properties" : {
+          "id" : {
+            "format" : "int64",
+            "type" : "integer"
+          },
+          "url" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "id", "url" ],
+        "type" : "object"
+      },
       "ConversationDto" : {
         "properties" : {
           "creatorId" : {
@@ -348,7 +361,7 @@
         "type" : "object"
       },
       "ProblemCode" : {
-        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "REPLY_HAS_NO_THREAD", "EMOJI_INVALID", "CHANNEL_NAME_EMPTY", "CHANNEL_NAME_TOO_LONG", "TOO_MANY_ATTACHMENTS", "UPLOAD_NOT_FOUND", "UPLOAD_INCOMPLETE", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_CHANNEL_ADMIN", "NOT_CHANNEL_CREATOR", "CHANNEL_CREATOR_PROTECTED", "MANAGING_YOURSELF", "DEFAULT_CHANNEL_LOCKED", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "CHANNEL_NAME_TAKEN", "ATTACHMENT_TOO_LARGE", "INTERNAL_ERROR" ],
+        "enum" : [ "BAD_REQUEST", "VALIDATION_FAILED", "MESSAGE_EMPTY", "REPLY_HAS_NO_THREAD", "EMOJI_INVALID", "CHANNEL_NAME_EMPTY", "CHANNEL_NAME_TOO_LONG", "USER_NAME_EMPTY", "USER_NAME_TOO_LONG", "TOO_MANY_ATTACHMENTS", "UPLOAD_NOT_FOUND", "UPLOAD_INCOMPLETE", "UNAUTHENTICATED", "NOT_MESSAGE_AUTHOR", "NOT_CHANNEL_ADMIN", "NOT_CHANNEL_CREATOR", "CHANNEL_CREATOR_PROTECTED", "MANAGING_YOURSELF", "DEFAULT_CHANNEL_LOCKED", "GUEST_PROFILE_LOCKED", "NOT_FOUND", "CONFLICT", "MESSAGE_DELETED", "CHANNEL_NAME_TAKEN", "ATTACHMENT_TOO_LARGE", "AVATAR_TOO_LARGE", "AVATAR_TYPE_UNSUPPORTED", "INTERNAL_ERROR" ],
         "type" : "string"
       },
       "ProblemDto" : {
@@ -428,7 +441,8 @@
             "message.created" : "#/components/schemas/MessageCreatedEvent",
             "message.updated" : "#/components/schemas/MessageUpdatedEvent",
             "presence.changed" : "#/components/schemas/PresenceChangedEvent",
-            "read.updated" : "#/components/schemas/ReadUpdatedEvent"
+            "read.updated" : "#/components/schemas/ReadUpdatedEvent",
+            "user.updated" : "#/components/schemas/UserUpdatedEvent"
           },
           "propertyName" : "type"
         },
@@ -443,8 +457,19 @@
         }, {
           "$ref" : "#/components/schemas/ReadUpdatedEvent"
         }, {
+          "$ref" : "#/components/schemas/UserUpdatedEvent"
+        }, {
           "$ref" : "#/components/schemas/PresenceChangedEvent"
         } ]
+      },
+      "RenameRequest" : {
+        "properties" : {
+          "name" : {
+            "type" : "string"
+          }
+        },
+        "required" : [ "name" ],
+        "type" : "object"
       },
       "RequestUploadRequest" : {
         "properties" : {
@@ -507,10 +532,17 @@
       "SetAvatarRequest" : {
         "properties" : {
           "avatar" : {
-            "$ref" : "#/components/schemas/PredefinedAvatar"
+            "oneOf" : [ {
+              "$ref" : "#/components/schemas/PredefinedAvatar"
+            }, {
+              "type" : "null"
+            } ]
+          },
+          "uploadId" : {
+            "format" : "int64",
+            "type" : [ "integer", "null" ]
           }
         },
-        "required" : [ "avatar" ],
         "type" : "object"
       },
       "ThreadPageDto" : {
@@ -612,9 +644,25 @@
           },
           "name" : {
             "type" : "string"
+          },
+          "uploadedAvatarUrl" : {
+            "type" : [ "string", "null" ]
           }
         },
-        "required" : [ "avatar", "email", "id", "name" ],
+        "required" : [ "avatar", "email", "id", "name", "uploadedAvatarUrl" ],
+        "type" : "object"
+      },
+      "UserUpdatedEvent" : {
+        "properties" : {
+          "type" : {
+            "enum" : [ "user.updated" ],
+            "type" : "string"
+          },
+          "user" : {
+            "$ref" : "#/components/schemas/UserDto"
+          }
+        },
+        "required" : [ "type", "user" ],
         "type" : "object"
       }
     }
@@ -1454,6 +1502,68 @@
             "application/json" : {
               "schema" : {
                 "$ref" : "#/components/schemas/SetAvatarRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/UserDto"
+                }
+              }
+            },
+            "description" : "OK"
+          }
+        },
+        "tags" : [ "me" ]
+      }
+    },
+    "/api/me/avatar/uploads" : {
+      "post" : {
+        "operationId" : "uploadAvatar",
+        "requestBody" : {
+          "content" : {
+            "multipart/form-data" : {
+              "schema" : {
+                "properties" : {
+                  "file" : {
+                    "format" : "binary",
+                    "type" : "string"
+                  }
+                },
+                "required" : [ "file" ],
+                "type" : "object"
+              }
+            }
+          }
+        },
+        "responses" : {
+          "201" : {
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AvatarUploadDto"
+                }
+              }
+            },
+            "description" : "Created"
+          }
+        },
+        "tags" : [ "me" ]
+      }
+    },
+    "/api/me/name" : {
+      "put" : {
+        "operationId" : "rename",
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/RenameRequest"
               }
             }
           },

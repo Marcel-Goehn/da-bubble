@@ -7,5 +7,7 @@
 import type { PredefinedAvatar } from './predefinedAvatar';
 
 export interface SetAvatarRequest {
-  avatar: PredefinedAvatar;
+  avatar?: PredefinedAvatar | null;
+  /** @nullable */
+  uploadId?: number | null;
 }

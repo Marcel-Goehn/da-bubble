@@ -23,7 +23,10 @@ import type {
 } from 'rxjs';
 
 import type {
+  AvatarUploadDto,
+  RenameRequest,
   SetAvatarRequest,
+  UploadAvatarBody,
   UserDto
 } from '../model';
 
@@ -138,6 +141,76 @@ export class MeService {
     return this.http.put<TData>(
       `/api/me/avatar`,
       setAvatarRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
+ uploadAvatar<TData = AvatarUploadDto>(uploadAvatarBody?: UploadAvatarBody, options?: HttpClientBodyOptions): Observable<TData>;
+ uploadAvatar<TData = AvatarUploadDto>(uploadAvatarBody?: UploadAvatarBody, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ uploadAvatar<TData = AvatarUploadDto>(uploadAvatarBody?: UploadAvatarBody, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  uploadAvatar<TData = AvatarUploadDto>(
+    uploadAvatarBody?: UploadAvatarBody, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {const formData = new FormData();
+if(uploadAvatarBody?.file !== undefined) {
+ formData.append(`file`, uploadAvatarBody.file);
+ }
+
+    if (options?.observe === 'events') {
+      return this.http.post<TData>(
+      `/api/me/avatar/uploads`,
+      formData,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.post<TData>(
+      `/api/me/avatar/uploads`,
+      formData,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.post<TData>(
+      `/api/me/avatar/uploads`,
+      formData,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'body',
+      }
+    );
+  }
+ rename<TData = UserDto>(renameRequest: RenameRequest, options?: HttpClientBodyOptions): Observable<TData>;
+ rename<TData = UserDto>(renameRequest: RenameRequest, options?: HttpClientEventOptions): Observable<HttpEvent<TData>>;
+ rename<TData = UserDto>(renameRequest: RenameRequest, options?: HttpClientResponseOptions): Observable<AngularHttpResponse<TData>>;
+  rename<TData = UserDto>(
+    renameRequest: RenameRequest, options?: HttpClientObserveOptions): Observable<TData | HttpEvent<TData> | AngularHttpResponse<TData>> {
+    if (options?.observe === 'events') {
+      return this.http.put<TData>(
+      `/api/me/name`,
+      renameRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'events',
+      }
+    );
+    }
+
+    if (options?.observe === 'response') {
+      return this.http.put<TData>(
+      `/api/me/name`,
+      renameRequest,{
+        ...(options as Omit<NonNullable<typeof options>, 'observe'>),
+        observe: 'response',
+      }
+    );
+    }
+
+    return this.http.put<TData>(
+      `/api/me/name`,
+      renameRequest,{
         ...(options as Omit<NonNullable<typeof options>, 'observe'>),
         observe: 'body',
       }

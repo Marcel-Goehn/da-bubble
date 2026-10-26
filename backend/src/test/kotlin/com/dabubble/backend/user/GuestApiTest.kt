@@ -17,7 +17,10 @@ class GuestApiTest : IntegrationTest() {
             .isOk
             .expectBody()
             .json(
-                """{"id":"$sub","name":"Guest","email":"guest@dabubble.com","avatar":"GUEST"}""",
+                """
+                {"id":"$sub","name":"Guest","email":"guest@dabubble.com","avatar":"GUEST",
+                "uploadedAvatarUrl":null}
+                """.trimIndent(),
                 JsonCompareMode.STRICT,
             )
     }

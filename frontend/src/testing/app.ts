@@ -5,6 +5,7 @@ import { render } from '@testing-library/angular';
 import { App } from '../app/app';
 import { routes } from '../app/app.routes';
 import { provideApi } from '../app/core/api/api.providers';
+import { avatarUrl } from '../app/core/data/avatars';
 import { ConversationDto, MemberDto } from '../app/core/data/conversation.store';
 import { MessageDto } from '../app/core/data/message.store';
 import { UnreadDto } from '../app/core/data/read.store';
@@ -23,6 +24,7 @@ export const ada: UserDto = {
   name: 'Ada Lovelace',
   email: 'ada@example.com',
   avatar: 'AVATAR_1',
+  uploadedAvatarUrl: null,
 };
 
 export const alan: UserDto = {
@@ -30,6 +32,7 @@ export const alan: UserDto = {
   name: 'Alan Turing',
   email: 'alan@example.com',
   avatar: 'AVATAR_2',
+  uploadedAvatarUrl: null,
 };
 
 export const grace: UserDto = {
@@ -37,6 +40,7 @@ export const grace: UserDto = {
   name: 'Grace Hopper',
   email: 'grace@example.com',
   avatar: 'AVATAR_3',
+  uploadedAvatarUrl: null,
 };
 
 /** When the test Conversations last had activity, unless a test says otherwise. */
@@ -193,7 +197,7 @@ export async function startApp({
   const realtime = TestBed.inject(FakeRealtimeService);
   const navigation = result.navigate(url);
   (await vi.waitFor(() => http.expectOne('/api/me'))).flush(me);
-  if (me.avatar !== null) {
+  if (avatarUrl(me) !== null) {
     const request = await vi.waitFor(() => http.expectOne('/api/conversations'));
     if (conversations === null) {
       request.flush(null, { status: 500, statusText: 'Internal Server Error' });

@@ -129,7 +129,8 @@
     "editChannelFailed": "Der Channel konnte nicht geändert werden. Bitte versuche es noch einmal.",
     "leaveChannelFailed": "Du konntest den Channel nicht verlassen. Bitte versuche es noch einmal.",
     "deleteChannelFailed": "Der Channel konnte nicht gelöscht werden. Bitte versuche es noch einmal.",
-    "openAttachmentFailed": "Die Datei konnte nicht geöffnet werden. Bitte versuche es noch einmal."
+    "openAttachmentFailed": "Die Datei konnte nicht geöffnet werden. Bitte versuche es noch einmal.",
+    "saveProfileFailed": "Dein Profil konnte nicht gespeichert werden. Versuch es noch einmal."
   },
   "legal": {
     "back": "Zurück zu DABubble",
@@ -186,7 +187,30 @@
   "profile": {
     "title": "Profil",
     "email": "E-Mail-Adresse",
-    "message": "Nachricht"
+    "message": "Nachricht",
+    "edit": "Bearbeiten",
+    "editTitle": "Dein Profil bearbeiten",
+    "name": "Vollständiger Name",
+    "nameBlank": "Bitte gib deinen Namen ein.",
+    "nameTooLong": "Ein Name hat höchstens {max} Zeichen.",
+    "cancel": "Abbrechen",
+    "save": "Speichern",
+    "avatar": {
+      "change": "Avatar ändern",
+      "upload": "Foto hochladen",
+      "choose": "Aus der Liste wählen",
+      "remove": "Foto entfernen",
+      "formats": "JPG, PNG oder WebP, bis 5 MB",
+      "hint": "Klicken oder ein Bild draufziehen",
+      "drop": "Loslassen zum Hochladen",
+      "uploading": "Avatar wird hochgeladen",
+      "dismissError": "Fehlermeldung schließen",
+      "errors": {
+        "tooLarge": "„{name}“ ist zu groß. Ein Avatar hat höchstens 5 MB.",
+        "unsupported": "„{name}“ geht nicht: nur JPG, PNG oder WebP.",
+        "failed": "„{name}“ konnte nicht hochgeladen werden. Versuch es noch einmal."
+      }
+    }
   },
   "sidebar": {
     "label": "Workspace-Menü",

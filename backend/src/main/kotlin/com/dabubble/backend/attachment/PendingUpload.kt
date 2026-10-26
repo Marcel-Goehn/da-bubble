@@ -3,6 +3,8 @@ package com.dabubble.backend.attachment
 import com.dabubble.backend.problem.ProblemCode
 import com.dabubble.backend.problem.ProblemException
 import jakarta.persistence.Entity
+import jakarta.persistence.EnumType
+import jakarta.persistence.Enumerated
 import jakarta.persistence.GeneratedValue
 import jakarta.persistence.GenerationType
 import jakarta.persistence.Id
@@ -10,13 +12,22 @@ import jakarta.persistence.Table
 import java.time.Instant
 import java.util.UUID
 
+/** What a Pending Upload is for; one is never used for the other. */
+enum class PendingUploadKind {
+    ATTACHMENT,
+    AVATAR,
+}
+
 /**
- * A file a User has requested an upload for but not yet used. Only its uploader may use it; sending it turns
- * it into an Attachment, with the object staying under the same key.
+ * A file a User has uploaded, or requested an upload for, but not yet used. Only its uploader may use it;
+ * sending it turns it into an Attachment, saving it makes it their Avatar, with the object staying under the
+ * same key.
  */
 @Entity
 @Table(name = "pending_uploads")
 class PendingUpload private constructor(
+    @Enumerated(EnumType.STRING)
+    val kind: PendingUploadKind,
     val uploaderId: UUID,
     val objectKey: String,
     /** Where an image's thumbnail goes; `null` for other files, or when the browser couldn't make one. */
@@ -59,8 +70,35 @@ class PendingUpload private constructor(
             val key = "attachments/${UUID.randomUUID()}"
             val hasThumbnail = thumbnailSize != null && AttachmentTypes.isImage(contentType)
             val thumbnailKey = thumbnailKeyOf(key).takeIf { hasThumbnail }
-            return PendingUpload(uploaderId, key, thumbnailKey, trimmed, size, contentType, createdAt)
+            return PendingUpload(
+                PendingUploadKind.ATTACHMENT,
+                uploaderId,
+                key,
+                thumbnailKey,
+                trimmed,
+                size,
+                contentType,
+                createdAt,
+            )
         }
+
+        /** An Avatar of [size] bytes of [contentType], already re-encoded by the backend, under a random key. */
+        fun avatar(
+            uploaderId: UUID,
+            size: Long,
+            contentType: String,
+            createdAt: Instant,
+        ) = PendingUpload(
+            PendingUploadKind.AVATAR,
+            uploaderId,
+            "avatars/${UUID.randomUUID()}",
+            null,
+            // Never shown or downloaded under a name.
+            "avatar",
+            size,
+            contentType,
+            createdAt,
+        )
 
         /** Where the thumbnail of the image stored at [objectKey] goes. */
         fun thumbnailKeyOf(objectKey: String) = "$objectKey-thumb"

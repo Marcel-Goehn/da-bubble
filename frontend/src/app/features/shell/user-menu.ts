@@ -33,7 +33,7 @@ const itemClasses =
       <!-- The name is the trigger's accessible name, so it stays for screen readers on mobile. -->
       <span class="text-32 font-bold max-lg:sr-only">{{ me().name }}</span>
       <app-avatar
-        [src]="avatarUrl(me().avatar)"
+        [src]="avatarUrl(me())"
         [name]="me().name"
         [size]="60"
         [presence]="presence.of(me().id)"

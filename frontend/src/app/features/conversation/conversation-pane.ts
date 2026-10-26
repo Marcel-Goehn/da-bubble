@@ -59,7 +59,7 @@ import { MessageList } from './message-list';
               (click)="profiles.open(partner.id)"
             >
               <app-avatar
-                [src]="avatarUrl(partner.avatar)"
+                [src]="avatarUrl(partner)"
                 [name]="partner.name"
                 [presence]="presence.of(partner.id)"
                 decorative
@@ -89,7 +89,7 @@ import { MessageList } from './message-list';
                 @for (member of memberStack(); track member.id) {
                   <app-avatar
                     class="rounded-full border-2 border-surface"
-                    [src]="avatarUrl(member.avatar)"
+                    [src]="avatarUrl(member)"
                     [name]="member.name"
                     [size]="40"
                     decorative

@@ -59,7 +59,7 @@ const optionKey = (mention: Mention) => `${mention.kind}:${mention.id}`;
               <span class="flex items-center gap-10 rounded-full bg-hover py-4 pr-8 pl-4">
                 @if (recipient.kind === 'user') {
                   <app-avatar
-                    [src]="avatarUrl(users.user(recipient.id)?.avatar ?? null)"
+                    [src]="avatarUrl(users.user(recipient.id))"
                     [name]="recipient.name"
                     [size]="40"
                     decorative
@@ -114,7 +114,7 @@ const optionKey = (mention: Mention) => `${mention.kind}:${mention.id}`;
                     >
                       @if (option.kind === 'user') {
                         <app-avatar
-                          [src]="avatarUrl(users.user(option.id)?.avatar ?? null)"
+                          [src]="avatarUrl(users.user(option.id))"
                           [name]="option.name"
                           [size]="40"
                           decorative

@@ -12,12 +12,7 @@ import { ProfileCards } from '../profile/profile-cards';
   host: { class: 'flex flex-col gap-20 px-16 py-20 lg:px-45' },
   template: `
     <p class="flex items-end gap-20 text-24 font-bold">
-      <app-avatar
-        [src]="avatarUrl(partner().avatar)"
-        [name]="partner().name"
-        [size]="100"
-        decorative
-      />
+      <app-avatar [src]="avatarUrl(partner())" [name]="partner().name" [size]="100" decorative />
       @if (self()) {
         {{ 'sidebar.selfDm' | transloco: { name: partner().name } }}
       } @else {

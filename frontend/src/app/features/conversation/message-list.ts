@@ -103,7 +103,7 @@ interface Rendered {
       @let authorName = author?.name ?? ('message.unknownAuthor' | transloco);
       <app-message-bubble
         [authorName]="authorName"
-        [avatarSrc]="avatarUrl(author?.avatar ?? null)"
+        [avatarSrc]="avatarUrl(author)"
         [presence]="presence.of(message.authorId)"
         [text]="message.text"
         [createdAt]="message.createdAt"

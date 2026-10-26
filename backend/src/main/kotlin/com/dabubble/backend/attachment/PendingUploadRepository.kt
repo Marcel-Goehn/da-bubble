@@ -8,13 +8,14 @@ import java.util.UUID
 
 interface PendingUploadRepository : JpaRepository<PendingUpload, Long> {
     /**
-     * Those of [ids] that [uploaderId] uploaded, locked until the transaction ends: a concurrent send of the
-     * same one waits, and then no longer finds it.
+     * Those of [ids] that [uploaderId] uploaded as [kind], locked until the transaction ends: a concurrent use
+     * of the same one waits, and then no longer finds it.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    fun findByIdInAndUploaderId(
+    fun findByIdInAndUploaderIdAndKind(
         ids: Collection<Long>,
         uploaderId: UUID,
+        kind: PendingUploadKind,
     ): List<PendingUpload>
 
     /**

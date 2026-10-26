@@ -1,4 +1,4 @@
-import { PredefinedAvatar } from './user.store';
+import { PredefinedAvatar, UserDto } from './user.store';
 
 const pictures: Record<PredefinedAvatar, string> = {
   AVATAR_1: '/avatars/1.webp',
@@ -15,9 +15,24 @@ export const predefinedAvatars = (Object.keys(pictures) as PredefinedAvatar[]).f
   (avatar) => avatar !== 'GUEST',
 );
 
-/** The static picture of [avatar], or `null` while the User has none (shown as a silhouette). */
-export function avatarUrl(avatar: PredefinedAvatar): string;
-export function avatarUrl(avatar: PredefinedAvatar | null): string | null;
-export function avatarUrl(avatar: PredefinedAvatar | null): string | null {
-  return avatar === null ? null : pictures[avatar];
+/** The pictures an Avatar may be uploaded from; the backend tells them apart by their bytes. */
+export const avatarTypes = ['image/jpeg', 'image/png', 'image/webp'];
+
+/** What a User's Avatar is shown from. */
+export type AvatarOf = Pick<UserDto, 'avatar' | 'uploadedAvatarUrl'>;
+
+/** The static picture of the predefined [avatar]. */
+export function predefinedAvatarUrl(avatar: PredefinedAvatar): string {
+  return pictures[avatar];
+}
+
+/**
+ * The picture of [user]'s Avatar: the one they uploaded, or a predefined one. `null` while they have none or
+ * aren't loaded (shown as a silhouette).
+ */
+export function avatarUrl(user: AvatarOf | null | undefined): string | null {
+  if (!user) {
+    return null;
+  }
+  return user.uploadedAvatarUrl ?? (user.avatar === null ? null : pictures[user.avatar]);
 }

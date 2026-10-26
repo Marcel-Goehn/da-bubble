@@ -154,7 +154,7 @@ const activeRowClasses = 'bg-hover font-bold text-menu-active';
               @let unread = reads.unreadIn(row.id);
               <span class="relative shrink-0">
                 <app-avatar
-                  [src]="avatarUrl(row.partner.avatar)"
+                  [src]="avatarUrl(row.partner)"
                   [name]="row.partner.name"
                   [presence]="presence.of(row.partner.id)"
                   decorative

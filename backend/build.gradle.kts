@@ -24,6 +24,9 @@ repositories {
 dependencies {
     implementation(platform("software.amazon.awssdk:bom:2.57.3"))
     implementation("software.amazon.awssdk:s3")
+    // ImageIO readers for WebP Avatars, and for JPEGs the JDK's reader refuses (e.g. CMYK).
+    implementation("com.twelvemonkeys.imageio:imageio-webp:3.15.3")
+    implementation("com.twelvemonkeys.imageio:imageio-jpeg:3.15.3")
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation("org.springframework.boot:spring-boot-starter-flyway")

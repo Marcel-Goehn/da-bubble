@@ -16,10 +16,11 @@ import java.util.UUID
 @Tag(name = "users")
 class UserController(
     private val users: UserRepository,
+    private val views: UserViews,
 ) {
     /** Every User of the Workspace, which everyone can see; a team of 5–50 needs no paging. */
     @GetMapping
-    fun listUsers(): List<UserDto> = users.findAll(Sort.by(User::name.name)).map(UserDto::from)
+    fun listUsers(): List<UserDto> = users.findAll(Sort.by(User::name.name)).map(views::toDto)
 
     /** One User, e.g. for a `/dm/:userId` with someone who joined after the list was loaded. */
     @GetMapping("/{id}")
@@ -27,6 +28,6 @@ class UserController(
         @PathVariable id: UUID,
     ): UserDto {
         val user = users.findByIdOrNull(id) ?: throw ProblemException(ProblemCode.NOT_FOUND, "No User $id")
-        return UserDto.from(user)
+        return views.toDto(user)
     }
 }

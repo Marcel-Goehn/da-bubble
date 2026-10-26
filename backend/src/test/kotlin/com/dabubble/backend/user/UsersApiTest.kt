@@ -21,8 +21,8 @@ class UsersApiTest : IntegrationTest() {
             .json(
                 """
                 [
-                  {"id":"$ada","name":"Ada Lovelace","email":"ada@example.com","avatar":null},
-                  {"id":"$alan","name":"Alan Turing","email":"alan@example.com","avatar":null}
+                  {"id":"$ada","name":"Ada Lovelace","email":"ada@example.com","avatar":null,"uploadedAvatarUrl":null},
+                  {"id":"$alan","name":"Alan Turing","email":"alan@example.com","avatar":null,"uploadedAvatarUrl":null}
                 ]
                 """.trimIndent(),
                 JsonCompareMode.STRICT,
@@ -40,7 +40,10 @@ class UsersApiTest : IntegrationTest() {
             .isOk
             .expectBody()
             .json(
-                """{"id":"$alan","name":"Alan Turing","email":"alan@example.com","avatar":null}""",
+                """
+                {"id":"$alan","name":"Alan Turing","email":"alan@example.com","avatar":null,
+                "uploadedAvatarUrl":null}
+                """.trimIndent(),
                 JsonCompareMode.STRICT,
             )
     }

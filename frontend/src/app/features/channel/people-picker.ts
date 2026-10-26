@@ -20,12 +20,7 @@ import { Icon } from '../../shared/ui/icon';
     >
       @for (person of pickedUsers(); track person.id) {
         <span class="flex items-center gap-10 rounded-full bg-hover py-4 pr-8 pl-4">
-          <app-avatar
-            [src]="avatarUrl(person.avatar)"
-            [name]="person.name"
-            [size]="40"
-            decorative
-          />
+          <app-avatar [src]="avatarUrl(person)" [name]="person.name" [size]="40" decorative />
           {{ person.name }}
           <button
             type="button"
@@ -68,12 +63,7 @@ import { Icon } from '../../shared/ui/icon';
               [value]="person.id"
               [label]="person.name"
             >
-              <app-avatar
-                [src]="avatarUrl(person.avatar)"
-                [name]="person.name"
-                [size]="40"
-                decorative
-              />
+              <app-avatar [src]="avatarUrl(person)" [name]="person.name" [size]="40" decorative />
               {{ person.name }}
             </div>
           }

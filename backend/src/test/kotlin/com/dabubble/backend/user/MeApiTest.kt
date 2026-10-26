@@ -27,7 +27,10 @@ class MeApiTest : IntegrationTest() {
             .isOk
             .expectBody()
             .json(
-                """{"id":"$sub","name":"Ada Lovelace","email":"ada@example.com","avatar":null}""",
+                """
+                {"id":"$sub","name":"Ada Lovelace","email":"ada@example.com","avatar":null,
+                "uploadedAvatarUrl":null}
+                """.trimIndent(),
                 JsonCompareMode.STRICT,
             )
     }

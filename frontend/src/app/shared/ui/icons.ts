@@ -35,12 +35,20 @@ import sendFilled from '@material-symbols/svg-400/outlined/send-fill.svg';
 import starFilled from '@material-symbols/svg-400/outlined/star-fill.svg';
 import tag from '@material-symbols/svg-400/outlined/tag.svg';
 import workspaces from '@material-symbols/svg-400/outlined/workspaces.svg';
+import upload from '@material-symbols/svg-400/outlined/upload.svg';
+import face from '@material-symbols/svg-400/outlined/face.svg';
+import deleteIcon from '@material-symbols/svg-400/outlined/delete.svg';
+import error from '@material-symbols/svg-400/outlined/error.svg';
 
 /**
  * The Material Symbols the app uses, bundled as markup so nothing is fetched at runtime. Add a symbol
  * here before using its name.
  */
 export const icons = {
+  upload,
+  face,
+  delete: deleteIcon,
+  error,
   attachFile,
   audioFile,
   description,

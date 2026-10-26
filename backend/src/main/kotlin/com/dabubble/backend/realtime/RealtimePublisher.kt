@@ -19,19 +19,26 @@ class RealtimePublisher(
         recipients: Collection<UUID>,
         event: RealtimeEvent,
     ) {
-        check(TransactionSynchronizationManager.isSynchronizationActive()) { "Events are sent after a commit" }
-        TransactionSynchronizationManager.registerSynchronization(
-            object : TransactionSynchronization {
-                override fun afterCommit() {
-                    recipients.forEach { messaging.convertAndSendToUser(it.toString(), USER_EVENTS, event) }
-                }
-            },
-        )
+        afterCommit { recipients.forEach { messaging.convertAndSendToUser(it.toString(), USER_EVENTS, event) } }
+    }
+
+    /** Sends [event] to every open tab of the Workspace after the current transaction commits. */
+    fun toWorkspaceAfterCommit(event: RealtimeEvent) {
+        afterCommit { messaging.convertAndSend(WORKSPACE, event) }
     }
 
     /** Sends [event] to every open tab of the Workspace now; for events no write causes, such as Presence. */
     fun toWorkspace(event: RealtimeEvent) {
         messaging.convertAndSend(WORKSPACE, event)
+    }
+
+    private fun afterCommit(send: () -> Unit) {
+        check(TransactionSynchronizationManager.isSynchronizationActive()) { "Events are sent after a commit" }
+        TransactionSynchronizationManager.registerSynchronization(
+            object : TransactionSynchronization {
+                override fun afterCommit() = send()
+            },
+        )
     }
 
     private companion object {

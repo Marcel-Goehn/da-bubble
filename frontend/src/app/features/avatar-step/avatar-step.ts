@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import Keycloak from 'keycloak-js';
-import { avatarUrl, predefinedAvatars } from '../../core/data/avatars';
+import { predefinedAvatars, predefinedAvatarUrl } from '../../core/data/avatars';
 import { ConversationStore } from '../../core/data/conversation.store';
 import { PredefinedAvatar, UserStore } from '../../core/data/user.store';
 import { Avatar } from '../../shared/ui/avatar';
@@ -111,11 +111,14 @@ export class AvatarStep {
   // The route's guard has loaded the User.
   protected readonly me = computed(() => this.users.me()!);
   protected readonly avatars = predefinedAvatars;
-  protected readonly avatarUrl = avatarUrl;
+  protected readonly avatarUrl = predefinedAvatarUrl;
   protected readonly selected = signal<PredefinedAvatar | null>(null);
   protected readonly saving = signal(false);
   protected readonly created = signal(false);
-  protected readonly preview = computed(() => avatarUrl(this.selected()));
+  protected readonly preview = computed(() => {
+    const selected = this.selected();
+    return selected === null ? null : predefinedAvatarUrl(selected);
+  });
 
   protected async save(): Promise<void> {
     // Stays set on success, so Weiter can't save twice while the overlay shows.

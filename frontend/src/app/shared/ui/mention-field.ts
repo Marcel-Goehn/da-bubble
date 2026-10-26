@@ -89,7 +89,7 @@ const optionKey = (mention: Mention) => `${mention.kind}:${mention.id}`;
           >
             @if (option.kind === 'user') {
               <app-avatar
-                [src]="avatarUrl(users.user(option.id)?.avatar ?? null)"
+                [src]="avatarUrl(users.user(option.id))"
                 [name]="option.name"
                 [size]="40"
                 decorative

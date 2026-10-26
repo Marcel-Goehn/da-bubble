@@ -9,6 +9,7 @@ import { ConversationStore } from './conversation.store';
 import { MessageStore } from './message.store';
 import { PresenceStore } from './presence.store';
 import { ReadStore } from './read.store';
+import { UserStore } from './user.store';
 
 export type { RealtimeEvent };
 
@@ -35,6 +36,7 @@ export class RealtimeService {
   private readonly messages = inject(MessageStore);
   private readonly presence = inject(PresenceStore);
   private readonly reads = inject(ReadStore);
+  private readonly users = inject(UserStore);
   private readonly errors = inject(ErrorService);
   private readonly transloco = inject(TranslocoService);
   private started = false;
@@ -109,6 +111,9 @@ export class RealtimeService {
         break;
       case 'read.updated':
         this.reads.noteRead(event);
+        break;
+      case 'user.updated':
+        this.users.upsert(event.user);
         break;
       case 'presence.changed':
         this.presence.set(event.userId, event.online);
